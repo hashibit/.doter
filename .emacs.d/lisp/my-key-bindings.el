@@ -64,7 +64,7 @@
 
 (bind-key* (kbd "s-T") #'multi-vterm)
 (bind-key* (kbd "C-t") #'claude-code-toggle)
-(bind-key* (kbd "C-,") #'claude-code-toggle)
+(bind-key* (kbd "s-o") #'claude-code-toggle)
 
 
 (bind-key* (kbd "s-c") #'kill-ring-save)
@@ -212,6 +212,7 @@
     (define-key god-local-mode-map (kbd "V") #'my-select-current-line-and-forward-line)
     (define-key god-local-mode-map (kbd "J") #'my-join-lines)
     (define-key god-local-mode-map (kbd "y") #'my-copy-whole-line-or-region)
+    (define-key god-local-mode-map (kbd "Y") #'my-copy-whole-line-or-region-to-tmux)
     (define-key god-local-mode-map (kbd "p") #'my-yank-but-check-newline-bellow)
     (define-key god-local-mode-map (kbd "P") #'my-yank-but-check-newline-above) ;; same as yank
     (define-key god-local-mode-map (kbd "u") #'undo-tree-undo)
@@ -291,6 +292,7 @@
 
     (define-key god-local-mode-map (kbd "C-\\") #'my-toggle-eldoc-box-help-at-point)
     (define-key god-local-mode-map (kbd "SPC R") #'revert-buffer)
+    (define-key god-local-mode-map (kbd "SPC C-r") #'revert-buffer-quick)
 
     (define-key god-local-mode-map (kbd "SPC M-f") #'my-projectile-switch-project-find-file)
     (define-key god-local-mode-map (kbd "SPC f") #'my-projectile-find-file)

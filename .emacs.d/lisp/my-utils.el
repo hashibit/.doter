@@ -629,6 +629,17 @@ If buffer-or-name is nil return current buffer's mode."
       (kill-new (concat (car kill-ring) "\n")))
     (message "Copied line")))
 
+
+(defun my-copy-whole-line-or-region-to-tmux ()
+  "Copy the current region or whole line to tmux paste buffer."
+  (interactive)
+  (let* ((in-region (use-region-p))
+         (beg (if in-region (region-beginning) (line-beginning-position)))
+         (end (if in-region (region-end) (min (1+ (line-end-position) ) (point-max)))))
+    (shell-command-on-region beg end "tmux load-buffer -" nil t)
+    (message "Copied to tmux buffer")))
+
+
 (defun my-select-current-line-and-forward-line (arg)
   "Select the current line and move the cursor by ARG lines IF
   no region is selected.

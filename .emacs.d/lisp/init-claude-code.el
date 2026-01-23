@@ -64,8 +64,8 @@ With prefix ARG, switch to Claude buffer after sending."
   (interactive)
   (when (called-interactively-p 'interactive)
     (setq api-key (read-string "API Key: ")))
-  ;; api-key first
-  (setq my-glm-api-key (or api-key my-glm-api-key))
+  (when (and api-key (not (string-empty-p api-key)))
+    (setq my-glm-api-key api-key))
   (if my-glm-api-key
     (progn
       (setenv "ANTHROPIC_BASE_URL" "https://open.bigmodel.cn/api/anthropic")

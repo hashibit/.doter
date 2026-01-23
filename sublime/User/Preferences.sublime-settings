@@ -2,7 +2,7 @@
 // and are overridden in turn by syntax-specific settings.
 {
 	"font_face": "IBM Plex Mono",
-	"font_size": 14,
+	"font_size": 12,
 	"ui_scale": 0.0,
 	"line_padding_top": 1,
 	"line_padding_bottom": 1,

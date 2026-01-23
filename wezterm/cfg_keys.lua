@@ -22,7 +22,10 @@ cfg.keys = {
   { mods = "SUPER",             key = "k",  action = wezterm.action{ClearScrollback = "ScrollbackAndViewport"}},
   { mods = "SUPER",             key = "f",  action = wezterm.action{Search = {CaseInSensitiveString = ""}}},
 
-  { mods = "SUPER",             key = "y",  action = wezterm.action.SendString '\x18\x40\x73\x79'     }, -- SUPER+Y in terminal, send C-x @ s y, hex code get from showkey -a
+  { mods = "SUPER",             key = "y",  action = wezterm.action.SendString '\x18\x40\x73\x79'     }, -- SUPER+Y in terminal, send C-x @ s y   hex code get from showkey -a
+  { mods = "SUPER",             key = "o",  action = wezterm.action.SendString '\x18\x40\x73\x6f'     }, -- SUPER+o in terminal, send C-x @ s o   hex code get from showkey -a
+  { mods = "SUPER",             key = "b",  action = wezterm.action.SendString '\x18\x40\x73\x62'     }, -- SUPER+b in terminal, send C-x @ s b   hex code get from showkey -a
+  { mods = "SUPER|SHIFT",       key = ";",  action = wezterm.action.SendString '\x18\x40\x73\x3a'     }, -- SUPER+: in terminal, send C-x @ s :   hex code get from showkey -a
 
   { mods = "SUPER",             key = "c",  action = wezterm.action{CopyTo = "Clipboard"}},
   { mods = "SUPER",             key = "v",  action = wezterm.action.PasteFrom("Clipboard")},
