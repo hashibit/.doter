@@ -636,7 +636,7 @@ If buffer-or-name is nil return current buffer's mode."
   (let* ((in-region (use-region-p))
          (beg (if in-region (region-beginning) (line-beginning-position)))
          (end (if in-region (region-end) (min (1+ (line-end-position) ) (point-max)))))
-    (shell-command-on-region beg end "tmux load-buffer -" nil t)
+    (shell-command-on-region beg end "tmux load-buffer -" nil nil t)
     (message "Copied to tmux buffer")))
 
 
