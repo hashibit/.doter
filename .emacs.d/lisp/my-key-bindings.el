@@ -337,6 +337,7 @@
 
     (define-key god-local-mode-map (kbd ", w") #'my-save-buffer)
     (define-key god-local-mode-map (kbd ", b") #'flip-buffer-to-window)
+    (define-key god-local-mode-map (kbd ", B") #'(lambda () (interactive) (flip-buffer-to-window t)))
 
     (define-key god-local-mode-map (kbd ", s") #'emacs-surround)
 

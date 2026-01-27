@@ -147,10 +147,12 @@
 
 
 
-(defun flip-buffer-to-window ()
+(defun flip-buffer-to-window (&optional include-special-buffer)
   "Flip to the last-visited buffer in this window."
   (interactive)
-  (let ((recent (my-most-recent-normal-buffer)))
+  (let ((recent (if include-special-buffer
+                  (nth 1 (buffer-list))
+                  (my-most-recent-normal-buffer))))
     (switch-to-buffer (or recent (other-buffer (current-buffer)))))
   )
 
