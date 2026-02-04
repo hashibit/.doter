@@ -38,7 +38,7 @@ vim.cmd([[
   hi FloatBorder             guifg=#569CD6       guibg=NONE
   hi NormalFloat             guifg=white         guibg=#1e1e1e
 
-  hi MatchParen guifg=purple guibg=yellow
+  hi MatchParen guifg=#4cf600 guibg=#1c4f13
 ]])
 
 -- Create autocmd to reapply highlights when colorscheme changes
