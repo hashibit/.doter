@@ -8,6 +8,7 @@
   (setq projectile-globally-ignored-directories
         '("node_modules"
           ".venv"
+          ".shadow-cljs"
           "venv"
           ".specstory"
           ".next"

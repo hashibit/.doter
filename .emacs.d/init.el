@@ -455,6 +455,7 @@
 (require 'init-lang-yaml)
 (require 'init-lang-qml)
 (require 'init-lang-java)
+(require 'init-lang-clojure)
 (require 'init-ansible)
 
 ;;; Lisp Development

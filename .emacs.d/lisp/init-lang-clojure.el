@@ -40,6 +40,9 @@
 ;; CIDER - Clojure 交互式开发环境
 ;; =============================================================================
 
+;; 使用 EGLOT 管理 xref 跳转
+;;(setq cider-use-xref nil) ;; 在这里设置不起作用，因为是 defcustom 定义的，应该要在 custom-set-varialbes 里
+
 (use-package cider
   :ensure t
   :defer t
@@ -52,9 +55,14 @@
           ("C-c C-t n" . cider-test-run-ns-tests)
           ("C-c C-t p" . cider-test-run-project-tests)
           ("C-c C-t t" . cider-test-run-test))
+  :init
+  :custom
+  ;; 不要操作我的 xref，我用 EGLOT 管理
+  (cider-use-xref nil)
   :config
   ;; REPL 配置
-  (setq cider-repl-display-help-banner nil
+  (setq
+    cider-repl-display-help-banner nil
     cider-repl-pop-to-buffer-on-connect 'display-only
     cider-repl-use-pretty-printing t
     cider-repl-result-prefix ";; => "
@@ -67,6 +75,13 @@
       (when (and (fboundp 'cider-repl-history-save)
               cider-repl-history-file)
         (cider-repl-history-save))))
+
+  ;; 不要操作我的 M-. 那是 xref 的快捷键
+  (add-hook 'cider-mode-hook
+    (lambda()
+      (define-key cider-mode-map (kbd "M-.") nil)
+      (define-key cider-mode-map (kbd "M-,") nil)
+      ))
 
   ;; 补全配置
   (setq cider-prompt-for-symbol nil
@@ -92,7 +107,8 @@
     nrepl-hide-special-buffers t)
 
   ;; 格式化代码快捷键
-  (define-key cider-mode-map (kbd "C-c C-f") #'cider-format-buffer))
+  (define-key cider-mode-map (kbd "C-c C-f") #'cider-format-buffer)
+  )
 
 ;; =============================================================================
 ;; CIDER REPL 增强
@@ -131,7 +147,8 @@
 ;; 快捷键绑定
 (with-eval-after-load 'cider
   (define-key cider-mode-map (kbd "C-c C-r r") #'my/cider-repl-reset)
-  (define-key cider-mode-map (kbd "C-c C-r f") #'my/cider-refresh))
+  (define-key cider-mode-map (kbd "C-c C-r f") #'my/cider-refresh)
+  )
 
 (provide 'init-lang-clojure)
 

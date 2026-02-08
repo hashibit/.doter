@@ -57,6 +57,7 @@
 
   (zig-mode . eglot-ensure)
   (tsx-ts-mode . eglot-ensure)
+  (clojure-ts-mode . eglot-ensure)
   ((rust-mode rust-ts-mode) . eglot-ensure)
 
   :config
