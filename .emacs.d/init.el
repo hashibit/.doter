@@ -76,8 +76,7 @@
 ;;; Load Path Configuration
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/emacswiki.org"))
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp"))
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/blink-search"))
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/tabby.el"))
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/emacs-translate"))
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/initializers"))
 (add-to-list 'custom-theme-load-path (expand-file-name "~/.emacs.d/lisp"))
 
