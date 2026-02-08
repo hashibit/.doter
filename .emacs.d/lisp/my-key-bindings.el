@@ -87,6 +87,8 @@
 (bind-key* (kbd "s-[") #'indent-rigidly-left)
 (bind-key* (kbd "s-]") #'indent-rigidly-right)
 
+(bind-key* (kbd "C-c C-t") #'emacs-translate-dwim)
+
 ;; 定义向左缩进函数（每次移动 tab-width 个空格）
 (defun indent-rigidly-left (start end)
   "向左 rigidly 缩进选中区域一个 tab-width。"
