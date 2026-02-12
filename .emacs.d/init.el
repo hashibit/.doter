@@ -116,7 +116,9 @@
 (unless (display-graphic-p)
   (require 'my-catch-term-escape-key)
   (require 'init-term-cursor)
-  (require 'my-term-popup))
+  (require 'my-term-popup)
+  (xclip-mode 1)
+  )
 
 ;;; ===================================================================
 ;;; UI & VISUAL CONFIGURATION
@@ -303,7 +305,8 @@
 (require 'init-slime)
 (require 'my-key-bindings)
 
-(require 'init-wayland)
+(when (my-system-type-is-gnu)
+  (require 'init-wayland))
 
 (global-unset-key [(control z)])
 
@@ -597,7 +600,6 @@
 
 ;;; Final Setup
 (which-key-mode 1)
-(xclip-mode 1)
 (save-place-mode 1)
 
 ;;; View Mode and Minibuffer Setup
