@@ -405,6 +405,9 @@
 ;;; DEVELOPMENT TOOLS & IDE FEATURES
 ;;; ===================================================================
 
+(semantic-idle-scheduler-mode -1)
+(global-semantic-idle-scheduler-mode -1)
+
 ;;; Code Intelligence and LSP
 (require 'init-eldoc)
 (require 'init-eglot)
