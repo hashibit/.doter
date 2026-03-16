@@ -233,10 +233,10 @@
   (interactive)
   (setq-local default-text-properties '(line-spacing 0.11 line-height 1.11)))
 
-(add-hook 'text-mode-hook #'my-set-small-line-height)
-(add-hook 'prog-mode-hook #'my-set-small-line-height)
-(add-hook 'conf-mode-hook #'my-set-small-line-height)
-(add-hook 'org-mode-hook  #'my-set-small-line-height)
+(add-hook 'text-mode-hook #'my-set-large-line-height)
+(add-hook 'prog-mode-hook #'my-set-large-line-height)
+(add-hook 'conf-mode-hook #'my-set-large-line-height)
+(add-hook 'org-mode-hook  #'my-set-large-line-height)
 
 ;; set global proxy
 (my-set-proxy)
