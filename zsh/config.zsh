@@ -260,6 +260,18 @@ find_file() {
 }
 
 
+dotenv () {
+    set -a
+
+    local env_file="$(pwd)/.env"
+
+    if [ -f "$env_file" ]; then
+        . "$env_file"
+    fi
+
+    set +a
+}
+
 #
 # Emacs vterm quick command end
 #

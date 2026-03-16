@@ -435,7 +435,6 @@
 (add-hook 'isearch-mode-end-hook #'my-isearch-cleanup)
 
 ;;; Additional Tools
-(require 'init-blink-search)
 ;; (require 'init-tabby)
 (require 'init-ivy)
 (require 'init-format-all)
@@ -574,7 +573,6 @@
     (ignore-errors (company-cancel))
     (ignore-errors (remove-all-highlight)))
   (ignore-errors (flymake-start)) ;; but show errors
-  (ignore-errors (blink-search-quit))
   (keyboard-quit)
   (keyboard-quit-context+)) ;; from custom-util-funcs.el
 
