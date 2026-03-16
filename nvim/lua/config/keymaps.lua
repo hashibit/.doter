@@ -46,8 +46,8 @@ function M.setup()
   vim.api.nvim_set_keymap("i", "<C-t>", "<C-o>O", { noremap = true })
   vim.api.nvim_set_keymap("i", "<M-BS>", "<C-w>", { noremap = true })
 
-  -- 将 Ctrl-[ 映射为退出 terminal 到 Normal 模式
-  vim.api.nvim_set_keymap("t", "<C-'>", "<C-\\><C-N>", { noremap = true, silent = false })
+  -- 将 Ctrl-\ 映射为退出 terminal 到 Normal 模式（标准 ASCII 0x1C，无需 extended keys）
+  vim.api.nvim_set_keymap("t", "<C-\\>", "<C-\\><C-N>", { noremap = true, silent = false })
 
   -- Advanced insert mode navigation
   keymap("i", "<M-d>", function()
