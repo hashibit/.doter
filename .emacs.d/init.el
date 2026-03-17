@@ -248,12 +248,23 @@
          :weight normal)))
   "custom highlight for treemacs current line")
 
+
+
+; (defface my-highlight-font-words-face
+;   `((t (:background "forest green"
+;          :foreground "cornsilk"
+;          :underline nil
+;          :weight normal)))
+;   "custom highlight for treemacs current line")
+
 (defface my-highlight-font-words-face
   `((t (:background "forest green"
-         :foreground "cornsilk"
+         :foreground "white"
          :underline nil
          :weight normal)))
   "custom highlight for treemacs current line")
+
+
 
 ;;  ;;; Theme Loading and Face Configuration
 ;;  (use-package vscode-dark-plus-theme
