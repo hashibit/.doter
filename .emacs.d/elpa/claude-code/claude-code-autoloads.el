@@ -133,16 +133,16 @@ Kill ALL Claude processes across all directories." t)
 (autoload 'claude-code-send-command "claude-code" "\
 Read a Claude command from the minibuffer and send it.
 
-With prefix ARG, switch to the Claude buffer after sending CMD.
+With prefix ARG, switch to the Claude buffer after sending.
 
-(fn CMD &optional ARG)" t)
+(fn &optional ARG)" t)
 (autoload 'claude-code-send-command-with-context "claude-code" "\
 Read a Claude command and send it with current file and line context.
 
 If region is active, include region line numbers.
-With prefix ARG, switch to the Claude buffer after sending CMD.
+With prefix ARG, switch to the Claude buffer after sending.
 
-(fn CMD &optional ARG)" t)
+(fn &optional ARG)" t)
 (autoload 'claude-code-send-return "claude-code" "\
 Send <return> to the Claude Code REPL.
 
@@ -244,6 +244,7 @@ disabled.
 
 (fn &optional ARG)" t)
 (register-definition-prefixes "claude-code" '("claude-code-"))
+
 
 ;;; End of scraped data
 

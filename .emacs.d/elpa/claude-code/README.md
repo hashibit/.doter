@@ -24,7 +24,7 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 
 - Emacs 30.0 or higher
 - [Claude Code CLI](https://github.com/anthropics/claude-code) installed and configured
-- Required: transient (0.7.5+)
+- Required: transient (0.7.5+) inheritenv (0.2)
 - Optional: eat (0.9.2+) for eat backend, vterm for vterm backend
   - Note: If not using a `:vc` install, the `eat` package requires NonGNU ELPA:
     ```elisp
@@ -35,10 +35,14 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 ### Using builtin use-package (Emacs 30+)
 
 ```elisp
-;; add melp to package archives, as vterm is on melpa:
+;; add melpa to package archives, as vterm is on melpa:
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
+
+;; install required inheritenv dependency:
+(use-package inheritenv
+  :vc (:url "https://github.com/purcell/inheritenv" :rev :newest))
 
 ;; for eat terminal backend:
 (use-package eat :ensure t)
@@ -49,14 +53,14 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 ;; install claude-code.el
 (use-package claude-code :ensure t
   :vc (:url "https://github.com/stevemolitor/claude-code.el" :rev :newest)
-  :config 
+  :config
   ;; optional IDE integration with Monet
   (add-hook 'claude-code-process-environment-functions #'monet-start-server-function)
   (monet-mode 1)
-  
+
   (claude-code-mode)
   :bind-keymap ("C-c c" . claude-code-command-map)
-  
+
   ;; Optionally define a repeat map so that "M" will cycle thru Claude auto-accept/plan/confirm modes after invoking claude-code-cycle-mode / C-c M.
   :bind
   (:repeat-map my-claude-code-map ("M" . claude-code-cycle-mode)))
@@ -65,6 +69,10 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 ### Using straight.el
 
 ```elisp
+;; install required inheritenv dependency:
+(use-package inheritenv
+  :straight (:type git :host github :repo "purcell/inheritenv"))
+
 ;; for eat terminal backend:
 (use-package eat
   :straight (:type git
@@ -87,7 +95,7 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
   ("C-c c" . claude-code-command-map) ;; or your preferred key
   ;; Optionally define a repeat map so that "M" will cycle thru Claude auto-accept/plan/confirm modes after invoking claude-code-cycle-mode / C-c M.
   :bind
-  (:repeat-map my-claude-code-map ("M" . claude-code-cycle-mode)))
+  (:repeat-map my-claude-code-map ("M" . claude-code-cycle-mode))
   :config
   ;; optional IDE integration with Monet
   (add-hook 'claude-code-process-environment-functions #'monet-start-server-function)
@@ -549,7 +557,32 @@ See the [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/cla
 
 ### Customizing Window Position
 
-You can control how the Claude Code window appears using Emacs' `display-buffer-alist`. For example, to make the Claude window appear in a persistent side window on the right side of your screen with 33% width:
+#### Using the Display Window Function
+
+You can customize how Claude Code windows are displayed by setting `claude-code-display-window-fn`. This function is called with the Claude buffer and should display it appropriately:
+
+```elisp
+;; Use display-buffer with custom configuration
+(setq claude-code-display-window-fn #'display-buffer)
+
+;; Example: Display in a side window using popwin
+(setq claude-code-display-window-fn #'display-buffer)
+(let ((buffer-regexp "^\\*claude:.+:.+\\*$"))
+  (push `(,buffer-regexp :regexp t :width 78 :position left :stick t :noselect nil :dedicated nil)
+        popwin:special-display-config))
+
+;; Example: Always display in a side window on the right
+(defun my-claude-display-right (buffer)
+  "Display Claude buffer in right side window."
+  (display-buffer buffer '((display-buffer-in-side-window)
+                           (side . right)
+                           (window-width . 90))))
+(setq claude-code-display-window-fn #'my-claude-display-right)
+```
+
+#### Using display-buffer-alist
+
+You can also control how the Claude Code window appears using Emacs' `display-buffer-alist`. For example, to make the Claude window appear in a persistent side window on the right side of your screen that is 90 characters wide:
 
 ```elisp
 (add-to-list 'display-buffer-alist

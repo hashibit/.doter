@@ -1,8 +1,8 @@
 ;;; claude-code.el --- Claude Code Emacs integration -*- lexical-binding: t; -*-
 
 ;; Author: Stephen Molitor <stevemolitor@gmail.com>
-;; Version: 0.4.4
-;; Package-Requires: ((emacs "30.0") (transient "0.9.3"))
+;; Version: 0.4.5
+;; Package-Requires: ((emacs "30.0") (transient "0.9.3") (inheritenv "0.2"))
 ;; Keywords: tools, ai
 ;; URL: https://github.com/stevemolitor/claude-code.el
 
@@ -16,6 +16,7 @@
 (require 'transient)
 (require 'project)
 (require 'cl-lib)
+(require 'inheritenv)
 
 ;;;; Customization options
 (defgroup claude-code nil
@@ -356,6 +357,13 @@ for each directory across multiple invocations.")
 
 (defvar claude-code--window-widths nil
   "Hash table mapping windows to their last known widths for eat terminals.")
+
+(defvar claude-code-command-history nil
+  "History of commands sent to Claude.
+This is separate from Emacs' main variable `command-history' to prevent
+pollution when using `savehist-mode'.  Users can optionally save
+this history by adding `claude-code-command-history' to
+`savehist-additional-variables'.")
 
 ;;;; Key bindings
 ;;;###autoload (autoload 'claude-code-command-map "claude-code")
@@ -728,19 +736,21 @@ SWITCHES are optional command-line arguments for PROGRAM."
                           (concat program " " (mapconcat #'identity switches " "))
                         program))
          (buffer (get-buffer-create buffer-name)))
-    (with-current-buffer buffer
-      ;; vterm needs to have an open window before starting the claude
-      ;; process; otherwise Claude doesn't seem to know how wide its
-      ;; terminal window is and it draws the input box too wide. But
-      ;; the user may not want to pop to the buffer. For some reason
-      ;; `display-buffer' also leads to wonky results, it has to be
-      ;; `pop-to-buffer'. So, show the buffer, start vterm-mode (which
-      ;; starts the vterm-shell claude process), and then hide the
-      ;; buffer. We'll optionally re-open it later.
-      (pop-to-buffer buffer)
-      (vterm-mode)
-      (delete-window (get-buffer-window buffer))
-      buffer)))
+    (inheritenv
+     ;; Use the current environment (even if buffer-local) when starting vterm in the new buffer
+     (with-current-buffer buffer
+        ;; vterm needs to have an open window before starting the claude
+        ;; process; otherwise Claude doesn't seem to know how wide its
+        ;; terminal window is and it draws the input box too wide. But
+        ;; the user may not want to pop to the buffer. For some reason
+        ;; `display-buffer' also leads to wonky results, it has to be
+        ;; `pop-to-buffer'. So, show the buffer, start vterm-mode (which
+        ;; starts the vterm-shell claude process), and then hide the
+        ;; buffer. We'll optionally re-open it later.
+        (pop-to-buffer buffer)
+        (vterm-mode)
+        (delete-window (get-buffer-window buffer))
+        buffer))))
 
 ;; Helper to ensure vterm is loaded
 (defun claude-code--ensure-vterm ()
@@ -781,8 +791,8 @@ _BACKEND is the terminal backend type (should be \\='vterm)."
   (claude-code--ensure-vterm)
   (vterm-copy-mode -1)
   (setq-local cursor-type nil)
-  ;; Restore keybindings that were lost when vterm-copy-mode reset the keymap
-  (claude-code--term-setup-keymap 'vterm))
+  ;; Keymap restoration is handled by vterm-copy-mode-hook
+  )
 
 (cl-defmethod claude-code--term-in-read-only-p ((_backend (eql vterm)))
   "Check if vterm terminal is in read-only mode.
@@ -817,7 +827,13 @@ _BACKEND is the terminal backend type (should be \\='vterm)."
   ;; Set up bell detection advice
   (advice-add 'vterm--filter :around #'claude-code--vterm-bell-detector)
   ;; Set up multi-line buffering to prevent flickering
-  (advice-add 'vterm--filter :around #'claude-code--vterm-multiline-buffer-filter))
+  (advice-add 'vterm--filter :around #'claude-code--vterm-multiline-buffer-filter)
+  ;; Set up hook to restore keymap when exiting vterm-copy-mode
+  (add-hook 'vterm-copy-mode-hook
+            (lambda ()
+              (unless vterm-copy-mode  ; Only when exiting copy-mode
+                (claude-code--term-setup-keymap 'vterm)))
+            nil t))  ; buffer-local hook
 
 (cl-defmethod claude-code--term-customize-faces ((_backend (eql vterm)))
   "Apply face customizations for vterm terminal.
@@ -829,27 +845,27 @@ _BACKEND is the terminal backend type (should be \\='vterm)."
 (defun claude-code--vterm-send-escape ()
   "Send escape key to vterm."
   (interactive)
-  (vterm-send-key ""))
+  (vterm-send-key "\C-["))
 
 (defun claude-code--vterm-send-return ()
-  "Send escape key to vterm."
+  "Send return key to vterm."
   (interactive)
-  (vterm-send-key ""))
+  (vterm-send-key "\C-m"))
 
 (defun claude-code--vterm-send-alt-return ()
   "Send <alt>-<return> to vterm."
   (interactive)
-  (vterm-send-key "" nil t))
+  (vterm-send-key "\C-m" nil t))
 
 (defun claude-code--vterm-send-shift-return ()
   "Send shift return to vterm."
   (interactive)
-  (vterm-send-key "" t))
+  (vterm-send-key "\C-m" t))
 
 (defun claude-code--vterm-send-super-return ()
-  "Send escape key to vterm."
+  "Send super-return key to vterm."
   (interactive)
-  ;; (vterm-send-key " " t)
+  ;; (vterm-send-key "\C-@" t)
   (vterm-send-key (kbd "s-<return>") t))
 
 ;; (defun claude-code--vterm-send-alt-return ()
@@ -1147,7 +1163,7 @@ FILE-NAME is the file path.  If nil, get from current buffer.
 LINE-START is the starting line number.  If nil, use current line.
 LINE-END is the ending line number for a range.  If nil, format single line."
   (let ((file (or file-name (claude-code--get-buffer-file-name)))
-        (start (or line-start (line-number-at-pos)))
+        (start (or line-start (line-number-at-pos nil t)))
         (end line-end))
     (when file
       (if end
@@ -1172,6 +1188,17 @@ Returns the selected Claude buffer or nil."
         claude-code-buffer)
     (claude-code--show-not-running-message)
     nil))
+
+
+(defun claude-code-display-buffer-below (buffer)
+  "Displays the claude code BUFFER below the currently selected one."
+  (display-buffer buffer '((display-buffer-below-selected))))
+
+(defcustom claude-code-display-window-fn #'claude-code-display-buffer-below
+  "Function used to display the claude code window.
+
+Must be callable with a buffer as its parameter."
+  :type 'function)
 
 (defun claude-code--start (arg extra-switches &optional force-prompt force-switch-to-buffer)
   "Start Claude with given command-line EXTRA-SWITCHES.
@@ -1263,7 +1290,7 @@ With double prefix ARG (\\[universal-argument] \\[universal-argument]), prompt f
       (setq-local vertical-scroll-bar nil)
 
       ;; Display buffer, setting window parameters
-      (let ((window (display-buffer buffer '((display-buffer-below-selected)))))
+      (let ((window (funcall claude-code-display-window-fn buffer)))
         (when window
           ;; turn off fringes and margins in the Claude buffer
           (set-window-parameter window 'left-margin-width 0)
@@ -1464,7 +1491,7 @@ ARGS can contain additional arguments passed from the CLI."
   ;; from trying to evaluate leftover arguments as Lisp expressions
   (let ((json-data (when server-eval-args-left (pop server-eval-args-left)))
         (extra-args (prog1 server-eval-args-left (setq server-eval-args-left nil))))
-    
+
     ;; Run the event hook and potentially get a JSON response
     (let* ((message (list :type type
                          :buffer-name buffer-name
@@ -1727,27 +1754,29 @@ directories, allowing you to choose which one to switch to."
   (claude-code--kill-all-instances))
 
 ;;;###autoload
-(defun claude-code-send-command (cmd &optional arg)
+(defun claude-code-send-command (&optional arg)
   "Read a Claude command from the minibuffer and send it.
 
-With prefix ARG, switch to the Claude buffer after sending CMD."
-  (interactive "sClaude command: \nP")
-  (let ((selected-buffer (claude-code--do-send-command cmd)))
+With prefix ARG, switch to the Claude buffer after sending."
+  (interactive "P")
+  (let* ((cmd (read-string "Claude command: " nil 'claude-code-command-history))
+         (selected-buffer (claude-code--do-send-command cmd)))
     (when (and arg selected-buffer)
       (pop-to-buffer selected-buffer))))
 
 ;;;###autoload
-(defun claude-code-send-command-with-context (cmd &optional arg)
+(defun claude-code-send-command-with-context (&optional arg)
   "Read a Claude command and send it with current file and line context.
 
 If region is active, include region line numbers.
-With prefix ARG, switch to the Claude buffer after sending CMD."
-  (interactive "sClaude command: \nP")
-  (let* ((file-ref (if (use-region-p)
+With prefix ARG, switch to the Claude buffer after sending."
+  (interactive "P")
+  (let* ((cmd (read-string "Claude command: " nil 'claude-code-command-history))
+         (file-ref (if (use-region-p)
                        (claude-code--format-file-reference
                         nil
-                        (line-number-at-pos (region-beginning))
-                        (line-number-at-pos (region-end)))
+                        (line-number-at-pos (region-beginning) t)
+                        (line-number-at-pos (region-end) t))
                      (claude-code--format-file-reference)))
          (cmd-with-context (if file-ref
                                (format "%s\n%s" cmd file-ref)
