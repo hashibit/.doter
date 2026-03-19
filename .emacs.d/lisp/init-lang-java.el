@@ -368,6 +368,7 @@
 
 (use-package jarchive
   :ensure t
+  :mode "\\.java\\'"
   :after eglot
   :config
   (jarchive-mode 1))

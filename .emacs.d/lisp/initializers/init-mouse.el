@@ -36,6 +36,20 @@ Ignores calls if they happen too frequently."
       ;; (message "Gesture ignored (rate limit)")
       nil)))
 
+(defun my/xref-go-forward-throttled ()
+  "Throttled version of `xref-go-forward` for touch gestures.
+Ignores calls if they happen too frequently."
+  (interactive)
+  (let ((now (float-time)))
+    (if (> (- now my/xref-gesture-last-time) my/xref-gesture-delay)
+        ;; 时间间隔足够，执行命令并更新时间
+        (progn
+          (setq my/xref-gesture-last-time now)
+          (call-interactively #'xref-go-forward))
+      ;; 时间间隔太短，忽略本次触发 (可选：加个 message 调试)
+      ;; (message "Gesture ignored (rate limit)")
+      nil)))
+
 
 
 
@@ -44,7 +58,7 @@ Ignores calls if they happen too frequently."
 ;; 绑定按键
 (define-key global-map (kbd "<s-mouse-3>")           #'my/xref-go-back-throttled)
 (define-key global-map (kbd "<s-triple-wheel-down>") #'my/xref-go-back-throttled)
-(define-key global-map (kbd "<s-triple-wheel-up>")   #'my/xref-go-back-throttled)
+(define-key global-map (kbd "<s-triple-wheel-up>")   #'my/xref-go-forward-throttled)
 
 
 
