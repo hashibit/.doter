@@ -225,13 +225,21 @@
     whitespace-trailing-fg-color "#161c23"
     hl-line-bg-color (face-background 'highlight)))
 
+;; (defun my-set-small-line-height ()
+;;   (interactive)
+;;   (setq-local default-text-properties '(line-spacing 0 line-height 1)))
+
+;; (defun my-set-large-line-height ()
+;;   (interactive)
+;;   (setq-local default-text-properpties '(line-spacing 0.15 line-height 1.15)))
+
 (defun my-set-small-line-height ()
   (interactive)
-  (setq-local default-text-properties '(line-spacing 0 line-height 1)))
+  (setq-local line-spacing 0))
 
 (defun my-set-large-line-height ()
   (interactive)
-  (setq-local default-text-properties '(line-spacing 0.11 line-height 1.11)))
+  (setq-local line-spacing 0.15))
 
 (add-hook 'text-mode-hook #'my-set-large-line-height)
 (add-hook 'prog-mode-hook #'my-set-large-line-height)
