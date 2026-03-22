@@ -225,6 +225,24 @@
     whitespace-trailing-fg-color "#161c23"
     hl-line-bg-color (face-background 'highlight)))
 
+
+
+;; use header-line to mimic buffer top padding
+(defun my-set-header-line ()
+  (interactive)
+  (set-face-attribute 'header-line nil
+    :background darker-window-bg-color
+    :box nil
+    :overline nil
+    :height 10)
+  (setq-local header-line-format " "))
+
+(defun my-unset-header-line()
+  (interactive)
+  (setq-local header-line-format nil))
+
+(add-hook 'prog-mode-hook #'my-set-header-line)
+
 ;; (defun my-set-small-line-height ()
 ;;   (interactive)
 ;;   (setq-local default-text-properties '(line-spacing 0 line-height 1)))
