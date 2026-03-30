@@ -309,8 +309,11 @@ bbc() {
 
     # 4. 执行 Git 操作 (假设你想基于该名称创建/切换分支)
     # 如果分支不存在，git worktree add 会报错，建议加上判断或使用 -b
-    if git worktree add "$TARGET_DIR" "$BRANCH_NAME"; then
+    if git worktree add "$TARGET_DIR"; then
         cd "$TARGET_DIR" || return 1
+        if [ -n "$TMUX" ]; then
+            tmux rename-window $(basename "$PWD")
+        fi
 
         # 5. Pnpm 依赖安装
         if [ -f "package.json" ]; then
@@ -321,7 +324,7 @@ bbc() {
         echo "🤖 启动 claude..."
         claude
     else
-        echo "⚠️ Git worktree 创建失败。请检查分支 [$BRANCH_NAME] 是否存在。"
+        echo "⚠️ Git worktree 创建失败。"
         return 1
     fi
 }
