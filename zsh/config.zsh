@@ -289,6 +289,43 @@ unset_proxy() {
 
 
 
+bbc() {
+    # 1. 优先读取参数 $1，如果没有则读取环境变量 $BB
+    local BRANCH_NAME="${1:-$BB}"
+
+    # 2. 如果两者都为空，则报错退出
+    if [ -z "$BRANCH_NAME" ]; then
+        echo "❌ 错误: 未指定分支名！"
+        echo "用法: bbc 分支名  或者  BB=分支名 bbc"
+        return 1
+    fi
+
+    # 3. 构造路径（使用刚刚获取到的 BRANCH_NAME）
+    local CURRENT_DIR=$(basename "$PWD")
+    local TARGET_DIR="../${CURRENT_DIR}-${BRANCH_NAME}"
+
+    echo "🚀 目标分支/标识: $BRANCH_NAME"
+    echo "📂 正在创建工作树: $TARGET_DIR ..."
+
+    # 4. 执行 Git 操作 (假设你想基于该名称创建/切换分支)
+    # 如果分支不存在，git worktree add 会报错，建议加上判断或使用 -b
+    if git worktree add "$TARGET_DIR" "$BRANCH_NAME"; then
+        cd "$TARGET_DIR" || return 1
+
+        # 5. Pnpm 依赖安装
+        if [ -f "package.json" ]; then
+            echo "📦 检测到项目，正在 pnpm i..."
+            pnpm i
+        fi
+
+        echo "🤖 启动 claude..."
+        claude
+    else
+        echo "⚠️ Git worktree 创建失败。请检查分支 [$BRANCH_NAME] 是否存在。"
+        return 1
+    fi
+}
+
 
 alias ss='swift sh'
 alias sf='swiftformat'
