@@ -4,6 +4,8 @@ macos-titlebar-style = hidden
 font-family = IBM Plex Mono
 font-size = 13.5
 cursor-color = FF0000
+macos-option-as-alt = true
+
 
 # ~/.config/ghostty/config.ghostty
 
