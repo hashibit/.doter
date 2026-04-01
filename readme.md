@@ -18,6 +18,7 @@ ln -s ~/.doter/tmux             ~/.config/tmux
 ln -s ~/.doter/helix            ~/.config/helix
 ln -s ~/.doter/wezterm          ~/.config/wezterm
 ln -s ~/.doter/alacritty        ~/.config/alacritty
+ln -s ~/.doter/ghostty          ~/.config/ghostty
 ln -s ~/.doter/karabiner        ~/.config/karabiner
 ln -s ~/.doter/kak              ~/.config/kak
 ln -s ~/.doter/git              ~/.config/git

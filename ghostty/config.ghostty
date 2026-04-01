@@ -1,0 +1,105 @@
+theme = Xcode Dark hc
+window-decoration = none
+macos-titlebar-style = hidden
+font-family = IBM Plex Mono
+font-size = 13.5
+cursor-color = FF0000
+
+# ~/.config/ghostty/config.ghostty
+
+# --- Ghostty native actions ---
+keybind = super+q=close_window
+keybind = super+n=new_window
+keybind = super+shift+t=new_tab
+
+keybind = super+equal=increase_font_size:1
+keybind = super+minus=decrease_font_size:1
+
+# Clear scrollback
+keybind = super+k=clear_screen
+
+# Search
+keybind = super+f=start_search
+
+# Copy / Paste
+keybind = super+c=copy_to_clipboard
+keybind = super+v=paste_from_clipboard
+keybind = ctrl+insert=copy_to_clipboard
+keybind = shift+insert=paste_from_clipboard
+
+# --- tmux 透传序列（text: 用 Zig string literal 语法）---
+
+# SUPER+Y  → C-x @ s y
+keybind = super+y=text:\x18\x40\x73\x79
+
+# SUPER+O  → C-x @ s o
+keybind = super+o=text:\x18\x40\x73\x6f
+
+# SUPER+B  → C-x @ s b
+keybind = super+b=text:\x18\x40\x73\x62
+
+# SUPER+SHIFT+;  → C-x @ s :
+keybind = super+shift+semicolon=text:\x18\x40\x73\x3a
+
+# SUPER+SHIFT+J  → C-s C-j
+keybind = super+shift+j=text:\x13\x0a
+
+# SUPER+SHIFT+K  → C-s C-k
+keybind = super+shift+k=text:\x13\x0b
+
+# SUPER+SHIFT+H  → C-s C-s h
+keybind = super+shift+h=text:\x13\x13\x68
+
+# SUPER+SHIFT+L  → C-s C-s l
+keybind = super+shift+l=text:\x13\x13\x6c
+
+# SUPER+SHIFT+N  → C-s C-s n
+keybind = super+shift+n=text:\x13\x13\x6e
+
+# SUPER+H  → C-s h
+keybind = super+h=text:\x13\x68
+
+# SUPER+L  → C-s l
+keybind = super+l=text:\x13\x6c
+
+# SUPER+SHIFT+{  → C-s h（{ 是 shift+[ ）
+keybind = super+shift+left_bracket=text:\x13\x68
+
+# SUPER+SHIFT+}  → C-s l（} 是 shift+] ）
+keybind = super+shift+right_bracket=text:\x13\x6c
+
+# SUPER+T  → C-s n（tmux new window）
+keybind = super+t=text:\x13\x6e
+
+# SUPER+W  → C-s x（tmux kill pane）
+keybind = super+w=text:\x13\x78
+
+# SUPER+SHIFT+W  → C-s X
+keybind = super+shift+w=text:\x13\x58
+
+# SUPER+R  → C-s [（tmux copy mode）
+keybind = super+r=text:\x13\x5b
+
+# SUPER+E  → C-s m（tmux toggle mouse）
+keybind = super+e=text:\x13\x6d
+
+# SUPER+0~9  → C-s 0~9（tmux select window）
+keybind = super+digit0=text:\x13\x30
+keybind = super+digit1=text:\x13\x31
+keybind = super+digit2=text:\x13\x32
+keybind = super+digit3=text:\x13\x33
+keybind = super+digit4=text:\x13\x34
+keybind = super+digit5=text:\x13\x35
+keybind = super+digit6=text:\x13\x36
+keybind = super+digit7=text:\x13\x37
+keybind = super+digit8=text:\x13\x38
+keybind = super+digit9=text:\x13\x39
+
+# CTRL+X  → ShowLauncher → 用 toggle_command_palette 代替
+keybind = ctrl+x=toggle_command_palette
+
+# CTRL+Q  → 透传 ctrl-q (\x11)
+keybind = ctrl+q=text:\x11
+
+# CTRL+/  → 透传 ctrl-/ (\x1f)
+keybind = ctrl+slash=text:\x1f
