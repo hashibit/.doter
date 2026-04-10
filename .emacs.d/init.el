@@ -276,12 +276,12 @@
 
 
 
-; (defface my-highlight-font-words-face
-;   `((t (:background "forest green"
-;          :foreground "cornsilk"
-;          :underline nil
-;          :weight normal)))
-;   "custom highlight for treemacs current line")
+                                        ; (defface my-highlight-font-words-face
+                                        ;   `((t (:background "forest green"
+                                        ;          :foreground "cornsilk"
+                                        ;          :underline nil
+                                        ;          :weight normal)))
+                                        ;   "custom highlight for treemacs current line")
 
 (defface my-highlight-font-words-face
   `((t (:background "forest green"
@@ -663,6 +663,7 @@
   '(avy-lead-face ((t (:background "#161c23" :weight normal :foreground "deeppink"))))
   '(avy-lead-face-0 ((t (:background "#161c23" :foreground "#FFB400"))))
   '(aw-mode-line-face ((t (:inherit nil))))
+  '(bold ((t (:slant normal :weight normal :height 130 :width normal :foundry "nil" :family "IBM Plex Mono"))))
   '(cfrs-border-color ((t (:background "yellow"))))
   '(company-tooltip ((t (:background "black"))))
   '(company-tooltip-common ((t (:weight normal :foreground "#7FDC59"))))
