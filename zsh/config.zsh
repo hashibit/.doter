@@ -346,6 +346,7 @@ export PATH="$HOME/zig/zls/bin:$PATH"
 export PATH="$HOME/zig/zig-macos-aarch64:$PATH"
 export PATH="$HOME/.roswell/bin:$PATH"
 export PATH="$HOME/platform-tools:$PATH"
+export PATH="$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH"
 
 export VCPKG_ROOT="$HOME/vcpkg"
 
@@ -359,6 +360,26 @@ export VCPKG_ROOT="$HOME/vcpkg"
 source <(fzf --zsh)
 
 alias ffplay="ffplay -vf \"drawtext=text='%{pts\:hms}':x=10:y=10:fontsize=32:fontcolor=yellow:box=1:boxcolor=red@0.8:boxborderw=10\" "
+
+
+# 检测系统类型和显示服务器
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS 自带 pbcopy/pbpaste，无需设置
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if [[ "$XDG_SESSION_TYPE" == "wayland" ]] && (( $+commands[wl-copy] )); then
+        # # Wayland 环境 (使用 wl-clipboard)
+        # alias pbcopy='wl-copy'
+        # alias pbpaste='wl-paste'
+    elif (( $+commands[xclip] )); then
+        # # X11 环境 (使用 xclip)
+        # alias pbcopy='xclip -selection clipboard'
+        # alias pbpaste='xclip -selection clipboard -o'
+    elif (( $+commands[xsel] )); then
+        # # X11 环境 (使用 xsel 作为备选)
+        # alias pbcopy='xsel --clipboard --input'
+        # alias pbpaste='xsel --clipboard --output'
+    fi
+fi
 
 if [ -f "$HOME/.claude/local/claude" ]; then
     alias claude="$HOME/.claude/local/claude"

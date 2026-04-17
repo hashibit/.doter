@@ -59,24 +59,24 @@ With prefix ARG, switch to Claude buffer after sending."
   )
 
 
-(setq my-bailian-api-key nil)
-(defun claude-code-bailian (&optional api-key)
-  (interactive)
-  (when (called-interactively-p 'interactive)
-    (setq api-key (read-string "API Key: ")))
-  (when (and api-key (not (string-empty-p api-key)))
-    (setq my-bailian-api-key api-key))
-  (if my-bailian-api-key
-    (progn
-      (setenv "ANTHROPIC_BASE_URL" "https://coding.dashscope.aliyuncs.com/apps/anthropic")
-      (setenv "ANTHROPIC_AUTH_TOKEN" my-bailian-api-key)
-      (setenv "http_proxy" nil)
-      (setenv "https_proxy" nil)
-      (setenv "HTTP_PROXY" nil)
-      (setenv "HTTPS_PROXY" nil)
-      (claude-code)
-      )
-    (message "should set aliyun bailian api-key")))
+;; (setq my-bailian-api-key nil)
+;; (defun claude-code-bailian (&optional api-key)
+;;   (interactive)
+;;   (when (called-interactively-p 'interactive)
+;;     (setq api-key (read-string "API Key: ")))
+;;   (when (and api-key (not (string-empty-p api-key)))
+;;     (setq my-bailian-api-key api-key))
+;;   (if my-bailian-api-key
+;;     (progn
+;;       (setenv "ANTHROPIC_BASE_URL" "https://coding.dashscope.aliyuncs.com/apps/anthropic")
+;;       (setenv "ANTHROPIC_AUTH_TOKEN" my-bailian-api-key)
+;;       (setenv "http_proxy" nil)
+;;       (setenv "https_proxy" nil)
+;;       (setenv "HTTP_PROXY" nil)
+;;       (setenv "HTTPS_PROXY" nil)
+;;       (claude-code)
+;;       )
+;;     (message "should set aliyun bailian api-key")))
 
 
 ;; (use-package claudemacs

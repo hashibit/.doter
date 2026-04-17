@@ -265,7 +265,7 @@
 (add-hook 'org-mode-hook  #'my-set-large-line-height)
 
 ;; set global proxy
-(my-set-proxy)
+;; (my-set-proxy)
 
 ;;; Custom Faces
 (defface my-highlight-font-chars-face
@@ -586,6 +586,7 @@
   (indent-bars-display-on-blank-lines t)
   :hook
   (prog-mode . indent-bars-mode)
+  (indent-bars-mode . indent-bars-reset)
   )
 
 (use-package systemd

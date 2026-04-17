@@ -21,6 +21,25 @@
 (use-package eglot
   :ensure t
   :commands (eglot eglot-ensure)
+  :custom
+  (eglot-code-action-indicator "")
+
+  :hook
+  ;; Enable eglot for various programming languages
+  ((c-ts-mode c++-ts-mode) . eglot-ensure)
+
+  ((go-mode go-ts-mode) . (lambda()
+                            (setq eglot-workspace-configuration
+                              '((gopls (usePlaceholders . t))))
+                            (eglot-ensure)))
+
+  (python-ts-mode . eglot-ensure)
+
+  (zig-mode . eglot-ensure)
+  (tsx-ts-mode . eglot-ensure)
+  (clojure-ts-mode . eglot-ensure)
+
+  ((rust-mode rust-ts-mode) . eglot-ensure)
 
   :config
 
@@ -44,23 +63,19 @@
           (when (bound-and-true-p pyvenv-mode)
             (pyvenv-activate (file-name-directory (directory-file-name venv-python))))))))
 
-  :hook
-  ;; Enable eglot for various programming languages
-  ((c-ts-mode c++-ts-mode) . eglot-ensure)
+  (defun my-rust-project-root (dir)
+    "Find the topmost Cargo.toml workspace root."
+    (when-let ((root (locate-dominating-file dir "Cargo.toml")))
+      (let ((parent (file-name-directory (directory-file-name root))))
+        (or (my-rust-project-root parent) root))))
 
-  ((go-mode go-ts-mode) . (lambda()
-                            (setq eglot-workspace-configuration
-                              '((gopls (usePlaceholders . t))))
-                            (eglot-ensure)))
+  (defun my-rust-project-try (dir)
+    "Project backend that returns the topmost Cargo workspace root."
+    (when (and dir (locate-dominating-file dir "Cargo.toml"))
+      (when-let ((root (my-rust-project-root dir)))
+        (cons 'transient root))))
+  (add-hook 'project-find-functions #'my-rust-project-try)
 
-  (python-ts-mode . eglot-ensure)
-
-  (zig-mode . eglot-ensure)
-  (tsx-ts-mode . eglot-ensure)
-  (clojure-ts-mode . eglot-ensure)
-  ((rust-mode rust-ts-mode) . eglot-ensure)
-
-  :config
   (defvar my-eglot-ensure-is-enabled t
     "控制是否允许 eglot-ensure 实际运行。")
   (defun my-toggle-eglot-ensure () (interactive) (setq my-eglot-ensure-is-enabled (not my-eglot-ensure-is-enabled)))
@@ -115,9 +130,6 @@
   ;; Don't interfere with company configuration
   (setq eglot-stay-out-of '(company))
   ;; Don't show indicator
-  (setq eglot-code-action-indicator "")
-  (setq eglot-code-action-indications nil)
-
   ;; Performance and behavior settings
   (setq eglot-autoshutdown t
     eglot-ignored-server-capabilities '(:foldingRangeProvider)

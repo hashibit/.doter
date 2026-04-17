@@ -3,8 +3,22 @@ window-decoration = none
 macos-titlebar-style = hidden
 font-family = IBM Plex Mono
 font-size = 13.5
+
+
+cursor-style = block
 cursor-color = FF0000
+shell-integration-features = no-cursor
+
 macos-option-as-alt = true
+
+# Set a global shortcut (macOS example)
+keybind = cmd+j=toggle_quick_terminal
+
+# Customize position (top, bottom, left, right, center)
+quick-terminal-position = center
+quick-terminal-size = 80%,80%
+quick-terminal-animation-duration = 0
+
 
 
 # ~/.config/ghostty/config.ghostty
