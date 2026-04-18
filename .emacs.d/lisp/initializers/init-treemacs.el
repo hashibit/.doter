@@ -104,7 +104,7 @@
 
   ;;;; custom highlight for treemacs current line
   (defface my-treemacs-custom-line-highlight
-    '((t (:background "#59dcb7" :foreground "black" :weight normal)))
+    '((t (:background "#292929" :weight normal)))
     "")
   (defun change-treemacs-hl-line-mode ()
     (setq-local hl-line-face 'my-treemacs-custom-line-highlight)

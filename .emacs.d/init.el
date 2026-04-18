@@ -579,7 +579,7 @@
   (indent-bars-color '(highlight :face-bg t :blend 0.5))
   (indent-bars-pattern ".")
   (indent-bars-width-frac 0.1)
-  (indent-bars-pad-frac 0.1)
+  (indent-bars-pad-frac 0.5) ; middle of char
   (indent-bars-zigzag nil)
   (indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 1) ); blend=1: blend with BG only
   (indent-bars-highlight-current-depth '(:blend 0.5)) ; pump up the BG blend on current
@@ -721,7 +721,7 @@
   '(treemacs-git-untracked-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
   '(treemacs-root-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))
   '(treemacs-tags-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(vertical-border ((t (:inherit shadow :foreground "#569CD6"))))
+  '(vertical-border ((t (:inherit shadow :foreground "#1a202c"))))
   '(whitespace-tab ((t (:foreground unspecified :background unspecified :inherit shadow))))
   '(whitespace-trailing ((t (:foreground unspecified :background unspecified :inherit shadow))))
   '(widget-field ((t (:background "#C6B8AD" :foreground "black"))))
