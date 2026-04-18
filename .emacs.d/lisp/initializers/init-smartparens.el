@@ -1,11 +1,9 @@
 (require 'smartparens-config)
 (require 'sp-sublimetext-like)
 
-; (smartparens-global-mode 1)
-; (smartparens-mode 1)
+(smartparens-global-mode 1)
 
 (defun indent-between-pair (&rest _ignored)
-  (newline)
   (indent-according-to-mode)
   (forward-line -1)
   (indent-according-to-mode))

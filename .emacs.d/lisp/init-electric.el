@@ -12,8 +12,9 @@
   :ensure t
   :demand t
   :config
-  (electric-pair-mode 1)
-  (electric-indent-mode 1))
+  (electric-pair-mode -1)
+  (electric-indent-mode -1))
+
 
 (provide 'init-electric)
 
