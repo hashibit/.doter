@@ -217,7 +217,7 @@ exists it returns /file/name_Copy2.ext etc."
 
 ;; 例如 12pt = 120
 (if (my-system-type-is-darwin)
-  (defvar my-font-height 140)
+  (defvar my-font-height 130)
   (defvar my-font-height 110))
 
 ;; 只设置 :height，其他属性由 custom-set-faces 提供
