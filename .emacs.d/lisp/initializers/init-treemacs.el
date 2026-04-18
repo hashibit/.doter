@@ -236,7 +236,7 @@ exists it returns /file/name_Copy2.ext etc."
                    treemacs-git-untracked-face
                    treemacs-root-face
                    treemacs-tags-face))
-    (set-face-attribute face nil :height my-font-height))
+    (set-face-attribute face nil :height 0.9))
   )
 
 
