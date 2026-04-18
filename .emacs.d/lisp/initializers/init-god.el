@@ -14,6 +14,7 @@
     "ibuffer-mode"
     "special-mode"
     "native-comp-limple-mode"
+    "ivy-occur-mode"
     "image-mode"
     ))
 

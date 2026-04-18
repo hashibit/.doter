@@ -27,6 +27,7 @@
   (setq claude-code-terminal-backend 'vterm)
   (setq claude-code-vterm-buffer-multiline-output nil)
   (setq claude-code-sandbox-program "claude")
+  (setq claude-code-newline-keybinding-style 'newline-on-alt-return)
 
   (defun my-send-command-with-buffer-or-region-context (cmd &optional arg)
     "Send CMD to Claude with context:
