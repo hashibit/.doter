@@ -284,8 +284,8 @@
                                         ;   "custom highlight for treemacs current line")
 
 (defface my-highlight-font-words-face
-  `((t (:background "forest green"
-         :foreground "white"
+  `((t (:background "#1e3a5f"
+         :foreground "#c8d8ff"
          :underline nil
          :weight normal)))
   "custom highlight for treemacs current line")
