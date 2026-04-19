@@ -707,7 +707,7 @@
   '(success ((t (:foreground "Green1" :weight regular))))
   '(symbol-overlay-default-face ((t (:inherit my-highlight-font-words-face))))
   '(tab-bar ((t (:background "#1e1e1e"))))
-  '(tab-bar-tab ((t (:background "#199DFF" :distant-foreground "black" :foreground "#199DFF" :box (:line-width (2 . 2) :color "#199DFF" :style flat-button) :height 0.9))))
+  '(tab-bar-tab ((t (:background "#199DFF" :distant-foreground "black" :foreground "#199DFF" :box (:line-width (2 . 2) :color "#199DFF" :style flat-button) :height 1.0))))
   '(tooltip ((t (:font "IBM Plex Mono-14.0" :box nil))))
   '(treemacs-directory-collapsed-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))
   '(treemacs-directory-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))

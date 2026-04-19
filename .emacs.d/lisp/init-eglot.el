@@ -39,7 +39,16 @@
   (tsx-ts-mode . eglot-ensure)
   (clojure-ts-mode . eglot-ensure)
 
-  ((rust-mode rust-ts-mode) . eglot-ensure)
+  ((rust-mode rust-ts-mode) . (lambda ()
+                               (setq-local eglot-workspace-configuration
+                                 '(:rust-analyzer
+                                    ( :checkOnSave (:enable :json-false)
+                                      :procMacro (:enable t)
+                                      :cargo ( :buildScripts (:enable t)
+                                               :features "all")
+                                      :diagnostics (:experimental (:enable :json-false))
+                                      :completion (:autoimport (:enable t)))))
+                               (eglot-ensure)))
 
   :config
 
@@ -64,10 +73,16 @@
             (pyvenv-activate (file-name-directory (directory-file-name venv-python))))))))
 
   (defun my-rust-project-root (dir)
-    "Find the topmost Cargo.toml workspace root."
-    (when-let ((root (locate-dominating-file dir "Cargo.toml")))
-      (let ((parent (file-name-directory (directory-file-name root))))
-        (or (my-rust-project-root parent) root))))
+    "Find the topmost Cargo.toml workspace root, stopping at filesystem root."
+    (let ((found nil)
+          (current (locate-dominating-file dir "Cargo.toml")))
+      (while current
+        (setq found current)
+        (let ((parent (file-name-directory (directory-file-name current))))
+          (if (string= parent current)
+            (setq current nil)  ; filesystem root, stop
+            (setq current (locate-dominating-file parent "Cargo.toml")))))
+      found))
 
   (defun my-rust-project-try (dir)
     "Project backend that returns the topmost Cargo workspace root."
