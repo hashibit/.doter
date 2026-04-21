@@ -112,7 +112,7 @@ keybind = super+digit8=text:\x13\x38
 keybind = super+digit9=text:\x13\x39
 
 # CTRL+X  → ShowLauncher → 用 toggle_command_palette 代替
-keybind = ctrl+x=toggle_command_palette
+keybind = cmd+shift+p=toggle_command_palette
 
 # CTRL+Q  → 透传 ctrl-q (\x11)
 keybind = ctrl+q=text:\x11

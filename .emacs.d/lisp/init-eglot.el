@@ -47,10 +47,16 @@
                                       :cargo ( :buildScripts (:enable t)
                                                :features "all")
                                       :diagnostics (:experimental (:enable :json-false))
-                                      :completion (:autoimport (:enable t)))))
+                                      :completion (:autoimport (:enable t))
+                                      :files (:watcher "server"))))
                                (eglot-ensure)))
 
   :config
+
+  (cl-defmethod eglot-register-capability
+    (_server (_method (eql workspace/didChangeWatchedFiles)) _id &key watchers)
+    (ignore watchers)
+    (list t "client-side watch refused; server polls"))
 
   (defun locate-venv-with-uv ()
     "Find a uv venv."
