@@ -39,6 +39,11 @@
   (tsx-ts-mode . eglot-ensure)
   (clojure-ts-mode . eglot-ensure)
 
+  (swift-mode . (lambda ()
+                  (unless (and buffer-file-name
+                            (string= (file-name-extension buffer-file-name) "swiftinterface"))
+                    (eglot-ensure))))
+
   ((rust-mode rust-ts-mode) . (lambda ()
                                (setq-local eglot-workspace-configuration
                                  '(:rust-analyzer
@@ -78,6 +83,28 @@
           (when (bound-and-true-p pyvenv-mode)
             (pyvenv-activate (file-name-directory (directory-file-name venv-python))))))))
 
+  ;; Swift: use .xcodeproj directory as project root for sourcekit-lsp.
+  ;; Without this, monorepo git root becomes rootUri and sourcekit-lsp
+  ;; can't resolve SPM dependencies or cross-reference project files.
+  (defun my-swift-project-try (dir)
+    "Project backend: find nearest directory containing .xcodeproj."
+    (when (and dir
+            (buffer-file-name)
+            (string-match-p "\\.swift\\'" (buffer-file-name)))
+      (let ((found nil)
+            (current dir))
+        (while (and current (not found))
+          (let ((match (directory-files current nil "\\.xcodeproj\\'" t)))
+            (if match
+              (setq found current)
+              (let ((parent (file-name-directory (directory-file-name current))))
+                (if (string= parent current)
+                  (setq current nil)
+                  (setq current parent))))))
+        (when found
+          (cons 'transient found)))))
+  (add-hook 'project-find-functions #'my-swift-project-try)
+
   (defun my-rust-project-root (dir)
     "Find the topmost Cargo.toml workspace root, stopping at filesystem root."
     (let ((found nil)
@@ -92,7 +119,10 @@
 
   (defun my-rust-project-try (dir)
     "Project backend that returns the topmost Cargo workspace root."
-    (when (and dir (locate-dominating-file dir "Cargo.toml"))
+    (when (and dir
+            (buffer-file-name)
+            (string-match-p "\\.rs\\'" (buffer-file-name))
+            (locate-dominating-file dir "Cargo.toml"))
       (when-let ((root (my-rust-project-root dir)))
         (cons 'transient root))))
   (add-hook 'project-find-functions #'my-rust-project-try)
@@ -141,12 +171,7 @@
         :textDocument/references
         :extra-params `(:context (:includeDeclaration :json-false)))))
 
-  ;; Swift mode hook with special handling for .swiftinterface files
-  (defun my-swift-eglot-hook ()
-    (if (string= (file-name-extension buffer-file-name) "swiftinterface")
-      (message "swift interface files ignored by eglot.")
-      (eglot-ensure)))
-  (add-hook 'swift-mode-hook #'my-swift-eglot-hook)
+  ;; Swift hook moved to :hook section above
 
   ;; Don't interfere with company configuration
   (setq eglot-stay-out-of '(company))
