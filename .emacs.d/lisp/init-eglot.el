@@ -186,22 +186,19 @@
   (add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1))))
 
 
-(use-package sideline
-  :ensure t
-  :after eglot
-  :hook (prog-mode . sideline-mode)
-  :config
-  (setq sideline-backends-right '(;; sideline-eglot     ; `eglot'
-                                   sideline-flymake)     ; `eglot' uses `flymake' by default
-    sideline-eglot-code-actions-prefix "-> ")
-  )
-
-(use-package sideline-flymake
-  :ensure t
-  :after sideline
-  :config
-  ;; Face configuration moved to custom-set-faces
-  )
+;; (use-package sideline
+;;   :ensure t
+;;   :after eglot
+;;   :hook (prog-mode . sideline-mode)
+;;   :config
+;;   (setq sideline-backends-right '(sideline-flymake)
+;;     sideline-eglot-code-actions-prefix "-> ")
+;;   )
+;;
+;; (use-package sideline-flymake
+;;   :ensure t
+;;   :after sideline
+;;   )
 
 (provide 'init-eglot)
 

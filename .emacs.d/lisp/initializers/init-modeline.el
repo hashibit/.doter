@@ -93,7 +93,7 @@ Example: 'project/src/main/java/File.java' -> 'p/s/m/j/File.java'"
                                 (rel-dir (file-relative-name (file-name-directory buffer-file-truename) root-parent)))
                      (concat rel-dir (file-name-nondirectory buffer-file-truename)))
                    buffer-file-name))
-                (abbreviated-path (if (< (length full-path) 40)
+                (abbreviated-path (if (< (length full-path) 80)
                                     full-path
                                     (abbreviate-file-path full-path) )))
 

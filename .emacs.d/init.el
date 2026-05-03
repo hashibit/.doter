@@ -243,6 +243,9 @@
 
 (add-hook 'prog-mode-hook #'my-set-header-line)
 
+
+(add-hook 'prog-mode-hook #'hs-minor-mode)
+
 ;; (defun my-set-small-line-height ()
 ;;   (interactive)
 ;;   (setq-local default-text-properties '(line-spacing 0 line-height 1)))
