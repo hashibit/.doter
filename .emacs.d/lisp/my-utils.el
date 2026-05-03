@@ -765,6 +765,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-next-line(args)
   (interactive "p")
+  (setq this-command 'next-line)
   (if my-visual-line-selection
     (let ((curr-line (line-number-at-pos)))
       (cond
@@ -782,6 +783,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-previous-line(args)
   (interactive "p")
+  (setq this-command 'previous-line)
   (if my-visual-line-selection
     (let ((curr-line (line-number-at-pos)))
       (cond
