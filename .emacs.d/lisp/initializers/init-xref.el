@@ -11,6 +11,38 @@
   (define-key xref--xref-buffer-mode-map (kbd "o") #'(lambda ()
                                                        (interactive)
                                                        (xref-goto-xref t)))
+
+
+
+  ;; jump back with window scroll position
+  (defvar my-xref-window-starts (make-hash-table :test 'equal))
+
+  (defun my-xref--save-window-start (&optional _m)
+    "Save window-start keyed by (buffer . position) before push."
+    (let ((ws (window-start)))
+      ;; (message "-------- save ws: %s" ws)
+      (puthash (cons (current-buffer) (point))
+        (window-start)
+        my-xref-window-starts)))
+
+  (defun my-xref--restore-window-start (&rest _)
+    "Restore window-start after xref-go-back."
+    (let ((ws (gethash (cons (current-buffer) (point))
+                my-xref-window-starts)))
+      ;; (message "------------debug ws %s" ws)
+      (when ws
+        (set-window-start nil ws)
+        (remhash (cons (current-buffer) (point))
+          my-xref-window-starts))))
+
+
+  (advice-add 'xref-find-definitions :before #'my-xref--save-window-start)
+  (advice-add 'xref-find-references :before #'my-xref--save-window-start)
+
+  (advice-add 'xref-go-back :after #'my-xref--restore-window-start)
+  (advice-add 'xref-go-forward :after #'my-xref--restore-window-start)
+
+
   ;; directly open it when there is only one candidate.
   ;; (setq xref-show-xrefs-function #'xref-show-definitions-buffer)
   ;; (setq xref-show-xrefs-function #'xref-show-definitions-buffer-at-bottom)
