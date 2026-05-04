@@ -43,8 +43,8 @@ With prefix ARG, switch to Claude buffer after sending."
                           file
                           (line-number-at-pos (region-beginning))
                           (line-number-at-pos (region-end)))
-                        (format "@%s" file))) ; ← 整个文件，无行号
-              (cmd-with-context (format "%s\n%s" cmd context))
+                        (format "@%s" file)))
+              (cmd-with-context (format "%s\n%s\n" cmd context))
               (claude-buffer (claude-code--do-send-command cmd-with-context)))
         (unless (get-buffer-window claude-buffer) (claude-code-toggle)))))
 
@@ -55,7 +55,8 @@ With prefix ARG, switch to Claude buffer after sending."
                            (window-list))))
       (when claude-window (select-window claude-window))))
 
-  (advice-add 'claude-code-send-region :after #'(lambda(&arg) (deactivate-mark)(beginning-of-line)))
+  (advice-add 'claude-code-send-region :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
+  (advice-add 'my-send-command-with-buffer-or-region-context :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
   (advice-add 'claude-code-toggle :after #'my-select-claude-window)
   )
 

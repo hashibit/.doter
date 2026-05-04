@@ -301,6 +301,25 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 
+(defun my-hs-is-there-hidden-code-p ()
+  "精确检测：是否有代码因hideshow被隐藏？"
+  (cl-some
+   (lambda (ov)
+     (eq 'code (overlay-get ov 'hs)))
+   (overlays-in (point-min) (point-max))))
+
+
+(defun my-hs-toggle-level ()
+  "可靠切换代码折叠状态（无视hideshow内部状态缺陷）"
+  (interactive)
+  (if (my-hs-is-there-hidden-code-p)
+      (progn
+        (message "展开所有代码...")
+        (hs-show-all))
+    (progn
+      (message "折叠层级1代码...")
+      (hs-hide-level 1))))
+
 
 (defun my-hs-toggle-all ()
   "If anything isn't hidden, run `hs-hide-all', else run `hs-show-all'."

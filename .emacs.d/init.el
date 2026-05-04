@@ -680,7 +680,7 @@
   '(flymake-error ((t (:foreground nil :background "#3c2020" :underline nil :weight normal))))
   '(flymake-note ((t (:underline nil))))
   '(flymake-warning ((t (:underline nil))))
-  '(font-lock-doc-face ((t (:inherit font-lock-comment-face :foreground "gray"))))
+  '(font-lock-doc-face ((t (:inherit font-lock-comment-face :foreground "#6A9955"))))
   '(font-lock-keyword-face ((t (:foreground "orchid" :weight normal))))
   '(font-lock-preprocessor-face ((t (:weight normal))))
   '(fringe ((t (:foreground unspecified :background unspecified :inherit default))))
