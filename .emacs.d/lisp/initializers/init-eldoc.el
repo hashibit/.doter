@@ -16,7 +16,15 @@
     '(lambda () (add-to-list 'eldoc-documentation-functions 'elisp-eldoc-var-docstring-with-value))))
 
 (use-package eldoc-box
-  :config (setq eldoc-box-clear-with-C-g t)
+  :config
+  (setq eldoc-box-clear-with-C-g t)
+  ;; Add extra height to childframe to prevent content truncation
+  (add-hook 'eldoc-box-frame-hook
+    (lambda (_main-frame)
+      (let ((frame (selected-frame)))
+        (set-frame-height frame
+          (+ (frame-pixel-height frame) (frame-char-height frame))
+          nil t))))
   :commands (eldoc-box-help-at-point))
 
 
