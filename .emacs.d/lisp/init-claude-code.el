@@ -43,8 +43,8 @@ With prefix ARG, switch to Claude buffer after sending."
                           file
                           (line-number-at-pos (region-beginning))
                           (line-number-at-pos (region-end)))
-                        (format "@%s" file)))
-              (cmd-with-context (format "%s\n%s\n" cmd context))
+                        (format "@%s\n" file)))
+              (cmd-with-context (format "%s\n%s" cmd context))
               (claude-buffer (claude-code--do-send-command cmd-with-context)))
         (unless (get-buffer-window claude-buffer) (claude-code-toggle)))))
 
