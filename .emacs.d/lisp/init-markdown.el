@@ -78,9 +78,13 @@ mermaid.initialize({
 "
         markdown-gfm-additional-languages "Mermaid")
 
-  ;; `multimarkdown' is necessary for `highlight.js' and `mermaid.js'
-  (when (executable-find "multimarkdown")
-    (setq markdown-command "multimarkdown"))
+  ;; Use pandoc for GFM support (tables, task lists, etc.)
+  ;; Falls back to multimarkdown, then default
+  (cond
+   ((executable-find "pandoc")
+    (setq markdown-command "pandoc -f gfm -t html5"))
+   ((executable-find "multimarkdown")
+    (setq markdown-command "multimarkdown")))
   :config
   ;; Support `mermaid'
   (add-to-list 'markdown-code-lang-modes '("mermaid" . mermaid-mode))
