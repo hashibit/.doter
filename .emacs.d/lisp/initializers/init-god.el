@@ -209,37 +209,70 @@
       should-not-display-no-paddings-modes)
     ))
 
-(setq my-god-mode-is-active-flag nil)
+(defvar-local my-god-mode-is-active-flag nil
+  "Buffer-local flag tracking whether god-mode was explicitly enabled in this buffer.")
+
+(defun refresh-current-mode-visuals ()
+  "Apply visual settings for the current buffer (background, margins)."
+  (when (my-god-this-is-dark-background-buffer (buffer-name))
+    (make-local-variable 'face-remapping-alist)
+    (cl-flet ((set-remap (face props)
+                (setq face-remapping-alist
+                      (cons (cons face props)
+                            (assq-delete-all face face-remapping-alist)))))
+      (set-remap 'default `(:background ,darker-window-bg-color))
+      (set-remap 'line-number `(:background ,darker-window-bg-color :foreground "#627d9d"))
+      (set-remap 'line-number-current-line `(:background ,darker-window-bg-color :foreground "#627d9d"))))
+  (when (my-god-this-buffer-window-no-padding (buffer-name))
+    (setq-local window-margins '(0 . 0))))
 
 (defun refresh-current-mode ()
-  "Refresh the current mode settings based on buffer type."
+  "Refresh the current mode settings based on buffer type.
+When switching to an existing buffer, respects the buffer's prior god-mode state."
   (interactive)
-  (when (my-god-this-is-dark-background-buffer (buffer-name))
-      (set (make-local-variable 'face-remapping-alist)
-           `((default :background ,darker-window-bg-color)
-             (line-number :background ,darker-window-bg-color :foreground "#627d9d")
-             (line-number-current-line :background ,darker-window-bg-color :foreground "#627d9d"))))
-  (when (my-god-this-buffer-window-no-padding (buffer-name))
-    (setq-local window-margins '(0 . 0)))
+  (refresh-current-mode-visuals)
   (cond
    ((my-god-this-is-legendary-buffer (buffer-name))
-    ;; (message "%s is legendary buffer" (buffer-name))
     (god-local-mode 0)
     (my-keys-minor-mode 0)
     (my-special-buffer-keys-minor-mode 0))
    ((my-god-this-is-special-buffer (buffer-name))
-    ;; (message "%s is special buffer" (buffer-name))
     (god-local-mode 0)
     (my-keys-minor-mode 0)
     (my-special-buffer-keys-minor-mode 1))
    (t
-    ;; (message "%s not a special buffer" (buffer-name))
-    (god-local-mode 1) ;; start local mode
+    ;; Restore the buffer's own god-mode state; don't override if user disabled it.
+    (if my-god-mode-is-active-flag
+        (progn
+          (god-local-mode 1)
+          (my-keys-minor-mode 1)
+          (my-special-buffer-keys-minor-mode 0))
+      ;; Flag is nil: only enable if god-local-mode isn't already explicitly off.
+      ;; This branch is hit on buffer-switch; new files are handled by init below.
+      (my-keys-minor-mode (if (bound-and-true-p god-local-mode) 1 0))
+      (my-special-buffer-keys-minor-mode 0))))
+  ;; Always sync tab bar color to current buffer's god-mode state.
+  (my-god-mode-update-cursor-type))
+
+(defun my-init-god-mode-for-new-buffer ()
+  "Enable god-mode for a newly opened file buffer (find-file-hook)."
+  (refresh-current-mode-visuals)
+  (cond
+   ((my-god-this-is-legendary-buffer (buffer-name))
+    (god-local-mode 0)
+    (my-keys-minor-mode 0)
+    (my-special-buffer-keys-minor-mode 0))
+   ((my-god-this-is-special-buffer (buffer-name))
+    (god-local-mode 0)
+    (my-keys-minor-mode 0)
+    (my-special-buffer-keys-minor-mode 1))
+   (t
+    (god-local-mode 1)
     (my-keys-minor-mode 1)
     (setq my-god-mode-is-active-flag t)
     (my-special-buffer-keys-minor-mode 0))))
 
-(add-hook 'find-file-hook 'refresh-current-mode)
+(add-hook 'find-file-hook 'my-init-god-mode-for-new-buffer)
 
 (defun my-quit-god-mode ()
   "Quit god mode."
@@ -252,12 +285,14 @@
   (interactive)
   (if (bound-and-true-p god-local-mode)
       (my-quit-god-mode)
-    (refresh-current-mode)))
+    (god-local-mode 1)
+    (my-keys-minor-mode 1)
+    (setq my-god-mode-is-active-flag t)
+    (my-special-buffer-keys-minor-mode 0)))
 
 (defun my-god-mode-with-switch-any-buffer (prev curr)
   "Handle god mode when switching buffers from PREV to CURR."
   (cl-assert (eq curr (current-buffer))) ;; Always t
-  ;; (message "%S -> %S -> %S" prev curr (string-trim (buffer-name curr)))
   (refresh-current-mode))
 
 (add-hook 'switch-buffer-functions #'my-god-mode-with-switch-any-buffer)

@@ -609,7 +609,7 @@
 ;;; Custom Key Functions
 (defun my-escape-key ()
   (interactive)
-  (refresh-current-mode)
+  (my-init-god-mode-for-new-buffer)  ;; ESC always forces god-mode on
   (when isearch-mode (isearch-abort) (isearch-abort))  ;; must double abort
   (when (my-god-this-is-normal-editor-buffer (buffer-name))
     (when (bound-and-true-p multiple-cursors-mode) (multiple-cursors-mode 0))

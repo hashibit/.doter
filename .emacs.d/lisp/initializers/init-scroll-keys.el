@@ -11,7 +11,7 @@
   scroll-conservatively 99
   scroll-up-aggressively 0.01
   scroll-down-aggressively 0.01
-  ;; scroll-preserve-screen-position 'always
+  scroll-preserve-screen-position nil
   auto-window-vscroll nil)
 
 (defun scroll-full-page-down ()
@@ -22,13 +22,23 @@
   (interactive)
   (scroll-up (* (/ (window-body-height) 5) 4)))
 
+;; (defun scroll-half-page-down ()
+;;   (interactive)
+;;   (scroll-down (/ (window-body-height) 2)))
+;;
+;; (defun scroll-half-page-up ()
+;;   (interactive)
+;;   (scroll-up (/ (window-body-height) 2)))
+
+
 (defun scroll-half-page-down ()
   (interactive)
-  (scroll-down (/ (window-body-height) 2)))
+  (scroll-down (* (/ (window-body-height) 20) 9)))
 
 (defun scroll-half-page-up ()
   (interactive)
-  (scroll-up (/ (window-body-height) 2)))
+  (scroll-up (* (/ (window-body-height) 20) 9)))
+
 
 (defun scroll-other-window-half-page-up ()
   (interactive)

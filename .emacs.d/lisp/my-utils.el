@@ -587,7 +587,7 @@ If buffer-or-name is nil return current buffer's mode."
   "delete current word, goto insert mode"
   (interactive)
   (save-buffer)
-  (refresh-current-mode)
+  (my-init-god-mode-for-new-buffer)
   ;; (my-quit-mc-mode-if-need)
   )
 
@@ -595,7 +595,7 @@ If buffer-or-name is nil return current buffer's mode."
   "delete current word, goto insert mode"
   (interactive)
   (save-buffer-without-hooks)
-  (refresh-current-mode)
+  (my-init-god-mode-for-new-buffer)
   ;; (my-quit-mc-mode-if-need)
   )
 

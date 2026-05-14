@@ -89,7 +89,7 @@
   (interactive)
   (unless my-code-intelligence
     (my-enable-eglot-highlight)
-    (electric-pair-mode 1)
+    (electric-pair-mode 0)
     (undo-tree-mode 1)
     (setq my-code-intelligence 't)
     ;; (message "code-intelligence is enabled.")

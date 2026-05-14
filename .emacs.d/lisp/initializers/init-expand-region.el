@@ -1,5 +1,4 @@
-
-
+;; -*- lexical-binding: t -*-
 
 (use-package expand-region
   :bind (("M-i" . 'er/expand-region)))
@@ -13,12 +12,9 @@
   (if (use-region-p)
     (progn
       (jump-to-register 'a)
-      (keyboard-quit)
-      )
+      (keyboard-quit))
     (point-to-register 'a)
-    (er/mark-defun))
-  )
-
+    (er/mark-defun)))
 
 (defun my-toggle-er/mark-inside-paren (arg)
   (interactive "p")

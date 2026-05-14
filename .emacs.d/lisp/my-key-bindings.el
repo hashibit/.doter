@@ -253,7 +253,7 @@
     ;; (define-key god-local-mode-map (kbd "<RET>") #'next-line)
 
     (define-key god-local-mode-map (kbd "z o") #'my-hs-toggle-hiding)
-    (define-key god-local-mode-map (kbd "z m") #'my-hs-toggle-all)
+    (define-key god-local-mode-map (kbd "z m") #'my-hs-toggle-level)
     (define-key god-local-mode-map (kbd "z z") #'recenter)
 
     (define-key god-local-mode-map (kbd "A") #'my-god-mwin-end-and-insert-mode)
