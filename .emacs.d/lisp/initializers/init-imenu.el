@@ -41,4 +41,71 @@
            ("L" . my-shrink-imenu-width)
            ("m" . my-imenu-list-smart-toggle-refresh))))
 
+;;; Struct method filter sidebar
+
+(defface my-imenu-group-face
+  '((t :inherit font-lock-type-face :weight bold))
+  "Face for impl block headers in struct method sidebar.")
+
+(defface my-imenu-method-face
+  '((t :inherit font-lock-function-name-face))
+  "Face for method names in struct method sidebar.")
+
+(defface my-imenu-field-face
+  '((t :inherit font-lock-variable-name-face))
+  "Face for field names in struct method sidebar.")
+
+(defface my-imenu-method-hover-face
+  '((t :inherit highlight))
+  "Face for hovered method in struct method sidebar.")
+
+(defun my-imenu-jump ()
+  "Jump to the item under point in the struct methods buffer."
+  (interactive)
+  (when-let ((data (get-text-property (point) 'my-imenu-pos)))
+    (pop-to-buffer (car data))
+    (goto-char (cadr data))))
+
+(defun my-imenu-filter-struct (struct-name)
+  "Show a sidebar with all impl blocks matching STRUCT-NAME.
+If region is active, use the selected text as input."
+  (interactive
+   (list (if (use-region-p)
+             (buffer-substring-no-properties (region-beginning) (region-end))
+           (read-string "Struct name: "))))
+  (let* ((items (imenu--make-index-alist t))
+         (filtered (seq-filter
+                    (lambda (item)
+                      (and (imenu--subalist-p item)
+                           (string-match-p struct-name (car item))))
+                    items))
+         (buf (get-buffer-create "*Ilist-struct-methods*"))
+         (src (current-buffer)))
+    (if (null filtered)
+        (message "No impl blocks found matching: %s" struct-name)
+      (with-current-buffer buf
+        (read-only-mode -1)
+        (erase-buffer)
+        (dolist (group filtered)
+          (let ((group-start (point)))
+            (insert (car group) "\n")
+            (add-text-properties group-start (1- (point))
+                                 '(face my-imenu-group-face)))
+          (let ((is-impl (string-match-p "\\`impl\\b" (car group))))
+            (dolist (method (cdr group))
+              (let ((start (point))
+                    (item-face (if is-impl 'my-imenu-method-face 'my-imenu-field-face)))
+                (insert "  " (car method) "\n")
+                (add-text-properties start (1- (point))
+                                     `(face ,item-face
+                                       mouse-face my-imenu-method-hover-face
+                                       my-imenu-pos (,src ,(cdr method))))))))
+        (imenu-list-major-mode)
+        (goto-char (point-min))
+        (local-set-key (kbd "RET") #'my-imenu-jump)
+        (local-set-key (kbd "q") #'quit-window))
+      (display-buffer buf '(display-buffer-in-side-window
+                            (side . right)
+                            (window-width . 35))))))
+
 (provide 'init-imenu)

@@ -44,7 +44,7 @@
                        "*Flymake"
                        "*ansi-term*"
                        "*fzf*"
-                       "*Ilist*"
+                       "*Ilist"
                        "*NeoTree*"))
 
 
