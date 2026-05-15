@@ -1,4 +1,4 @@
-
+;;; -*- lexical-binding: t -*-
 
 ;; imenu size sidebar width, 0.20 of screen
 ;; NOTE: <SPC>-i to toggle imenu sidebar
@@ -46,6 +46,10 @@
 (defface my-imenu-group-face
   '((t :inherit font-lock-type-face :weight bold))
   "Face for impl block headers in struct method sidebar.")
+
+(defface my-imenu-file-face
+  '((t :foreground "#57D8D4" :weight bold))
+  "Face for file name headers in struct method sidebar.")
 
 (defface my-imenu-method-face
   '((t :inherit font-lock-function-name-face))
@@ -207,5 +211,149 @@ If region is active, use the selected text as input."
       (display-buffer buf '(display-buffer-in-side-window
                             (side . right)
                             (window-width . 35))))))
+
+;;; Eglot cross-file struct method finder
+
+(defun my-imenu--uri-to-path (uri)
+  "Convert LSP file URI to local path."
+  (if (fboundp 'eglot-uri-to-path)
+      (eglot-uri-to-path uri)
+    (expand-file-name (url-unhex-string
+                       (replace-regexp-in-string "\\`file://" "" uri)))))
+
+(defun my-imenu--render-from-files (struct-name paths src-buf)
+  "Run imenu on each path in PATHS, collect groups matching STRUCT-NAME, render sidebar."
+  (let ((buf (get-buffer-create "*Ilist-struct-methods*"))
+        (root (or (when (project-current) (project-root (project-current))) ""))
+        all-groups)
+    (dolist (path paths)
+      (when (file-exists-p path)
+        (let* ((file-buf (find-file-noselect path))
+               (items (with-current-buffer file-buf
+                        (imenu--make-index-alist t)))
+               (matches (seq-filter
+                         (lambda (item)
+                           (and (imenu--subalist-p item)
+                                (string-match-p (regexp-quote struct-name) (car item))))
+                         items)))
+          (when matches
+            (push (cons path matches) all-groups)))))
+    (if (null all-groups)
+        (progn
+          (message "No impl blocks found for %s, falling back to current file" struct-name)
+          (with-current-buffer src-buf
+            (my-imenu-filter-struct struct-name)))
+      (with-current-buffer buf
+        (read-only-mode -1)
+        (erase-buffer)
+        (pcase-dolist (`(,path . ,groups) (nreverse all-groups))
+          (let* ((short (file-relative-name path root))
+                 (file-buf (find-file-noselect path))
+                 (start (point)))
+            (insert "── " short " ──\n")
+            (add-text-properties start (1- (point)) '(face my-imenu-file-face)))
+          (dolist (group groups)
+            (let ((group-start (point)))
+              (insert (car group) "\n")
+              (add-text-properties group-start (1- (point))
+                                   '(face my-imenu-group-face)))
+            (let ((is-method (my-imenu-method-group-p (car group) (find-file-noselect path))))
+              (dolist (method (cdr group))
+                (let ((start (point))
+                      (item-face (if is-method 'my-imenu-method-face 'my-imenu-field-face)))
+                  (insert "  " (car method) "\n")
+                  (add-text-properties start (1- (point))
+                                       `(face ,item-face
+                                         mouse-face my-imenu-method-hover-face
+                                         my-imenu-pos (,(find-file-noselect path) ,(cdr method)))))))))
+        (imenu-list-major-mode)
+        (goto-char (point-min))
+        (local-set-key (kbd "RET") #'my-imenu-jump)
+        (local-set-key (kbd "SPC") #'my-imenu-peek)
+        (local-set-key (kbd "q") #'quit-window))
+      (display-buffer buf '(display-buffer-in-side-window
+                            (side . right)
+                            (window-width . 35))))))
+
+(defun my-imenu-filter-struct-eglot (struct-name)
+  "Show all methods of STRUCT-NAME across the project.
+Uses eglot: workspace/symbol to find the definition, then textDocument/references
+to get all files containing references, then imenu on those files.
+Falls back to `my-imenu-filter-struct' if eglot is unavailable."
+  (interactive
+   (list (if (use-region-p)
+             (prog1 (buffer-substring-no-properties (region-beginning) (region-end))
+               (deactivate-mark))
+           (read-string "Struct name: "))))
+  (let ((server (eglot-current-server))
+        (src-buf (current-buffer)))
+    (if (not server)
+        (progn
+          (message "eglot not connected, using imenu fallback")
+          (my-imenu-filter-struct struct-name))
+      ;; Step 1: find the struct definition via workspace/symbol
+      (jsonrpc-async-request
+       server
+       :workspace/symbol
+       `(:query ,struct-name)
+       :timeout 5
+       :success-fn
+       (lambda (symbols)
+         (let* ((sym-list (append symbols nil))
+                (struct-kinds '(5 10 11 23)) ; Class Interface Enum Struct
+                (def (seq-find (lambda (s)
+                                 (and (string= (plist-get s :name) struct-name)
+                                      (memq (plist-get s :kind) struct-kinds)))
+                               sym-list)))
+           (if (not def)
+               (progn
+                 (message "Cannot find definition of %s, falling back" struct-name)
+                 (with-current-buffer src-buf
+                   (my-imenu-filter-struct struct-name)))
+             ;; Step 2: textDocument/references on the definition position
+             (let* ((loc (plist-get def :location))
+                    (uri (plist-get loc :uri))
+                    (start (plist-get (plist-get loc :range) :start))
+                    (line (plist-get start :line))
+                    (char (plist-get start :character)))
+               (jsonrpc-async-request
+                server
+                :textDocument/references
+                `(:textDocument (:uri ,uri)
+                  :position (:line ,line :character ,char)
+                  :context (:includeDeclaration t))
+                :timeout 10
+                :success-fn
+                (lambda (refs)
+                  (let* ((paths (delete-dups
+                                 (mapcar (lambda (r)
+                                           (my-imenu--uri-to-path (plist-get r :uri)))
+                                         (append refs nil)))))
+                    (message "[imenu-eglot] %s: found %d reference(s) in %d file(s): %s"
+                             struct-name
+                             (length (append refs nil))
+                             (length paths)
+                             (mapconcat #'file-name-nondirectory paths ", "))
+                    (my-imenu--render-from-files struct-name paths src-buf)))
+                :error-fn
+                (lambda (err)
+                  (message "references failed: %s, falling back" err)
+                  (with-current-buffer src-buf
+                    (my-imenu-filter-struct struct-name)))
+                :timeout-fn
+                (lambda ()
+                  (message "references timed out, falling back")
+                  (with-current-buffer src-buf
+                    (my-imenu-filter-struct struct-name))))))))
+       :error-fn
+       (lambda (err)
+         (message "workspace/symbol failed: %s, falling back" err)
+         (with-current-buffer src-buf
+           (my-imenu-filter-struct struct-name)))
+       :timeout-fn
+       (lambda ()
+         (message "workspace/symbol timed out, falling back")
+         (with-current-buffer src-buf
+           (my-imenu-filter-struct struct-name)))))))
 
 (provide 'init-imenu)
