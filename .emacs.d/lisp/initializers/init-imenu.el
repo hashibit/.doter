@@ -62,16 +62,96 @@
 (defun my-imenu-jump ()
   "Jump to the item under point in the struct methods buffer."
   (interactive)
+  (when my-imenu-peek--visible
+    (my-imenu-peek--hide))
   (when-let ((data (get-text-property (point) 'my-imenu-pos)))
     (pop-to-buffer (car data))
     (goto-char (cadr data))))
+
+(defvar my-imenu-peek--visible nil
+  "Whether the imenu peek posframe is currently visible.")
+
+(defun my-imenu-peek--poshandler (info)
+  "Position posframe so its right edge aligns with the sidebar's left edge."
+  (cons (- (plist-get info :parent-window-left)
+            (plist-get info :posframe-width))
+        (plist-get info :parent-window-top)))
+
+(defun my-imenu-peek--hide ()
+  "Hide the peek posframe and clean up the post-command hook."
+  (posframe-hide " *imenu-peek*")
+  (setq my-imenu-peek--visible nil)
+  (remove-hook 'post-command-hook #'my-imenu-peek--maybe-hide t))
+
+(defvar my-imenu-peek--last-line nil
+  "Line number when peek was last shown.")
+
+(defun my-imenu-peek--maybe-hide ()
+  "Auto-update peek posframe when cursor moves to a new line."
+  (unless (eq this-command 'my-imenu-peek)
+    (let ((current-line (line-number-at-pos)))
+      (if (eq current-line my-imenu-peek--last-line)
+          (my-imenu-peek--hide)
+        (my-imenu-peek--show)))))
+
+(defun my-imenu-peek--show ()
+  "Show posframe preview for the item under point."
+  (when-let ((data (get-text-property (point) 'my-imenu-pos)))
+    (let* ((src (car data))
+           (pos (cadr data))
+           (context-lines 10)
+           (content
+            (with-current-buffer src
+              (save-excursion
+                (goto-char pos)
+                (let* ((start (save-excursion
+                                (forward-line (- context-lines))
+                                (point)))
+                       (end (save-excursion
+                              (forward-line context-lines)
+                              (point))))
+                  (font-lock-ensure start end)
+                  (let* ((text (buffer-substring start end))
+                         (target-line (line-number-at-pos pos))
+                         (start-line (line-number-at-pos start)))
+                    (list text (- target-line start-line)))))))
+           (text (car content))
+           (highlight-line (cadr content))
+           (peek-buf (get-buffer-create " *imenu-peek*")))
+      (with-current-buffer peek-buf
+        (read-only-mode -1)
+        (erase-buffer)
+        (insert text)
+        (goto-char (point-min))
+        (forward-line highlight-line)
+        (add-text-properties (line-beginning-position) (line-end-position)
+                             '(face highlight))
+        (read-only-mode 1))
+      (posframe-show peek-buf
+                     :poshandler #'my-imenu-peek--poshandler
+                     :width 80
+                     :height (1+ (* 2 context-lines))
+                     :border-width 1
+                     :border-color (face-foreground 'font-lock-comment-face nil t)
+                     :background-color (face-background 'default nil t))
+      (setq my-imenu-peek--visible t)
+      (setq my-imenu-peek--last-line (line-number-at-pos))
+      (add-hook 'post-command-hook #'my-imenu-peek--maybe-hide nil t))))
+
+(defun my-imenu-peek ()
+  "Toggle posframe preview of the code around the item under point."
+  (interactive)
+  (if my-imenu-peek--visible
+      (my-imenu-peek--hide)
+    (my-imenu-peek--show)))
 
 (defun my-imenu-filter-struct (struct-name)
   "Show a sidebar with all impl blocks matching STRUCT-NAME.
 If region is active, use the selected text as input."
   (interactive
    (list (if (use-region-p)
-             (buffer-substring-no-properties (region-beginning) (region-end))
+             (prog1 (buffer-substring-no-properties (region-beginning) (region-end))
+               (deactivate-mark))
            (read-string "Struct name: "))))
   (let* ((items (imenu--make-index-alist t))
          (filtered (seq-filter
@@ -103,6 +183,7 @@ If region is active, use the selected text as input."
         (imenu-list-major-mode)
         (goto-char (point-min))
         (local-set-key (kbd "RET") #'my-imenu-jump)
+        (local-set-key (kbd "SPC") #'my-imenu-peek)
         (local-set-key (kbd "q") #'quit-window))
       (display-buffer buf '(display-buffer-in-side-window
                             (side . right)
