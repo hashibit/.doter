@@ -89,7 +89,7 @@
     (let ((scroll-up (if (display-graphic-p) 'triple-wheel-up 'wheel-up))
            (scroll-down (if (display-graphic-p) 'triple-wheel-down 'wheel-down))
            (event-type (car-safe (car-safe event))))
-      (message "event-type: %s" event-type)
+      ;; (message "event-type: %s" event-type)
       (cond
         ((eq event-type scroll-up)
           (unless vterm-copy-mode (vterm-copy-mode 1)))
