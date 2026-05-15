@@ -145,6 +145,25 @@
       (my-imenu-peek--hide)
     (my-imenu-peek--show)))
 
+(defvar my-imenu-method-group-patterns
+  '((rust-mode          . "\\`impl\\b")
+    (rust-ts-mode       . "\\`impl\\b")
+    (python-mode        . "\\`class\\b")
+    (python-ts-mode     . "\\`class\\b")
+    (go-mode            . "\\`\\(type\\|func\\)\\b")
+    (go-ts-mode         . "\\`\\(type\\|func\\)\\b")
+    (c++-mode           . "\\`\\(class\\|struct\\|namespace\\)\\b")
+    (c++-ts-mode        . "\\`\\(class\\|struct\\|namespace\\)\\b")
+    (java-mode          . "\\`\\(class\\|interface\\|enum\\)\\b")
+    (java-ts-mode       . "\\`\\(class\\|interface\\|enum\\)\\b"))
+  "Alist mapping major-mode to a regexp matching method-bearing group names.")
+
+(defun my-imenu-method-group-p (group-name src-buffer)
+  "Return non-nil if GROUP-NAME represents a method-bearing group in SRC-BUFFER."
+  (when-let ((pattern (alist-get (buffer-local-value 'major-mode src-buffer)
+                                 my-imenu-method-group-patterns)))
+    (string-match-p pattern group-name)))
+
 (defun my-imenu-filter-struct (struct-name)
   "Show a sidebar with all impl blocks matching STRUCT-NAME.
 If region is active, use the selected text as input."
@@ -171,10 +190,10 @@ If region is active, use the selected text as input."
             (insert (car group) "\n")
             (add-text-properties group-start (1- (point))
                                  '(face my-imenu-group-face)))
-          (let ((is-impl (string-match-p "\\`impl\\b" (car group))))
+          (let ((is-method-group (my-imenu-method-group-p (car group) src)))
             (dolist (method (cdr group))
               (let ((start (point))
-                    (item-face (if is-impl 'my-imenu-method-face 'my-imenu-field-face)))
+                    (item-face (if is-method-group 'my-imenu-method-face 'my-imenu-field-face)))
                 (insert "  " (car method) "\n")
                 (add-text-properties start (1- (point))
                                      `(face ,item-face

@@ -319,7 +319,7 @@
     (define-key god-local-mode-map (kbd "SPC s") #'counsel-imenu)
     (define-key god-local-mode-map (kbd "SPC S") #'my-occur)
     (define-key god-local-mode-map (kbd "SPC i") #'imenu-list-smart-toggle)
-    (define-key god-local-mode-map (kbd "SPC I") #'my-imenu-list-smart-toggle-refresh)
+    (define-key god-local-mode-map (kbd "SPC I") #'my-imenu-filter-struct)
 
 
     (define-key god-local-mode-map (kbd "SPC a s") #'claude-code-send-region)
