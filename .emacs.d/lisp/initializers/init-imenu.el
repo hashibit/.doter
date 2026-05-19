@@ -125,19 +125,23 @@
       (with-current-buffer peek-buf
         (read-only-mode -1)
         (erase-buffer)
+        (setq-local truncate-lines t)
         (insert text)
         (goto-char (point-min))
         (forward-line highlight-line)
         (add-text-properties (line-beginning-position) (line-end-position)
                              '(face highlight))
         (read-only-mode 1))
-      (posframe-show peek-buf
-                     :poshandler #'my-imenu-peek--poshandler
-                     :width 80
-                     :height (1+ (* 2 context-lines))
-                     :border-width 1
-                     :border-color (face-foreground 'font-lock-comment-face nil t)
-                     :background-color (face-background 'default nil t))
+      (let ((pf (posframe-show peek-buf
+                               :poshandler #'my-imenu-peek--poshandler
+                               :width 80
+                               :height (1+ (* 2 context-lines))
+                               :border-width 1
+                               :border-color (face-foreground 'font-lock-comment-face nil t)
+                               :background-color (face-background 'default nil t))))
+        (when (framep pf)
+          (with-selected-window (frame-root-window pf)
+            (setq truncate-lines t))))
       (setq my-imenu-peek--visible t)
       (setq my-imenu-peek--last-line (line-number-at-pos))
       (add-hook 'post-command-hook #'my-imenu-peek--maybe-hide nil t))))
@@ -207,7 +211,11 @@ If region is active, use the selected text as input."
         (goto-char (point-min))
         (local-set-key (kbd "RET") #'my-imenu-jump)
         (local-set-key (kbd "SPC") #'my-imenu-peek)
-        (local-set-key (kbd "q") #'quit-window))
+        (local-set-key (kbd "q") (lambda ()
+                                   (interactive)
+                                   (when my-imenu-peek--visible
+                                     (my-imenu-peek--hide))
+                                   (quit-window))))
       (display-buffer buf '(display-buffer-in-side-window
                             (side . right)
                             (window-width . 35))))))
@@ -270,7 +278,11 @@ If region is active, use the selected text as input."
         (goto-char (point-min))
         (local-set-key (kbd "RET") #'my-imenu-jump)
         (local-set-key (kbd "SPC") #'my-imenu-peek)
-        (local-set-key (kbd "q") #'quit-window))
+        (local-set-key (kbd "q") (lambda ()
+                                   (interactive)
+                                   (when my-imenu-peek--visible
+                                     (my-imenu-peek--hide))
+                                   (quit-window))))
       (display-buffer buf '(display-buffer-in-side-window
                             (side . right)
                             (window-width . 35))))))

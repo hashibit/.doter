@@ -1141,6 +1141,37 @@ Return trimmed stdout if success, nil otherwise."
       (untabify insert-start insert-end))))
 
 
+(defun my/wrap-in-bg-box (start end)
+  "用 face 属性画一个矩形框，避开 line-spacing 断裂。
+选区会自动扩展到完整的行。"
+  (interactive "r")
+  (save-excursion
+    (goto-char start)
+    (setq start (line-beginning-position))
+    (goto-char end)
+    (setq end (line-end-position)))
+  (let* ((lines (split-string (buffer-substring-no-properties start end) "\n"))
+          (width (apply #'max (mapcar #'string-width lines)))
+          (bg "#2a2a2a")
+          (fg "#888888")
+          (last (1- (length lines))))
+    (delete-region start end)
+    (cl-loop for line in lines
+      for i from 0
+      do (let ((p (point)))
+           (insert " " line
+             (make-string (- width (string-width line)) ?\s)
+             " ")
+           (let ((ov (make-overlay p (point))))
+             (overlay-put ov 'priority -50)
+             (overlay-put ov 'face
+               `(:background ,bg
+                  :box (:line-width (1 . 0) :color ,fg)
+                  ,@(and (= i 0)    `(:overline ,fg))
+                  ,@(and (= i last) `(:underline (:color ,fg :position 0)))))))
+      unless (= i last) do (insert "\n"))))
+
+
 (defun cmake-download-cpm()
   (interactive)
   (let* ((cmake-dir (file-name-concat (cmake-project-find-root-directory) "cmake"))

@@ -309,8 +309,8 @@
 
 ;; (load-theme 'doom-material-dark t)
 (advice-add 'load-theme :after
-    (lambda (&rest _)
-      (set-face-attribute 'region nil :foreground nil)))
+  (lambda (&rest _)
+    (set-face-attribute 'region nil :foreground 'unspecified)))
 (load-theme 'kaolin-galaxy t)
 
 ;;; Terminal Colors
