@@ -148,6 +148,15 @@ Send <return> to the Claude Code REPL.
 
 This is useful for saying Yes when Claude asks for confirmation without
 having to switch to the REPL buffer." t)
+(autoload 'claude-code-yank-media "claude-code" "\
+Paste an image from the clipboard into the current Claude buffer.
+
+Runs `yank-media' in the Claude buffer, which dispatches to the handler
+installed by `claude-code--register-image-yank-media-handler': the image
+is written to a temp file and an `@/path/to/image' reference is inserted
+at the prompt.  Claude's CLI reads `@path' references natively.
+
+Requires Emacs 29 or later." t)
 (autoload 'claude-code-send-1 "claude-code" "\
 Send \"1\" to the Claude Code REPL.
 

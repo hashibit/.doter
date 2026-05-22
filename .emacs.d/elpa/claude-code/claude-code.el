@@ -104,6 +104,9 @@ These are passed as SWITCHES parameters to `eat-make`."
   :type '(repeat string)
   :group 'claude-code)
 
+(defvar claude-code--auto-mode-enabled nil
+  "When non-nil, pass `--enable-auto-mode' to Claude on startup.")
+
 (defcustom claude-code-sandbox-program nil
   "Program to run when starting Claude in sandbox mode.
 This must be set to the path of your Claude sandbox binary before use."
@@ -169,9 +172,10 @@ resizing."
 
 (defcustom claude-code-terminal-backend 'eat
   "Terminal backend to use for Claude Code.
-Choose between \\='eat (default) and \\='vterm terminal emulators."
+Choose between \\='eat (default), \\='vterm, and \\='ghostel terminal emulators."
   :type '(radio (const :tag "Eat terminal emulator" eat)
-                (const :tag "Vterm terminal emulator" vterm))
+                (const :tag "Vterm terminal emulator" vterm)
+                (const :tag "Ghostel terminal emulator (libghostty)" ghostel))
   :group 'claude-code)
 
 (defcustom claude-code-no-delete-other-windows nil
@@ -185,13 +189,50 @@ launch a new full-screen buffer."
   :group 'claude-code-window)
 
 (defcustom claude-code-toggle-auto-select nil
-  "Whether to automatically select the Claude buffer after toggling it open.
+  "Whether to automatically select the Claude buffer after displaying it.
 
-When non-nil, `claude-code-toggle' will automatically switch to the
-Claude buffer when toggling it open.  When nil, the buffer will be
-displayed but focus will remain in the current buffer."
+When non-nil, commands that open or show the Claude buffer will also
+switch focus to it.  This applies to `claude-code-toggle' when it
+toggles the buffer open, and to `claude-code' (and related start
+commands) when they first display the buffer.
+
+When nil, the Claude buffer is displayed but focus remains in the
+current buffer."
   :type 'boolean
   :group 'claude-code-window)
+
+(defcustom claude-code-enable-image-paste t
+  "Whether to enable image paste via `yank-media' in Claude buffers.
+
+When non-nil, pasting an image from the system clipboard via
+`yank-media' writes the image to a temp file and inserts an
+`@/path/to/image' reference at the prompt.  Claude's CLI reads `@path'
+references natively and will attach the image to your next message.
+
+Requires Emacs 29 or later (for `yank-media-handler').  Has no effect
+on older Emacs versions."
+  :type 'boolean
+  :group 'claude-code)
+
+(defcustom claude-code-image-paste-cleanup-on-kill t
+  "Whether to delete pasted image temp files when the Claude buffer is killed.
+
+When non-nil, any temp files created by `claude-code-enable-image-paste'
+are removed when the Claude buffer is killed.  When nil, the files
+stay in `claude-code-image-paste-directory' until the OS cleans them up."
+  :type 'boolean
+  :group 'claude-code)
+
+(defcustom claude-code-image-paste-directory
+  (if (file-directory-p "/tmp") "/tmp" temporary-file-directory)
+  "Directory where pasted images are written.
+
+Defaults to \"/tmp\" on systems that have it (macOS, Linux, BSD) so
+the `@/path/to/image' reference inserted at the prompt stays short and
+readable.  Falls back to the variable `temporary-file-directory' on
+systems (e.g. Windows) without a top-level /tmp."
+  :type 'directory
+  :group 'claude-code)
 
 ;;;;; Eat terminal customizations
 ;; Eat-specific terminal faces
@@ -395,10 +436,18 @@ this history by adding `claude-code-command-history' to
     (define-key map (kbd "3") 'claude-code-send-3)
     (define-key map (kbd "M") 'claude-code-cycle-mode)
     (define-key map (kbd "o") 'claude-code-send-buffer-file)
+    (define-key map (kbd "p") 'claude-code-yank-media)
     map)
   "Keymap for Claude commands.")
 
 ;;;; Transient Menus
+
+(defun claude-code-toggle-auto-mode ()
+  "Toggle auto mode for Claude startup."
+  (interactive)
+  (setq claude-code--auto-mode-enabled (not claude-code--auto-mode-enabled))
+  (message "Claude auto mode %s" (if claude-code--auto-mode-enabled "enabled" "disabled")))
+
 ;;;###autoload (autoload 'claude-code-transient "claude-code" nil t)
 (transient-define-prefix claude-code-transient ()
   "Claude command menu."
@@ -418,6 +467,7 @@ this history by adding `claude-code-command-history' to
     ("x" "Send command with context" claude-code-send-command-with-context)
     ("r" "Send region or buffer" claude-code-send-region)
     ("o" "Send buffer file" claude-code-send-buffer-file)
+    ("p" "Paste image from clipboard" claude-code-yank-media)
     ("e" "Fix error at point" claude-code-fix-error-at-point)
     ("f" "Fork conversation" claude-code-fork)
     ("/" "Slash Commands" claude-code-slash-commands)]
@@ -434,7 +484,13 @@ this history by adding `claude-code-command-history' to
     ("1" "Send \"1\"" claude-code-send-1)
     ("2" "Send \"2\"" claude-code-send-2)
     ("3" "Send \"3\"" claude-code-send-3)
-    ]])
+    ]
+   ["Options"
+    ("a" claude-code-toggle-auto-mode
+     :transient t
+     :description (lambda ()
+                    (format "Auto mode (%s)"
+                            (if claude-code--auto-mode-enabled "on" "off"))))]])
 
 ;;;###autoload (autoload 'claude-code-slash-commands "claude-code" nil t)
 (transient-define-prefix claude-code-slash-commands ()
@@ -600,8 +656,8 @@ possible, preventing the scrolling up issue when editing other buffers."
   (dolist (window windows)
     (if (eq window 'buffer)
         (goto-char (eat-term-display-cursor eat-terminal))
-      ;; Don't move the cursor around when in eat-emacs-mode
-      (when (not buffer-read-only)
+      ;; Don't move the cursor around when in eat-emacs-mode (read-only mode)
+      (when eat--semi-char-mode
         (let ((cursor-pos (eat-term-display-cursor eat-terminal)))
           ;; Always set point to cursor position
           (set-window-point window cursor-pos)
@@ -909,6 +965,159 @@ _BACKEND is the terminal backend type (should be \\='vterm)."
   "Get the BACKEND specific function that adjusts window size."
   #'vterm--window-adjust-process-window-size)
 
+;;;;; ghostel backend implementations
+
+;; Declare external variables and functions from ghostel package
+(defvar ghostel--process)
+(defvar ghostel--copy-mode-active)
+(defvar ghostel-kill-buffer-on-exit)
+(defvar ghostel-set-title-function)
+(declare-function ghostel-exec "ghostel")
+(declare-function ghostel-send-string "ghostel")
+(declare-function ghostel-send-key "ghostel")
+(declare-function ghostel-copy-mode "ghostel")
+(declare-function ghostel-copy-mode-exit "ghostel")
+(declare-function ghostel--window-adjust-process-window-size "ghostel")
+
+;; Helper to ensure ghostel is loaded
+(defun claude-code--ensure-ghostel ()
+  "Ensure ghostel package is loaded."
+  (unless (featurep 'ghostel)
+    (unless (require 'ghostel nil t)
+      (error "The ghostel package is required for ghostel terminal backend. Please install it"))))
+
+(cl-defmethod claude-code--term-make ((_backend (eql ghostel)) buffer-name program &optional switches)
+  "Create a ghostel terminal for BACKEND.
+
+_BACKEND is the terminal backend type (should be \\='ghostel).
+BUFFER-NAME is the name for the new terminal buffer.
+PROGRAM is the program to run in the terminal.
+SWITCHES are optional command-line arguments for PROGRAM."
+  (claude-code--ensure-ghostel)
+  (let ((buffer (get-buffer-create buffer-name)))
+    (inheritenv (ghostel-exec buffer program switches))
+    buffer))
+
+(cl-defmethod claude-code--term-send-string ((_backend (eql ghostel)) string)
+  "Send STRING to ghostel terminal.
+
+_BACKEND is the terminal backend type (should be \\='ghostel).
+STRING is the text to send to the terminal."
+  (ghostel-send-string string))
+
+(cl-defmethod claude-code--term-kill-process ((_backend (eql ghostel)) buffer)
+  "Kill the ghostel terminal process in BUFFER.
+
+_BACKEND is the terminal backend type (should be \\='ghostel).
+BUFFER is the terminal buffer containing the process to kill."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (when (and ghostel--process (process-live-p ghostel--process))
+        (kill-process ghostel--process)))
+    (kill-buffer buffer)))
+
+(cl-defmethod claude-code--term-read-only-mode ((_backend (eql ghostel)))
+  "Switch ghostel terminal to read-only mode.
+
+_BACKEND is the terminal backend type (should be \\='ghostel)."
+  (claude-code--ensure-ghostel)
+  (unless ghostel--copy-mode-active
+    (ghostel-copy-mode)))
+
+(cl-defmethod claude-code--term-interactive-mode ((_backend (eql ghostel)))
+  "Switch ghostel terminal to interactive mode.
+
+_BACKEND is the terminal backend type (should be \\='ghostel)."
+  (claude-code--ensure-ghostel)
+  (when ghostel--copy-mode-active
+    (ghostel-copy-mode-exit)
+    ;; Re-setup keymap since ghostel-copy-mode-exit restores the saved keymap
+    (claude-code--term-setup-keymap 'ghostel)))
+
+(cl-defmethod claude-code--term-in-read-only-p ((_backend (eql ghostel)))
+  "Check if ghostel terminal is in read-only mode.
+
+_BACKEND is the terminal backend type (should be \\='ghostel)."
+  ghostel--copy-mode-active)
+
+(defun claude-code--ghostel-bell-handler ()
+  "Handle bell from ghostel terminal by triggering Claude notification."
+  (claude-code--notify nil))
+
+(cl-defmethod claude-code--term-configure ((_backend (eql ghostel)))
+  "Configure ghostel terminal in current buffer.
+
+_BACKEND is the terminal backend type (should be \\='ghostel)."
+  (claude-code--ensure-ghostel)
+  ;; Prevent ghostel from killing buffer on process exit directly;
+  ;; instead route through claude-code--kill-buffer for proper cleanup
+  (setq-local ghostel-kill-buffer-on-exit nil)
+  (add-hook 'ghostel-exit-functions
+            (lambda (buf _event)
+              (claude-code--kill-buffer buf))
+            nil t)
+  ;; Prevent ghostel from renaming the buffer via OSC title sequences
+  (setq-local ghostel-set-title-function nil)
+  ;; Route bell to claude-code notification system
+  ;; (ghostel native module calls `ding' on BEL, which uses ring-bell-function)
+  (setq-local ring-bell-function #'claude-code--ghostel-bell-handler)
+  ;; Fix initial terminal layout timing
+  (sleep-for claude-code-startup-delay))
+
+(cl-defmethod claude-code--term-customize-faces ((_backend (eql ghostel)))
+  "Apply face customizations for ghostel terminal.
+
+_BACKEND is the terminal backend type (should be \\='ghostel)."
+  ;; Ghostel inherits from term-color-* faces; no remapping needed
+  )
+
+(defun claude-code--ghostel-send-return ()
+  "Send return key to ghostel."
+  (interactive)
+  (ghostel-send-string "\r"))
+
+(defun claude-code--ghostel-send-alt-return ()
+  "Send <alt>-<return> to ghostel."
+  (interactive)
+  (ghostel-send-key "return" "meta"))
+
+(defun claude-code--ghostel-send-escape ()
+  "Send escape key to ghostel."
+  (interactive)
+  (ghostel-send-string "\e"))
+
+(cl-defmethod claude-code--term-setup-keymap ((_backend (eql ghostel)))
+  "Set up the local keymap for Claude Code buffers.
+
+_BACKEND is the terminal backend type (should be \\='ghostel)."
+  (let ((map (make-sparse-keymap)))
+    ;; Inherit parent ghostel keymap
+    (set-keymap-parent map (current-local-map))
+
+    ;; C-g for escape
+    (define-key map (kbd "C-g") #'claude-code--ghostel-send-escape)
+
+    ;; Configure key bindings based on user preference
+    (pcase claude-code-newline-keybinding-style
+      ('newline-on-shift-return
+       (define-key map (kbd "<S-return>") #'claude-code--ghostel-send-alt-return)
+       (define-key map (kbd "<return>") #'claude-code--ghostel-send-return))
+      ('newline-on-alt-return
+       (define-key map (kbd "<M-return>") #'claude-code--ghostel-send-alt-return)
+       (define-key map (kbd "<return>") #'claude-code--ghostel-send-return))
+      ('shift-return-to-send
+       (define-key map (kbd "<return>") #'claude-code--ghostel-send-alt-return)
+       (define-key map (kbd "<S-return>") #'claude-code--ghostel-send-return))
+      ('super-return-to-send
+       (define-key map (kbd "<return>") #'claude-code--ghostel-send-alt-return)
+       (define-key map (kbd "<s-return>") #'claude-code--ghostel-send-return)))
+
+    (use-local-map map)))
+
+(cl-defmethod claude-code--term-get-adjust-process-window-size-fn ((_backend (eql ghostel)))
+  "Get the ghostel specific function that adjusts window size."
+  #'ghostel--window-adjust-process-window-size)
+
 ;;;; Private util functions
 (defmacro claude-code--with-buffer (&rest body)
   "Execute BODY with the Claude buffer, handling buffer selection and display.
@@ -930,6 +1139,72 @@ BUFFER can be either a buffer object or a buffer name string."
                   buffer
                 (buffer-name buffer))))
     (and name (string-match-p "^\\*claude:" name))))
+
+;;;;; Image paste
+
+(defvar-local claude-code--pasted-image-files nil
+  "List of temp image files created by `yank-media' in this buffer.
+Cleaned up on `kill-buffer' when `claude-code-image-paste-cleanup-on-kill'
+is non-nil.")
+
+(defconst claude-code--image-mime-extensions
+  '(("image/png"  . ".png")
+    ("image/jpeg" . ".jpg")
+    ("image/jpg"  . ".jpg")
+    ("image/gif"  . ".gif")
+    ("image/webp" . ".webp")
+    ("image/bmp"  . ".bmp"))
+  "Alist mapping image MIME-type prefix to file extension.")
+
+(defun claude-code--image-extension-for-mimetype (mimetype)
+  "Return the file extension (including the dot) for MIMETYPE.
+MIMETYPE may be a symbol or a string.  Falls back to \".png\" if
+the type is unrecognized."
+  (let* ((str (if (symbolp mimetype) (symbol-name mimetype) mimetype))
+         (match (seq-find (lambda (pair) (string-prefix-p (car pair) str))
+                          claude-code--image-mime-extensions)))
+    (if match (cdr match) ".png")))
+
+(defun claude-code--image-yank-media-handler (mimetype data)
+  "Handle an `image/*' paste in a Claude buffer.
+MIMETYPE is the MIME type (string or symbol); DATA is the raw bytes.
+
+Writes DATA to a temp file named by MIMETYPE's extension, remembers it
+for cleanup, then injects `@<path> ' into the terminal so Claude's CLI
+receives it as a file reference at the prompt.
+
+Returns non-nil to signal the paste was handled."
+  (let* ((ext (claude-code--image-extension-for-mimetype mimetype))
+         (temporary-file-directory claude-code-image-paste-directory)
+         (path (make-temp-file "claude-image-" nil ext))
+         (coding-system-for-write 'binary))
+    (with-temp-file path (insert data))
+    (push path claude-code--pasted-image-files)
+    (claude-code--term-send-string claude-code-terminal-backend
+                                   (concat "@" path " "))
+    (message "Pasted image as %s" path)
+    t))
+
+(defun claude-code--cleanup-pasted-images ()
+  "Delete any temp image files created by `yank-media' in this buffer.
+Called from `kill-buffer-hook' when
+`claude-code-image-paste-cleanup-on-kill' is non-nil."
+  (when claude-code-image-paste-cleanup-on-kill
+    (dolist (file claude-code--pasted-image-files)
+      (when (file-exists-p file)
+        (ignore-errors (delete-file file))))
+    (setq claude-code--pasted-image-files nil)))
+
+(defun claude-code--register-image-yank-media-handler ()
+  "Register `yank-media-handler' for images in the current Claude buffer.
+No-op on Emacs versions without `yank-media-handler' (pre-29)."
+  (when (and claude-code-enable-image-paste
+             (fboundp 'yank-media-handler))
+    (yank-media-handler "image/.*"
+                        #'claude-code--image-yank-media-handler)
+    (add-hook 'kill-buffer-hook
+              #'claude-code--cleanup-pasted-images
+              nil t)))
 
 (defun claude-code--directory ()
   "Get get the root Claude directory for the current buffer.
@@ -1226,9 +1501,11 @@ With double prefix ARG (\\[universal-argument] \\[universal-argument]), prompt f
          ;; Prompt for instance name (only if instances exist, or force-prompt is true)
          (instance-name (claude-code--prompt-for-instance-name dir existing-instance-names force-prompt))
          (buffer-name (claude-code--buffer-name instance-name))
-         (program-switches (if extra-switches
-                               (append claude-code-program-switches extra-switches)
-                             claude-code-program-switches))
+         (auto-mode-switch (when claude-code--auto-mode-enabled
+                            '("--enable-auto-mode")))
+         (program-switches (append claude-code-program-switches
+                                   extra-switches
+                                   auto-mode-switch))
 
          ;; Set process-adaptive-read-buffering to nil to avoid flickering while Claude is processing
          (process-adaptive-read-buffering nil)
@@ -1283,6 +1560,10 @@ With double prefix ARG (\\[universal-argument] \\[universal-argument]), prompt f
       ;; Add cleanup hook to remove directory mappings when buffer is killed
       (add-hook 'kill-buffer-hook #'claude-code--cleanup-directory-mapping nil t)
 
+      ;; Register yank-media handler so users can paste images from the
+      ;; clipboard; the handler writes to a temp file and inserts @path.
+      (claude-code--register-image-yank-media-handler)
+
       ;; run start hooks
       (run-hooks 'claude-code-start-hook)
 
@@ -1298,7 +1579,10 @@ With double prefix ARG (\\[universal-argument] \\[universal-argument]), prompt f
           (set-window-parameter window 'left-fringe-width 0)
           (set-window-parameter window 'right-fringe-width 0)
           ;; set no-delete-other-windows parameter for claude-code window
-          (set-window-parameter window 'no-delete-other-windows claude-code-no-delete-other-windows))))
+          (set-window-parameter window 'no-delete-other-windows claude-code-no-delete-other-windows)
+          ;; Optionally select the window based on user preference
+          (when claude-code-toggle-auto-select
+            (select-window window)))))
 
     ;; switch to the Claude buffer if asked to
     (when switch-after
@@ -1494,9 +1778,9 @@ ARGS can contain additional arguments passed from the CLI."
 
     ;; Run the event hook and potentially get a JSON response
     (let* ((message (list :type type
-                         :buffer-name buffer-name
-                         :json-data json-data
-                         :args (append args extra-args)))
+                          :buffer-name buffer-name
+                          :json-data json-data
+                          :args (append args extra-args)))
            (hook-response (run-hook-with-args-until-success 'claude-code-event-hook message)))
 
       ;; Return hook response if any, otherwise nil
@@ -1665,7 +1949,7 @@ If the Claude buffer doesn't exist, create it."
     (if claude-code-buffer
         (if (get-buffer-window claude-code-buffer)
             (delete-window (get-buffer-window claude-code-buffer))
-          (let ((window (display-buffer claude-code-buffer '((display-buffer-below-selected)))))
+          (let ((window (funcall claude-code-display-window-fn claude-code-buffer)))
             ;; set no-delete-other-windows parameter for claude-code window
             (set-window-parameter window 'no-delete-other-windows claude-code-no-delete-other-windows)
             ;; Optionally select the window based on user preference
@@ -1793,6 +2077,22 @@ This is useful for saying Yes when Claude asks for confirmation without
 having to switch to the REPL buffer."
   (interactive)
   (claude-code--do-send-command ""))
+
+;;;###autoload
+(defun claude-code-yank-media ()
+  "Paste an image from the clipboard into the current Claude buffer.
+
+Runs `yank-media' in the Claude buffer, which dispatches to the handler
+installed by `claude-code--register-image-yank-media-handler': the image
+is written to a temp file and an `@/path/to/image' reference is inserted
+at the prompt.  Claude's CLI reads `@path' references natively.
+
+Requires Emacs 29 or later."
+  (interactive)
+  (unless (fboundp 'yank-media)
+    (user-error "`yank-media' requires Emacs 29 or later"))
+  (claude-code--with-buffer
+   (call-interactively #'yank-media)))
 
 ;;;###autoload
 (defun claude-code-send-1 ()

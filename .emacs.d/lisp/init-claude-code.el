@@ -3,6 +3,11 @@
 
 ;;; Code:
 
+
+;; install required inheritenv dependency:
+(use-package inheritenv
+  :vc (:url "https://github.com/purcell/inheritenv" :rev :newest))
+
 (use-package claude-code
   :ensure t
   :vc (:url "https://github.com/stevemolitor/claude-code.el" :rev :newest)

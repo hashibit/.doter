@@ -7,6 +7,7 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 - **Seamless Emacs Integration** - Start, manage, and interact with Claude without leaving Emacs
 - **Stay in Your Buffer** - Send code, regions, or commands to Claude while keeping your focus
 - **Fix Errors Instantly** - Point at a flycheck/flymake error and ask Claude to fix it
+- **Paste Images** - `M-x yank-media` sends a clipboard image to Claude as an `@path` reference (Emacs 29+)
 - **Multiple Instances** - Run separate Claude sessions for different projects or tasks
 - **Quick Responses** - Answer Claude with a keystroke (<return>/<escape>/1/2/3) without switching buffers
 - **Smart Context** - Optionally include file paths and line numbers when sending commands to Claude
@@ -15,7 +16,7 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 - **Read-Only Mode** - Toggle to select and copy text with normal Emacs commands and keybindings
 - **Mode Cycling** - Quick switch between default, auto-accept edits, and plan modes
 - **Desktop Notifications** - Get notified when Claude finishes processing
-- **Terminal Choice** - Works with both eat and vterm backends
+- **Terminal Choice** - Works with eat, vterm, and ghostel (libghostty) backends
 - **Fully Customizable** - Configure keybindings, notifications, and display preferences
 
 ## Installation
@@ -25,7 +26,7 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 - Emacs 30.0 or higher
 - [Claude Code CLI](https://github.com/anthropics/claude-code) installed and configured
 - Required: transient (0.7.5+) inheritenv (0.2)
-- Optional: eat (0.9.2+) for eat backend, vterm for vterm backend
+- Optional: eat (0.9.2+) for eat backend, vterm for vterm backend, [ghostel](https://github.com/dakra/ghostel) for ghostel backend
   - Note: If not using a `:vc` install, the `eat` package requires NonGNU ELPA:
     ```elisp
     (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
@@ -35,7 +36,7 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 ### Using builtin use-package (Emacs 30+)
 
 ```elisp
-;; add melpa to package archives, as vterm is on melpa:
+;; add melpa to package archives (vterm and ghostel are on melpa):
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
@@ -49,6 +50,10 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 
 ;; for vterm terminal backend:
 (use-package vterm :ensure t)
+
+;; for ghostel terminal backend (libghostty):
+(use-package ghostel
+  :vc (:url "https://github.com/dakra/ghostel" :rev :newest))
 
 ;; install claude-code.el
 (use-package claude-code :ensure t
@@ -87,6 +92,10 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 ;; for vterm terminal backend:
 (use-package vterm :straight t)
 
+;; for ghostel terminal backend (libghostty):
+(use-package ghostel
+  :straight (:type git :host github :repo "dakra/ghostel"))
+
 ;; install claude-code.el, using :depth 1 to reduce download size:
 (use-package claude-code
   :straight (:type git :host github :repo "stevemolitor/claude-code.el" :branch "main" :depth 1
@@ -109,13 +118,22 @@ An Emacs interface for [Claude Code CLI](https://github.com/anthropics/claude-co
 ### Setting Prefix Key
 You need to set your own key binding for the Claude Code command map, as described in the [Installation](#installation) section. The examples in this README use `C-c c` as the prefix key.
 
-### Picking Eat or Vterm
+### Picking a Terminal Backend
 
-By default claude-code.el uses the `eat` backend. If you prefer vterm customize
-`claude-code-terminal-backend`:
+claude-code.el supports three terminal backends:
+
+- **eat** (default) — pure Elisp terminal emulator, no external dependencies beyond its own Emacs package.
+- **vterm** — libvterm-based terminal; generally snappier than eat but requires compiling a native module.
+- **ghostel** — [libghostty](https://ghostty.org)-based terminal; typically faster than vterm and renders the Claude TUI most faithfully. Requires the [ghostel](https://github.com/dakra/ghostel) package.
+
+Switch backends by customizing `claude-code-terminal-backend`:
 
 ```elisp
+;; Use vterm:
 (setq claude-code-terminal-backend 'vterm)
+
+;; Use ghostel (libghostty-powered terminal emulator):
+(setq claude-code-terminal-backend 'ghostel)
 ```
 
 ### Transient Menu
@@ -155,6 +173,14 @@ If you put your cursor over a flymake or flycheck error, you can ask Claude to f
 
 To show and hide the Claude buffer use `claude-code-toggle` (`C-c c t`).  To jump to the Claude buffer use `claude-code-switch-to-buffer` (`C-c c b`). This will open the buffer if hidden.
 
+### Pasting Images
+
+On Emacs 29 and later, you can paste an image from the system clipboard directly into a Claude buffer with `claude-code-yank-media` (`C-c c p`), or with `M-x yank-media` from inside the Claude buffer. claude-code.el writes the image to a temp file and injects an `@/path/to/image` reference at the prompt; the Claude CLI reads `@path` references natively and attaches the image to your next message. The temp files are cleaned up when the Claude buffer is killed.
+
+Works with all terminal backends (eat, vterm, ghostel). Disable by setting `claude-code-enable-image-paste` to `nil`, or disable cleanup with `claude-code-image-paste-cleanup-on-kill`.
+
+If you use the [ghostel](https://github.com/dakra/ghostel) backend, regular `C-v` will also paste clipboard images directly into the Claude buffer — no claude-code.el handling required, since ghostel forwards image data through libghostty as a terminal feature ([thanks @dakra](https://github.com/stevemolitor/claude-code.el/issues/127#issuecomment-4288290963)).
+
 ### Managing Claude Windows
 
 The `claude-code-toggle` (`C-c c t`) will show and hide the Claude window. Use the `claude-code-switch-to-buffer` (`C-c c b`) command to switch to the Claude window even if it is hidden. 
@@ -180,6 +206,10 @@ You can optionally use [Monet](https://github.com/stevemolitor/monet) for IDE in
 ```
 
 When Claude starts a new instance it will automatically start a Monet websocket server to listen to and send IDE comments to/from Claude. Current selection will automatically be sent to Claude, and Claude will show diffs in Emacs, use Emacs Monet tools to open files, get diagnostics, etc. See the [Monet](https://github.com/stevemolitor/monet) documentation for more details.
+
+## Community Extensions
+
+- [**claude-code-extras**](https://github.com/lsy83971/claude-code-emacs) by [@lsy83971](https://github.com/lsy83971) — adds a dedicated input buffer for composing multi-line prompts (with send history), an instance manager dashboard (`tabulated-list-mode`), same-window display advice, copy/paste support for the vterm backend, and a spinner glyph fix. Worth a look if any of those features fit your workflow.
 
 ## Working with Multiple Claude Instances
 
@@ -779,6 +809,16 @@ This is particularly useful if you like to keep Claude in a narrow side window w
 The `vterm-timer-delay` variable controls how often vterm refreshes its buffer when receiving data. This delay (in seconds) helps manage performance when processing large amounts of output. Setting it to `nil` disables the delay entirely.
 
 The default value of `0.1` seconds works well with Claude Code. Since Claude often sends large bursts of data when generating code or explanations, reducing this delay or disabling it (`nil`) can significantly degrade performance. Stick with the default, or use a slightly higher value  unless you experience specific display issues. 
+
+### Ghostel-specific Customization
+
+When using the ghostel (libghostty) backend, claude-code.el configures a few ghostel options automatically in Claude buffers:
+
+- Disables ghostel's own `ghostel-kill-buffer-on-exit` so claude-code.el manages buffer cleanup.
+- Sets `ghostel-set-title-function` to nil so OSC title sequences don't rename the Claude buffer.
+- Routes terminal bell events through `claude-code-notification-function` for consistent notifications.
+
+For general ghostel configuration (keybindings, colors, font settings, and so on), see the [ghostel documentation](https://github.com/dakra/ghostel).
 
 ## Contributing
 
