@@ -33,7 +33,10 @@
                               '((gopls (usePlaceholders . t))))
                             (eglot-ensure)))
 
-  (python-ts-mode . eglot-ensure)
+  ;; (python-ts-mode . eglot-ensure)
+  (python-ts-mode . (lambda ()
+                      (my-python-eglot-setup)
+                      (eglot-ensure)))
 
   (zig-mode . eglot-ensure)
   (tsx-ts-mode . eglot-ensure)
@@ -63,25 +66,32 @@
     (ignore watchers)
     (list t "client-side watch refused; server polls"))
 
-  (defun locate-venv-with-uv ()
-    "Find a uv venv."
-    (run-command-in-directory nil "uv" "python" "find"))
-  ;; TODO
+  (defun my-python-locate-venv ()
+  "Locate the local virtualenv Python executable using project.el and uv standards."
+  (when-let* ((project (project-current))
+              (project-root (project-root project))
+              ;; 优先查找项目根目录下的 .venv (uv 的默认行为)
+              (venv-dir (expand-file-name ".venv/" project-root))
+              (python-exec (expand-file-name "bin/python" venv-dir)))
+    (when (file-executable-p python-exec)
+      python-exec)))
+
   (defun my-python-eglot-setup ()
-    "Set up Eglot workspace configuration for Python with uv."
-    (when (and (derived-mode-p 'python-ts-mode)
-            (executable-find "uv"))
-      (let ((venv-python (locate-venv-with-uv)))
-        (when (and venv-python (file-executable-p venv-python))
-          (message "✅ Eglot: Using uv venv Python: %s" venv-python)
-          (setq-local eglot-workspace-configuration
-            `(:python
-               (:pythonPath ,venv-python)
-               :python.analysis
-               (:logLevel "trace")))
-          ;; 可选：激活 pyvenv
-          (when (bound-and-true-p pyvenv-mode)
-            (pyvenv-activate (file-name-directory (directory-file-name venv-python))))))))
+    "Set up Eglot workspace configuration for Python using local venv."
+    (if-let ((venv-python (my-python-locate-venv)))
+      (progn
+        (message "✅ Eglot: Using project venv Python: %s" venv-python)
+        (setq-local eglot-workspace-configuration
+          `(:python
+             (:pythonPath ,venv-python)
+             :python.analysis
+             (:logLevel "trace")))
+        ;; 可选：激活 pyvenv
+        (when (bound-and-true-p pyvenv-mode)
+          (pyvenv-activate (file-name-directory (directory-file-name venv-python)))))
+      ;; 回退机制：没找到本地虚拟环境则清除临时配置
+      (setq-local eglot-workspace-configuration nil)
+      (message "ℹ️ Eglot: No local .venv found, using fallback/global server.")))
 
   ;; Swift: use .xcodeproj directory as project root for sourcekit-lsp.
   ;; Without this, monorepo git root becomes rootUri and sourcekit-lsp

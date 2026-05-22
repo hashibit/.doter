@@ -82,6 +82,17 @@ With prefix ARG, switch to Claude buffer after sending."
     (message "should set aliyun bailian api-key")))
 
 
+(defun reset-claude-code-env()
+  (interactive)
+  (setenv "ANTHROPIC_BASE_URL" nil)
+  (setenv "ANTHROPIC_MODEL" nil)
+  (setenv "ANTHROPIC_AUTH_TOKEN" nil))
+
+(defun claude-code-origin()
+  (interactive)
+  (reset-claude-code-env)
+  (claude-code))
+
 ;; (use-package claudemacs
 ;;   :vc (:fetcher github :repo "cpoile/claudemacs"))
 
