@@ -40,6 +40,8 @@
 
   (zig-mode . eglot-ensure)
   (tsx-ts-mode . eglot-ensure)
+  (js-ts-mode . eglot-ensure)
+  (typescript-ts-mode . eglot-ensure)
   (clojure-ts-mode . eglot-ensure)
 
   (swift-mode . (lambda ()

@@ -1,7 +1,6 @@
 ;;; Emacs Lisp Mode Hook
 (defun my-elisp-mode-hook ()
-  (setq indent-tabs-mode nil
-        lisp-indent-offset 2))
+  (setq lisp-indent-offset 2))
 
 (add-hook 'emacs-lisp-mode-hook 'my-elisp-mode-hook)
 (add-hook 'lisp-mode-hook 'my-elisp-mode-hook)

@@ -14,7 +14,32 @@
   (setq company-dabbrev-downcase nil
         ;; company-backends '((company-capf company-keywords company-files company-dabbrev))
         company-backends '((company-capf company-keywords company-files))
+        ;; Visual tuning
+        company-format-margin-function #'company-text-icons-margin
+        company-text-icons-add-background t
+        company-tooltip-margin 2
+        company-tooltip-minimum-width 40
+        company-tooltip-maximum-width 80
+        company-tooltip-limit 12
+        company-tooltip-align-annotations t
+        company-tooltip-flip-when-above t
         )
+
+  ;; Fill the gaps the theme leaves: only company-tooltip is themed.
+  (with-eval-after-load 'company
+    (let* ((bg (face-background 'company-tooltip nil t))
+           (fg (face-foreground 'company-tooltip nil t))
+           (sel-bg "#3E4451")
+           (common "#61AFEF")
+           (anno   "#7F848E"))
+      (custom-set-faces
+       `(company-tooltip-selection            ((t (:background ,sel-bg :foreground ,fg :weight semi-bold))))
+       `(company-tooltip-common               ((t (:foreground ,common :weight bold))))
+       `(company-tooltip-common-selection     ((t (:foreground ,common :weight bold))))
+       `(company-tooltip-annotation           ((t (:foreground ,anno :slant normal))))
+       `(company-tooltip-annotation-selection ((t (:foreground ,anno :slant normal :weight semi-bold))))
+       `(company-tooltip-scrollbar-track      ((t (:background ,bg))))
+       `(company-tooltip-scrollbar-thumb      ((t (:background ,sel-bg)))))))
   )
 
 (use-package company-posframe
@@ -27,11 +52,13 @@
   ;; Posframe settings
   (setq company-tooltip-scrollbar-width 0
         company-posframe-show-params (list
-                                      ; :internal-border-color (face-foreground 'vertical-border)
-                                      ; :internal-border-width my-posframe-border-width
-                                      :left-fringe 0
-                                      :right-fringe 0
-                                      :line-height 1.0))
+                                      :internal-border-width 1
+                                      :internal-border-color "#3E4451"
+                                      :left-fringe 8
+                                      :right-fringe 8
+                                      :line-height 1.1))
+  ;; Make the internal border actually render with the chosen color in GUI frames.
+  (set-face-background 'internal-border "#3E4451")
 
   ;; Key bindings for company-active-map
   (define-key company-active-map (kbd "<TAB>") #'company-select-next-if-tooltip-visible-or-complete-selection)

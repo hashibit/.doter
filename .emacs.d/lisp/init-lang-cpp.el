@@ -45,17 +45,10 @@ otherwise assumed alphabetic."
                    (setq-local c-ts-mode-indent-offset 2))
                   ((equal "WebKit" base-style)
                    (setq-local c-ts-mode-indent-offset 4)))))
-      (if (not (equal "" tabs-str))
-          (if (not (string-equal "Never" tabs-str))
-              (setq-local indent-tabs-mode t)
-            (setq-local indent-tabs-mode nil))
-        (if (not (equal "" base-style))
-            (cond ((or (equal "LLVM" base-style)
-                       (equal "Google" base-style)
-                       (equal "Chromium" base-style)
-                       (equal "Mozilla" base-style)
-                       (equal "WebKit" base-style))
-                   (setq-local indent-tabs-mode nil)))))
+      ;; 全局默认 indent-tabs-mode 为 nil；只在 .clang-format 明确要求 TAB 时覆盖
+      (when (and (not (equal "" tabs-str))
+                 (not (string-equal "Never" tabs-str)))
+        (setq-local indent-tabs-mode t))
       (if (functionp 'indent-bars-reset)
         (indent-bars-reset)))))
 
@@ -73,6 +66,7 @@ otherwise assumed alphabetic."
    ;; line coment, double forward slash
    (c-ts-mode-toggle-comment-style -1)
    (add-hook 'before-save-hook #'clang-format-buffer nil 'local) ;; add-hook for buffer local, nice!
+   (format-all-mode -1) ;; 只用 clang-format，关掉 format-all 避免双重格式化
 
   (my-set-indent-from-clang-format)
 )

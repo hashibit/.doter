@@ -31,7 +31,7 @@ function M.setup()
     c = { shiftwidth = 4, tabstop = 4, softtabstop = 4 },
     h = { shiftwidth = 4, tabstop = 4, softtabstop = 4 },
     coffee = { shiftwidth = 2, softtabstop = 2 },
-    javascript = { shiftwidth = 4, softtabstop = 4 },
+    javascript = { shiftwidth = 2, softtabstop = 2, tabstop = 2 },
     scss = { shiftwidth = 4, softtabstop = 4 },
     sh = { shiftwidth = 4, softtabstop = 4 },
     lua = { shiftwidth = 4, softtabstop = 4 },
@@ -51,7 +51,7 @@ function M.setup()
     elseif filetype == 'coffee' then
       patterns = { '*.coffee' }
     elseif filetype == 'javascript' then
-      patterns = { '*.js' }
+      patterns = { '*.js', '*.jsx', '*.ts', '*.tsx', '*.mjs', '*.cjs' }
     elseif filetype == 'scss' then
       patterns = { '*.scss' }
     elseif filetype == 'sh' then

@@ -12,8 +12,7 @@
   :ensure t
   :hook
   (qml-mode . (lambda ()
-                (setq indent-tabs-mode nil
-                      js-indent-level 4)
+                (setq js-indent-level 4)
                 (c-ts-mode-toggle-comment-style -1)
                 (bind-keys :map qml-mode-map ("C-c C-b" . compile))
                 (bind-keys :map qml-mode-map ("s-b" . compile))))

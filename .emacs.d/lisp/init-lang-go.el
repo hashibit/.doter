@@ -21,6 +21,8 @@
   :init
   (add-hook 'go-ts-mode-hook #'eglot-ensure)
   (add-hook 'go-ts-mode-hook #'(lambda() (highlight-indent-guides-mode -1)))
+  ;; 只用 eglot-format-buffer（见 my-go-before-save），关掉 format-all 避免双重格式化
+  (add-hook 'go-ts-mode-hook #'(lambda() (format-all-mode -1)))
   :config
   (setq go-ts-mode-indent-offset 4)
   (defun my-go-mode-split-string(arg)

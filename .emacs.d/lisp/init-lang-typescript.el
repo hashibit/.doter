@@ -4,9 +4,15 @@
 (use-package typescript-ts-mode
   :mode ("\\.ts\\'" "\\.tsx\\'"))
 
+;; 纯 .js 走原生 treesit JS mode，避免 JSX parser 误判（如 `a < b > c`）
+;; 和 LSP 发错 languageId（"javascriptreact" vs "javascript"）。
+(use-package js
+  :mode ("\\.js\\'" . js-ts-mode)
+  :hook (js-ts-mode . hs-minor-mode))
+
 (use-package jtsx
   :ensure t
-  :mode (("\\.jsx?\\'" . jtsx-jsx-mode)
+  :mode (("\\.jsx\\'" . jtsx-jsx-mode)
          ("\\.tsx\\'" . jtsx-tsx-mode)
          ("\\.ts\\'" . jtsx-typescript-mode))
   :commands jtsx-install-treesit-language
@@ -15,8 +21,8 @@
          (jtsx-typescript-mode . hs-minor-mode))
   :custom
   ;; Optional customizations
-  ;; (js-indent-level 2)
-  ;; (typescript-ts-mode-indent-offset 2)
+  (js-indent-level 2)
+  (typescript-ts-mode-indent-offset 2)
   ;; (jtsx-switch-indent-offset 0)
   ;; (jtsx-indent-statement-block-regarding-standalone-parent nil)
   ;; (jtsx-jsx-element-move-allow-step-out t)

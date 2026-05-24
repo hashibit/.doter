@@ -2,9 +2,8 @@
 ;;; init-lang-swift.el --- Swift language configuration
 
 (use-package swift-mode
-  :defer t
-  :config
-  (add-hook 'before-save-hook 'format-all-buffer nil 'local))
+  :defer t)
+;; 格式化由 format-all-mode（挂在 prog-mode-hook）统一处理，走 swiftformat。
 
 (defun xcode-build()
   "Build current Xcode project."
