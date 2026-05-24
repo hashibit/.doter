@@ -154,11 +154,18 @@ exists it returns /file/name_Copy2.ext etc."
     :group 'treemacs-faces)
   (put 'treemacs-button 'mouse-face 'treemacs-button-underline-only)
 
+  ;; 禁止 treemacs 在光标到行尾时把窗口横向滚动 (避免“跳一下”的视觉)
+  (defun my-treemacs-disable-hscroll ()
+    (setq-local auto-hscroll-mode nil)
+    (setq-local hscroll-margin 0)
+    (setq-local hscroll-step 0))
+
   (add-hook 'treemacs-mode-hook #'my-add-padding-for-treemacs)
   (add-hook 'treemacs-mode-hook #'display-treemacs-widow-in-ace-window-selection)
   (add-hook 'treemacs-mode-hook #'dim-treemacs-window-background)
   (add-hook 'treemacs-mode-hook #'change-treemacs-hl-line-mode)
   (add-hook 'treemacs-mode-hook #'my-special-buffer-keys-minor-mode)
+  (add-hook 'treemacs-mode-hook #'my-treemacs-disable-hscroll)
   ;; (add-hook 'treemacs-mode-hook #'my-set-large-line-height)
   :bind
   (:map

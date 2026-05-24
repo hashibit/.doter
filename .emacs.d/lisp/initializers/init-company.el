@@ -33,11 +33,11 @@
            (common "#61AFEF")
            (anno   "#7F848E"))
       (custom-set-faces
-       `(company-tooltip-selection            ((t (:background ,sel-bg :foreground ,fg :weight semi-bold))))
-       `(company-tooltip-common               ((t (:foreground ,common :weight bold))))
-       `(company-tooltip-common-selection     ((t (:foreground ,common :weight bold))))
-       `(company-tooltip-annotation           ((t (:foreground ,anno :slant normal))))
-       `(company-tooltip-annotation-selection ((t (:foreground ,anno :slant normal :weight semi-bold))))
+       `(company-tooltip-selection            ((t (:background ,sel-bg :foreground ,fg :weight normal))))
+       `(company-tooltip-common               ((t (:foreground ,common :weight normal))))
+       `(company-tooltip-common-selection     ((t (:foreground ,common :weight normal))))
+       `(company-tooltip-annotation           ((t (:foreground ,anno :slant normal :weight normal))))
+       `(company-tooltip-annotation-selection ((t (:foreground ,anno :slant normal :weight normal))))
        `(company-tooltip-scrollbar-track      ((t (:background ,bg))))
        `(company-tooltip-scrollbar-thumb      ((t (:background ,sel-bg)))))))
   )
@@ -57,8 +57,11 @@
                                       :left-fringe 8
                                       :right-fringe 8
                                       :line-height 1.1))
-  ;; Make the internal border actually render with the chosen color in GUI frames.
-  (set-face-background 'internal-border "#3E4451")
+  ;; Color the child-frame border (Emacs 28+). This face only affects posframes,
+  ;; not the main Emacs frame's internal border.
+  (when (facep 'child-frame-border)
+    (set-face-background 'child-frame-border "#3E4451"))
+
 
   ;; Key bindings for company-active-map
   (define-key company-active-map (kbd "<TAB>") #'company-select-next-if-tooltip-visible-or-complete-selection)
@@ -91,7 +94,11 @@
   :after company
   :demand t
   :config
-  (company-prescient-mode 1))
+  (company-prescient-mode 1)
+  ;; Kill the bold weight on matched characters; keep just the color/underline cues.
+  (with-eval-after-load 'prescient
+    (set-face-attribute 'prescient-primary-highlight   nil :weight 'normal)
+    (set-face-attribute 'prescient-secondary-highlight nil :weight 'normal)))
 
 (provide 'init-company)
 

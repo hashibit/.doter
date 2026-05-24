@@ -31,8 +31,12 @@
 ;;; Code:
 
 (use-package markdown-mode
-  :mode (("README\\.md\\'" . gfm-mode))
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
   :init
+  ;; Override built-in markdown-ts-mode registration (Emacs 30+)
+  (setq auto-mode-alist (rassq-delete-all 'markdown-ts-mode auto-mode-alist))
   (setq markdown-enable-wiki-links t
         markdown-italic-underscore t
         markdown-asymmetric-header t
