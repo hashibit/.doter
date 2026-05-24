@@ -41,6 +41,9 @@
 
 ;; invoke M-x treesit-auto-install-all to install treesit libs to ~/.emacs.d/tree-sitter/
 (use-package treesit-auto
-  :config (global-treesit-auto-mode))
+  :config
+  ;; markdown-ts-mode applies bold face to all paragraph text (upstream bug)
+  (setq treesit-auto-langs (remove 'markdown treesit-auto-langs))
+  (global-treesit-auto-mode))
 
 (provide 'init-treesit)
