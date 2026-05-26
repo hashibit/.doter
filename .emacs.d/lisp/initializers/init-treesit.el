@@ -2,13 +2,14 @@
   :demand t
   :custom
   (treesit-font-lock-level 4) ;; skittles highlighting
-  :mode (("\\.tsx\\'" . tsx-ts-mode)
-          ("\\.js\\'"  . typescript-ts-mode)
-          ("\\.mjs\\'" . typescript-ts-mode)
-          ("\\.mts\\'" . typescript-ts-mode)
-          ("\\.cjs\\'" . typescript-ts-mode)
-          ("\\.ts\\'"  . typescript-ts-mode)
-          ("\\.jsx\\'" . tsx-ts-mode)
+  :mode (
+          ;; ("\\.tsx\\'" . tsx-ts-mode)
+          ;; ("\\.js\\'"  . typescript-ts-mode)
+          ;; ("\\.mjs\\'" . typescript-ts-mode)
+          ;; ("\\.mts\\'" . typescript-ts-mode)
+          ;; ("\\.cjs\\'" . typescript-ts-mode)
+          ;; ("\\.ts\\'"  . typescript-ts-mode)
+          ;; ("\\.jsx\\'" . tsx-ts-mode)
           ("\\.json\\'" .  json-ts-mode)
           ("\\.clj\\'" . clojure-ts-mode)
           ("\\.cljs\\'" . clojure-ts-mode)

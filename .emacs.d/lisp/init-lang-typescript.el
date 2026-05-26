@@ -9,14 +9,22 @@
 ;; 和 LSP 发错 languageId（"javascriptreact" vs "javascript"）。
 (use-package js
   :mode ("\\.js\\'" . js-ts-mode)
-  :hook (js-ts-mode . hs-minor-mode))
+  :hook (js-ts-mode . hs-minor-mode)
+  :config
+  ;; shebang "#!/usr/bin/env node" 优先级高于 auto-mode-alist，默认映射到 js-mode。
+  ;; 对 .ts/.tsx 文件改走 jtsx，其余保持 js-ts-mode。
+  (add-to-list 'interpreter-mode-alist
+    '("node" . (lambda ()
+                 (if (and buffer-file-name
+                          (string-match "\\.tsx?\\'" buffer-file-name))
+                     (jtsx-typescript-mode)
+                   (js-ts-mode))))))
 
 (use-package jtsx
   :ensure t
   :mode (("\\.jsx\\'" . jtsx-jsx-mode)
          ("\\.tsx\\'" . jtsx-tsx-mode)
          ("\\.ts\\'" . jtsx-typescript-mode))
-  :commands jtsx-install-treesit-language
   :hook ((jtsx-jsx-mode . hs-minor-mode)
          (jtsx-tsx-mode . hs-minor-mode)
          (jtsx-typescript-mode . hs-minor-mode)
@@ -63,7 +71,13 @@
     (jtsx-bind-keys-to-mode-map jtsx-tsx-mode-map))
 
   (add-hook 'jtsx-jsx-mode-hook 'jtsx-bind-keys-to-jtsx-jsx-mode-map)
-  (add-hook 'jtsx-tsx-mode-hook 'jtsx-bind-keys-to-jtsx-tsx-mode-map))
+  (add-hook 'jtsx-tsx-mode-hook 'jtsx-bind-keys-to-jtsx-tsx-mode-map)
+
+  ;; eglot 通过 major-mode symbol 上的 eglot-language-id 属性确定 languageId。
+  ;; jtsx 派生自 ts 内建 mode，但 eglot 不自动识别，需显式声明。
+  (put 'jtsx-typescript-mode 'eglot-language-id "typescript")
+  (put 'jtsx-tsx-mode        'eglot-language-id "typescriptreact")
+  (put 'jtsx-jsx-mode        'eglot-language-id "javascriptreact"))
 
 (provide 'init-lang-typescript)
 

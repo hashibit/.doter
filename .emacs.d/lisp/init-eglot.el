@@ -42,6 +42,9 @@
   (tsx-ts-mode . eglot-ensure)
   (js-ts-mode . eglot-ensure)
   (typescript-ts-mode . eglot-ensure)
+  (jtsx-typescript-mode . eglot-ensure)
+  (jtsx-tsx-mode . eglot-ensure)
+  (jtsx-jsx-mode . eglot-ensure)
   (clojure-ts-mode . eglot-ensure)
 
   (swift-mode . (lambda ()
