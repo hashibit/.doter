@@ -12,6 +12,9 @@
 (add-hook 'makefile-mode-hook (lambda () (setq indent-tabs-mode t)))
 (add-hook 'go-mode-hook       (lambda () (setq indent-tabs-mode t)))
 
+;; 让 ‣ (U+2023) 使用与主字体行高一致的字体，避免 Arial Unicode MS fallback 导致偏高
+(set-fontset-font t #x2023 (font-spec :family "Sarasa Mono SC") nil 'prepend)
+
 (add-hook 'prog-mode-hook #'(lambda()
                               (add-hook 'before-save-hook #'delete-trailing-whitespace)))
 

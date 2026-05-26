@@ -1,8 +1,9 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-lang-typescript.el --- TypeScript language configuration
 
-(use-package typescript-ts-mode
-  :mode ("\\.ts\\'" "\\.tsx\\'"))
+;; (use-package typescript-ts-mode
+;;   :mode ("\\.ts\\'" "\\.tsx\\'"))
+;; Superseded by jtsx below, which registers the same extensions.
 
 ;; 纯 .js 走原生 treesit JS mode，避免 JSX parser 误判（如 `a < b > c`）
 ;; 和 LSP 发错 languageId（"javascriptreact" vs "javascript"）。
@@ -18,7 +19,9 @@
   :commands jtsx-install-treesit-language
   :hook ((jtsx-jsx-mode . hs-minor-mode)
          (jtsx-tsx-mode . hs-minor-mode)
-         (jtsx-typescript-mode . hs-minor-mode))
+         (jtsx-typescript-mode . hs-minor-mode)
+         (jtsx-jsx-mode . (lambda () (rainbow-delimiters-mode -1)))
+         (jtsx-tsx-mode . (lambda () (rainbow-delimiters-mode -1))))
   :custom
   ;; Optional customizations
   (js-indent-level 2)
