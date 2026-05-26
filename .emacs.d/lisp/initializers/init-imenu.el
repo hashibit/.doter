@@ -1,45 +1,23 @@
 ;;; -*- lexical-binding: t -*-
 
-;; imenu size sidebar width, 0.20 of screen
-;; NOTE: <SPC>-i to toggle imenu sidebar
 (setq imenu-list-size 0.20)
 (setq imenu-list-auto-update nil)
 
-(defun my-enlarge-imenu-width ()
-  (interactive)
-  (enlarge-window-horizontally (/ (frame-width) 3)))
-
-(defun my-shrink-imenu-width ()
-  (interactive)
-  (shrink-window-horizontally (/ (frame-width) 3)))
-
-(defun my-fit-imenu-width ()
-  (interactive)
-  (imenu-list-resize-window))
-
-(defun my-imenu-list-check-window-is-open ()
-  (interactive)
-  (and
-    (bound-and-true-p imenu-list-buffer-name)
-    (get-buffer-window imenu-list-buffer-name t)
-    t))
-
-
 (defun my-imenu-list-smart-toggle-refresh ()
   (interactive)
-  (when (my-imenu-list-check-window-is-open)
+  (when (and (bound-and-true-p imenu-list-buffer-name)
+             (get-buffer-window imenu-list-buffer-name t))
     (imenu-list-quit-window))
   (imenu-list-minor-mode 1)
   (select-window (get-buffer-window (imenu-list-get-buffer-create))))
 
 (use-package imenu-list
   :defer t
-  :bind ((:map
-           imenu-list-major-mode-map
-           ("H" . my-enlarge-imenu-width)
-           ("M" . my-fit-imenu-width)
-           ("L" . my-shrink-imenu-width)
-           ("m" . my-imenu-list-smart-toggle-refresh))))
+  :bind ((:map imenu-list-major-mode-map
+               ("H" . (lambda () (interactive) (enlarge-window-horizontally (/ (frame-width) 3))))
+               ("M" . imenu-list-resize-window)
+               ("L" . (lambda () (interactive) (shrink-window-horizontally (/ (frame-width) 3))))
+               ("m" . my-imenu-list-smart-toggle-refresh))))
 
 ;;; Struct method filter sidebar
 
@@ -108,17 +86,11 @@
             (with-current-buffer src
               (save-excursion
                 (goto-char pos)
-                (let* ((start (save-excursion
-                                (forward-line (- context-lines))
-                                (point)))
-                       (end (save-excursion
-                              (forward-line context-lines)
-                              (point))))
+                (let* ((start (save-excursion (forward-line (- context-lines)) (point)))
+                       (end   (save-excursion (forward-line context-lines) (point))))
                   (font-lock-ensure start end)
-                  (let* ((text (buffer-substring start end))
-                         (target-line (line-number-at-pos pos))
-                         (start-line (line-number-at-pos start)))
-                    (list text (- target-line start-line)))))))
+                  (list (buffer-substring start end)
+                        (- (line-number-at-pos pos) (line-number-at-pos start)))))))
            (text (car content))
            (highlight-line (cadr content))
            (peek-buf (get-buffer-create " *imenu-peek*")))
@@ -129,8 +101,7 @@
         (insert text)
         (goto-char (point-min))
         (forward-line highlight-line)
-        (add-text-properties (line-beginning-position) (line-end-position)
-                             '(face highlight))
+        (add-text-properties (line-beginning-position) (line-end-position) '(face highlight))
         (read-only-mode 1))
       (let ((pf (posframe-show peek-buf
                                :poshandler #'my-imenu-peek--poshandler
@@ -149,9 +120,20 @@
 (defun my-imenu-peek ()
   "Toggle posframe preview of the code around the item under point."
   (interactive)
-  (if my-imenu-peek--visible
-      (my-imenu-peek--hide)
-    (my-imenu-peek--show)))
+  (if my-imenu-peek--visible (my-imenu-peek--hide) (my-imenu-peek--show)))
+
+(defun my-imenu--finalize-sidebar (buf)
+  "Set up keybindings in BUF and display it as a right-side sidebar."
+  (with-current-buffer buf
+    (imenu-list-major-mode)
+    (goto-char (point-min))
+    (local-set-key (kbd "RET") #'my-imenu-jump)
+    (local-set-key (kbd "SPC") #'my-imenu-peek)
+    (local-set-key (kbd "q") (lambda ()
+                               (interactive)
+                               (when my-imenu-peek--visible (my-imenu-peek--hide))
+                               (quit-window))))
+  (display-buffer buf '(display-buffer-in-side-window (side . right) (window-width . 35))))
 
 (defvar my-imenu-method-group-patterns
   '((rust-mode          . "\\`impl\\b")
@@ -181,11 +163,10 @@ If region is active, use the selected text as input."
                (deactivate-mark))
            (read-string "Struct name: "))))
   (let* ((items (imenu--make-index-alist t))
-         (filtered (seq-filter
-                    (lambda (item)
-                      (and (imenu--subalist-p item)
-                           (string-match-p struct-name (car item))))
-                    items))
+         (filtered (seq-filter (lambda (item)
+                                 (and (imenu--subalist-p item)
+                                      (string-match-p struct-name (car item))))
+                               items))
          (buf (get-buffer-create "*Ilist-struct-methods*"))
          (src (current-buffer)))
     (if (null filtered)
@@ -196,8 +177,7 @@ If region is active, use the selected text as input."
         (dolist (group filtered)
           (let ((group-start (point)))
             (insert (car group) "\n")
-            (add-text-properties group-start (1- (point))
-                                 '(face my-imenu-group-face)))
+            (add-text-properties group-start (1- (point)) '(face my-imenu-group-face)))
           (let ((is-method-group (my-imenu-method-group-p (car group) src)))
             (dolist (method (cdr group))
               (let ((start (point))
@@ -206,19 +186,8 @@ If region is active, use the selected text as input."
                 (add-text-properties start (1- (point))
                                      `(face ,item-face
                                        mouse-face my-imenu-method-hover-face
-                                       my-imenu-pos (,src ,(cdr method))))))))
-        (imenu-list-major-mode)
-        (goto-char (point-min))
-        (local-set-key (kbd "RET") #'my-imenu-jump)
-        (local-set-key (kbd "SPC") #'my-imenu-peek)
-        (local-set-key (kbd "q") (lambda ()
-                                   (interactive)
-                                   (when my-imenu-peek--visible
-                                     (my-imenu-peek--hide))
-                                   (quit-window))))
-      (display-buffer buf '(display-buffer-in-side-window
-                            (side . right)
-                            (window-width . 35))))))
+                                       my-imenu-pos (,src ,(cdr method)))))))))
+      (my-imenu--finalize-sidebar buf))))
 
 ;;; Eglot cross-file struct method finder
 
@@ -237,60 +206,44 @@ If region is active, use the selected text as input."
     (dolist (path paths)
       (when (file-exists-p path)
         (let* ((file-buf (find-file-noselect path))
-               (items (with-current-buffer file-buf
-                        (imenu--make-index-alist t)))
-               (matches (seq-filter
-                         (lambda (item)
-                           (and (imenu--subalist-p item)
-                                (string-match-p (regexp-quote struct-name) (car item))))
-                         items)))
-          (when matches
-            (push (cons path matches) all-groups)))))
+               (items (with-current-buffer file-buf (imenu--make-index-alist t)))
+               (matches (seq-filter (lambda (item)
+                                      (and (imenu--subalist-p item)
+                                           (string-match-p (regexp-quote struct-name) (car item))))
+                                    items)))
+          (when matches (push (cons path matches) all-groups)))))
     (if (null all-groups)
         (progn
           (message "No impl blocks found for %s, falling back to current file" struct-name)
-          (with-current-buffer src-buf
-            (my-imenu-filter-struct struct-name)))
+          (with-current-buffer src-buf (my-imenu-filter-struct struct-name)))
       (with-current-buffer buf
         (read-only-mode -1)
         (erase-buffer)
         (pcase-dolist (`(,path . ,groups) (nreverse all-groups))
-          (let* ((short (file-relative-name path root))
-                 (file-buf (find-file-noselect path))
-                 (start (point)))
+          (let* ((file-buf (find-file-noselect path))
+                 (short (file-relative-name path root))
+                 (hdr-start (point)))
             (insert "── " short " ──\n")
-            (add-text-properties start (1- (point)) '(face my-imenu-file-face)))
-          (dolist (group groups)
-            (let ((group-start (point)))
-              (insert (car group) "\n")
-              (add-text-properties group-start (1- (point))
-                                   '(face my-imenu-group-face)))
-            (let ((is-method (my-imenu-method-group-p (car group) (find-file-noselect path))))
-              (dolist (method (cdr group))
-                (let ((start (point))
-                      (item-face (if is-method 'my-imenu-method-face 'my-imenu-field-face)))
-                  (insert "  " (car method) "\n")
-                  (add-text-properties start (1- (point))
-                                       `(face ,item-face
-                                         mouse-face my-imenu-method-hover-face
-                                         my-imenu-pos (,(find-file-noselect path) ,(cdr method)))))))))
-        (imenu-list-major-mode)
-        (goto-char (point-min))
-        (local-set-key (kbd "RET") #'my-imenu-jump)
-        (local-set-key (kbd "SPC") #'my-imenu-peek)
-        (local-set-key (kbd "q") (lambda ()
-                                   (interactive)
-                                   (when my-imenu-peek--visible
-                                     (my-imenu-peek--hide))
-                                   (quit-window))))
-      (display-buffer buf '(display-buffer-in-side-window
-                            (side . right)
-                            (window-width . 35))))))
+            (add-text-properties hdr-start (1- (point)) '(face my-imenu-file-face))
+            (dolist (group groups)
+              (let ((group-start (point)))
+                (insert (car group) "\n")
+                (add-text-properties group-start (1- (point)) '(face my-imenu-group-face)))
+              (let ((is-method (my-imenu-method-group-p (car group) file-buf)))
+                (dolist (method (cdr group))
+                  (let ((item-start (point))
+                        (item-face (if is-method 'my-imenu-method-face 'my-imenu-field-face)))
+                    (insert "  " (car method) "\n")
+                    (add-text-properties item-start (1- (point))
+                                         `(face ,item-face
+                                           mouse-face my-imenu-method-hover-face
+                                           my-imenu-pos (,file-buf ,(cdr method)))))))))))
+      (my-imenu--finalize-sidebar buf))))
 
 (defun my-imenu-filter-struct-eglot (struct-name)
   "Show all methods of STRUCT-NAME across the project.
-Uses eglot: workspace/symbol to find the definition, then textDocument/references
-to get all files containing references, then imenu on those files.
+Uses eglot workspace/symbol to find the definition, then textDocument/references
+to get all files, then imenu on those files.
 Falls back to `my-imenu-filter-struct' if eglot is unavailable."
   (interactive
    (list (if (use-region-p)
@@ -299,73 +252,116 @@ Falls back to `my-imenu-filter-struct' if eglot is unavailable."
            (read-string "Struct name: "))))
   (let ((server (eglot-current-server))
         (src-buf (current-buffer)))
-    (if (not server)
-        (progn
-          (message "eglot not connected, using imenu fallback")
-          (my-imenu-filter-struct struct-name))
-      ;; Step 1: find the struct definition via workspace/symbol
-      (jsonrpc-async-request
-       server
-       :workspace/symbol
-       `(:query ,struct-name)
-       :timeout 5
-       :success-fn
-       (lambda (symbols)
-         (let* ((sym-list (append symbols nil))
-                (struct-kinds '(5 10 11 23)) ; Class Interface Enum Struct
-                (def (seq-find (lambda (s)
-                                 (and (string= (plist-get s :name) struct-name)
-                                      (memq (plist-get s :kind) struct-kinds)))
-                               sym-list)))
-           (if (not def)
-               (progn
-                 (message "Cannot find definition of %s, falling back" struct-name)
-                 (with-current-buffer src-buf
-                   (my-imenu-filter-struct struct-name)))
-             ;; Step 2: textDocument/references on the definition position
-             (let* ((loc (plist-get def :location))
-                    (uri (plist-get loc :uri))
-                    (start (plist-get (plist-get loc :range) :start))
-                    (line (plist-get start :line))
-                    (char (plist-get start :character)))
-               (jsonrpc-async-request
-                server
-                :textDocument/references
-                `(:textDocument (:uri ,uri)
-                  :position (:line ,line :character ,char)
-                  :context (:includeDeclaration t))
-                :timeout 10
-                :success-fn
-                (lambda (refs)
-                  (let* ((paths (delete-dups
-                                 (mapcar (lambda (r)
-                                           (my-imenu--uri-to-path (plist-get r :uri)))
-                                         (append refs nil)))))
-                    (message "[imenu-eglot] %s: found %d reference(s) in %d file(s): %s"
-                             struct-name
-                             (length (append refs nil))
-                             (length paths)
-                             (mapconcat #'file-name-nondirectory paths ", "))
-                    (my-imenu--render-from-files struct-name paths src-buf)))
-                :error-fn
-                (lambda (err)
-                  (message "references failed: %s, falling back" err)
-                  (with-current-buffer src-buf
-                    (my-imenu-filter-struct struct-name)))
-                :timeout-fn
-                (lambda ()
-                  (message "references timed out, falling back")
-                  (with-current-buffer src-buf
-                    (my-imenu-filter-struct struct-name))))))))
-       :error-fn
-       (lambda (err)
-         (message "workspace/symbol failed: %s, falling back" err)
-         (with-current-buffer src-buf
-           (my-imenu-filter-struct struct-name)))
-       :timeout-fn
-       (lambda ()
-         (message "workspace/symbol timed out, falling back")
-         (with-current-buffer src-buf
-           (my-imenu-filter-struct struct-name)))))))
+    (cl-flet ((fallback () (with-current-buffer src-buf (my-imenu-filter-struct struct-name))))
+      (if (not server)
+          (progn (message "eglot not connected, using imenu fallback") (fallback))
+        (jsonrpc-async-request
+         server
+         :workspace/symbol
+         `(:query ,struct-name)
+         :timeout 5
+         :success-fn
+         (lambda (symbols)
+           (let* ((sym-list (append symbols nil))
+                  (struct-kinds '(5 10 11 23)) ; Class Interface Enum Struct
+                  (def (seq-find (lambda (s)
+                                   (and (string= (plist-get s :name) struct-name)
+                                        (memq (plist-get s :kind) struct-kinds)))
+                                 sym-list)))
+             (if (not def)
+                 (progn (message "Cannot find definition of %s, falling back" struct-name) (fallback))
+               (let* ((loc   (plist-get def :location))
+                      (uri   (plist-get loc :uri))
+                      (start (plist-get (plist-get loc :range) :start))
+                      (line  (plist-get start :line))
+                      (char  (plist-get start :character)))
+                 (jsonrpc-async-request
+                  server
+                  :textDocument/references
+                  `(:textDocument (:uri ,uri)
+                    :position (:line ,line :character ,char)
+                    :context (:includeDeclaration t))
+                  :timeout 10
+                  :success-fn
+                  (lambda (refs)
+                    (let ((paths (delete-dups
+                                  (mapcar (lambda (r) (my-imenu--uri-to-path (plist-get r :uri)))
+                                          (append refs nil)))))
+                      (message "[imenu-eglot] %s: found %d reference(s) in %d file(s): %s"
+                               struct-name (length (append refs nil)) (length paths)
+                               (mapconcat #'file-name-nondirectory paths ", "))
+                      (my-imenu--render-from-files struct-name paths src-buf)))
+                  :error-fn   (lambda (err) (message "references failed: %s, falling back" err) (fallback))
+                  :timeout-fn (lambda () (message "references timed out, falling back") (fallback)))))))
+         :error-fn   (lambda (err) (message "workspace/symbol failed: %s, falling back" err) (fallback))
+         :timeout-fn (lambda () (message "workspace/symbol timed out, falling back") (fallback)))))))
+
+;;; JS/TS imenu: filter locals + annotate exports
+
+(defvar my-imenu-js-export-marker "⬡ "
+  "String prepended to exported JS/TS symbols in imenu.")
+
+(defvar-local my-imenu-js--base-fn nil
+  "Original `imenu-create-index-function' before my-imenu-js-setup ran.")
+
+(defun my-imenu-js--in-local-scope-p (pos)
+  "Return non-nil if POS is inside a function/arrow/method body.
+Uses treesit to walk up the syntax tree looking for a statement_block
+whose parent is a function-like node."
+  (when (treesit-available-p)
+    (let ((node (treesit-node-parent
+                 (treesit-node-at (if (markerp pos) (marker-position pos) pos)))))
+      (catch 'result
+        (while node
+          (when (and (equal (treesit-node-type node) "statement_block")
+                     (member (treesit-node-type (treesit-node-parent node))
+                             '("function_declaration" "function_expression"
+                               "arrow_function" "method_definition")))
+            (throw 'result t))
+          (setq node (treesit-node-parent node)))
+        nil))))
+
+(defun my-imenu-js--remove-locals (index)
+  "Recursively remove entries at function-local positions from INDEX."
+  (seq-filter
+   (lambda (item)
+     (if (imenu--subalist-p item)
+         (progn (setcdr item (my-imenu-js--remove-locals (cdr item))) t)
+       (not (my-imenu-js--in-local-scope-p (cdr item)))))
+   index))
+
+(defun my-imenu-js--exported-p (pos)
+  "Return non-nil if the line at POS begins with an export keyword."
+  (save-excursion
+    (goto-char (if (markerp pos) (marker-position pos) pos))
+    (beginning-of-line)
+    (looking-at "[ \t]*export\\b")))
+
+(defun my-imenu-js--annotate (index)
+  "Recursively prefix exported entries in INDEX with `my-imenu-js-export-marker'."
+  (mapcar
+   (lambda (item)
+     (cond
+      ((imenu--subalist-p item)
+       (cons (car item) (my-imenu-js--annotate (cdr item))))
+      ((and (consp item) (cdr item) (my-imenu-js--exported-p (cdr item)))
+       (cons (concat my-imenu-js-export-marker (car item)) (cdr item)))
+      (t item)))
+   index))
+
+(defun my-imenu-js-setup ()
+  "Wrap imenu to filter local-scope entries and annotate exports.
+Idempotent: safe to call multiple times."
+  (interactive)
+  (unless my-imenu-js--base-fn
+    (setq my-imenu-js--base-fn imenu-create-index-function))
+  (setq-local imenu-create-index-function
+              (lambda ()
+                (thread-first (funcall my-imenu-js--base-fn)
+                              my-imenu-js--remove-locals
+                              my-imenu-js--annotate))))
+
+(dolist (hook '(js-ts-mode-hook jtsx-typescript-mode-hook jtsx-tsx-mode-hook jtsx-jsx-mode-hook))
+  (add-hook hook #'my-imenu-js-setup))
 
 (provide 'init-imenu)
