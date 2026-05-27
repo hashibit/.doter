@@ -576,6 +576,13 @@
 
 
 
+(defun my/indent-bars-enable-maybe ()
+  "Enable indent-bars-mode unless the buffer uses tab indentation."
+  (unless (save-excursion
+            (goto-char (point-min))
+            (re-search-forward "^\t" nil t))
+    (indent-bars-mode 1)))
+
 (use-package indent-bars
   :custom
   (indent-bars-no-descend-lists t) ; no extra bars in continued func arg lists
@@ -591,9 +598,8 @@
   (indent-bars-highlight-current-depth '(:blend 0.5)) ; pump up the BG blend on current
   (indent-bars-display-on-blank-lines nil)
   :hook
-  (prog-mode . indent-bars-mode)
-  (indent-bars-mode . indent-bars-reset)
-  )
+  (prog-mode . my/indent-bars-enable-maybe)
+  (indent-bars-mode . indent-bars-reset))
 
 (use-package systemd
   :ensure t
