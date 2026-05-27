@@ -388,4 +388,13 @@ Idempotent: safe to call multiple times."
 (dolist (hook '(js-ts-mode-hook jtsx-typescript-mode-hook jtsx-tsx-mode-hook jtsx-jsx-mode-hook))
   (add-hook hook #'my-imenu-js-setup))
 
+;; eglot sets imenu-create-index-function buffer-locally when it connects,
+;; overwriting the wrapper above.  Re-apply after eglot takes over.
+(add-hook 'eglot-managed-mode-hook
+          (lambda ()
+            (when (and eglot--managed-mode
+                       (memq major-mode '(js-ts-mode jtsx-typescript-mode
+                                          jtsx-tsx-mode jtsx-jsx-mode)))
+              (my-imenu-js-setup))))
+
 (provide 'init-imenu)
