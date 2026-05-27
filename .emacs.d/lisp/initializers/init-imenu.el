@@ -301,33 +301,49 @@ Falls back to `my-imenu-filter-struct' if eglot is unavailable."
 (defvar my-imenu-js-export-marker "⬡ "
   "String prepended to exported JS/TS symbols in imenu.")
 
-(defvar-local my-imenu-js--base-fn nil
-  "Original `imenu-create-index-function' before my-imenu-js-setup ran.")
+(defconst my-imenu-js--scope-boundaries
+  '("program" "class_body" "statement_block" "object" "formal_parameters")
+  "Treesit node types treated as scope boundaries for imenu filtering.
+`program' and `class_body' are significant (items kept).
+`statement_block', `object', `formal_parameters' are not (items dropped).")
 
-(defun my-imenu-js--in-local-scope-p (pos)
-  "Return non-nil if POS is inside a function/arrow/method body.
-Uses treesit to walk up the syntax tree looking for a statement_block
-whose parent is a function-like node."
-  (when (treesit-available-p)
-    (let ((node (treesit-node-parent
-                 (treesit-node-at (if (markerp pos) (marker-position pos) pos)))))
-      (catch 'result
-        (while node
-          (when (and (equal (treesit-node-type node) "statement_block")
-                     (member (treesit-node-type (treesit-node-parent node))
-                             '("function_declaration" "function_expression"
-                               "arrow_function" "method_definition")))
-            (throw 'result t))
-          (setq node (treesit-node-parent node)))
-        nil))))
+(defun my-imenu-js--significant-p (pos)
+  "Return non-nil if POS is at a top-level or class-level scope.
+Walks up the treesit tree to the nearest scope boundary.
+Returns t only when the boundary is `program' or `class_body'."
+  (and (treesit-available-p)
+       (treesit-parser-list)
+       (condition-case nil
+           (let ((node (treesit-node-at (if (markerp pos) (marker-position pos) pos))))
+             (while (and node (not (member (treesit-node-type node)
+                                          my-imenu-js--scope-boundaries)))
+               (setq node (treesit-node-parent node)))
+             (member (treesit-node-type node) '("program" "class_body")))
+         (error nil))))
 
-(defun my-imenu-js--remove-locals (index)
-  "Recursively remove entries at function-local positions from INDEX."
-  (seq-filter
+(defun my-imenu-js--remove-insignificant (index)
+  "Filter INDEX: drop non-significant leaves; collapse childless groups to leaves."
+  (mapcan
    (lambda (item)
-     (if (imenu--subalist-p item)
-         (progn (setcdr item (my-imenu-js--remove-locals (cdr item))) t)
-       (not (my-imenu-js--in-local-scope-p (cdr item)))))
+     (cond
+      ((not (imenu--subalist-p item))
+       (when (my-imenu-js--significant-p (cdr item)) (list item)))
+      (t
+       (let* ((children  (cdr item))
+              (self-entry (assoc " " children))
+              (self-pos   (cdr self-entry))
+              (rest       (seq-remove (lambda (c) (equal (car c) " ")) children))
+              (filtered   (my-imenu-js--remove-insignificant rest)))
+         (cond
+          (filtered
+           ;; Real children remain: keep as group, restore " " for navigation.
+           (list (cons (car item) (if self-entry
+                                      (cons self-entry filtered)
+                                    filtered))))
+          (self-pos
+           ;; No real children but has position: collapse to a leaf entry.
+           (list (cons (car item) self-pos)))
+          (t nil))))))
    index))
 
 (defun my-imenu-js--exported-p (pos)
@@ -338,27 +354,35 @@ whose parent is a function-like node."
     (looking-at "[ \t]*export\\b")))
 
 (defun my-imenu-js--annotate (index)
-  "Recursively prefix exported entries in INDEX with `my-imenu-js-export-marker'."
-  (mapcar
+  "Recursively prefix exported entries in INDEX with `my-imenu-js-export-marker'.
+For groups, the export check uses their \" \" self-reference child (which is
+then dropped from output to avoid the blank Go-to line in imenu-list)."
+  (mapcan
    (lambda (item)
      (cond
       ((imenu--subalist-p item)
-       (cons (car item) (my-imenu-js--annotate (cdr item))))
+       (let* ((children (cdr item))
+              (self-pos (cdr (assoc " " children)))
+              (exported (and self-pos (my-imenu-js--exported-p self-pos)))
+              (name (if exported (concat my-imenu-js-export-marker (car item)) (car item))))
+         (list (cons name (my-imenu-js--annotate children)))))
+      ;; Rename " " self-reference to a visible symbol so it's navigable.
+      ((equal (car item) " ") (list (cons "·" (cdr item))))
       ((and (consp item) (cdr item) (my-imenu-js--exported-p (cdr item)))
-       (cons (concat my-imenu-js-export-marker (car item)) (cdr item)))
-      (t item)))
+       (list (cons (concat my-imenu-js-export-marker (car item)) (cdr item))))
+      (t (list item))))
    index))
 
 (defun my-imenu-js-setup ()
   "Wrap imenu to filter local-scope entries and annotate exports.
+Uses treesit-simple-imenu as base directly — eglot's :before-until advice
+on that function is preserved, so this works with or without eglot.
 Idempotent: safe to call multiple times."
   (interactive)
-  (unless my-imenu-js--base-fn
-    (setq my-imenu-js--base-fn imenu-create-index-function))
   (setq-local imenu-create-index-function
               (lambda ()
-                (thread-first (funcall my-imenu-js--base-fn)
-                              my-imenu-js--remove-locals
+                (thread-first (treesit-simple-imenu)
+                              my-imenu-js--remove-insignificant
                               my-imenu-js--annotate))))
 
 (dolist (hook '(js-ts-mode-hook jtsx-typescript-mode-hook jtsx-tsx-mode-hook jtsx-jsx-mode-hook))
