@@ -502,23 +502,30 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun my-goto-match-paren (arg)
-  "Go to the matching parenthesis if on parenthesis. Else go to the
-  opening parenthesis one level up."
+  "Go to the matching parenthesis using show-paren-data-function when
+  available (works with tree-sitter modes), else fall back to syntax table."
   (interactive "p")
-  (cond ((looking-at "\\s\(") (forward-list 1))
-    (t
-      (backward-char 1)
-      (cond ((looking-at "\\s\)")
-              (forward-char 1) (backward-list 1))
+  (let ((data (when (and (boundp 'show-paren-data-function)
+                         show-paren-data-function)
+                (funcall show-paren-data-function))))
+    (if (and data (nth 2 data) (not (nth 4 data)))
+        ;; data = (here-beg here-end there-beg there-end mismatch)
+        (if (< (point) (nth 2 data))
+            (goto-char (nth 2 data))
+          (goto-char (nth 0 data)))
+      ;; fallback: syntax-table based
+      (cond ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
         (t
-          (while (not (looking-at "\\s("))
-            (backward-char 1)
-            (cond ((looking-at "\\s\)")
-                    (message "->> )")
-                    (forward-char 1)
-                    (backward-list 1)
-                    (backward-char 1)))
-            ))))))
+          (backward-char 1)
+          (cond ((looking-at "\\s\)")
+                  (forward-char 1) (backward-list 1))
+            (t
+              (while (not (looking-at "\\s("))
+                (backward-char 1)
+                (cond ((looking-at "\\s\)")
+                        (forward-char 1)
+                        (backward-list 1)
+                        (backward-char 1)))))))))))
 
 
 (defun my-comment-region-or-line()
