@@ -1267,15 +1267,14 @@ Return trimmed stdout if success, nil otherwise."
 
 (defun my/eldoc-box-position-at-mouse (width height)
   "Position eldoc-box childframe near the mouse cursor."
-  (let* ((abs   (mouse-absolute-pixel-position))
-         (edges (frame-edges nil 'native-edges))
-         (x     (- (car abs) (nth 0 edges)))
-         (y     (- (cdr abs) (nth 1 edges)))
-         (x     (min x (- (frame-inner-width)  width)))
-         (y     (min y (- (frame-inner-height) height)))
-         (x     (max x 0))
-         (y     (max y 0)))
-    (cons x (+ y 20))))
+  (let* ((edges (window-pixel-edges))
+          (right (nth 2 edges))
+          (top (nth 1 edges))
+          (offset-right (nth 1 eldoc-box-offset))
+          (offset-top (nth 2 eldoc-box-offset))
+          (extra-left-padding 80)) ; <--- 在这里设置你想要再往左移动的像素值
+    (cons (- right width offset-right extra-left-padding) ; <--- 减去这个值就会往左移
+      (+ top offset-top))))
 
 (defun my/eldoc-box-show-type-definition ()
   "Toggle eldoc-box display of the full type definition at point.
