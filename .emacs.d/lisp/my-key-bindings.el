@@ -61,6 +61,7 @@
 
 (bind-key* (kbd "s-w") #'kill-current-buffer)
 (bind-key* (kbd "s-k") #'my-toggle-eldoc-box-help-at-point)
+(bind-key* (kbd "s-K") #'my/eldoc-box-show-type-definition)
 (bind-key* (kbd "s-t") #'+funcs/new-empty-buffer)
 
 (bind-key* (kbd "s-T") #'multi-vterm)

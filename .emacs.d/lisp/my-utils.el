@@ -510,9 +510,12 @@ If buffer-or-name is nil return current buffer's mode."
                 (funcall show-paren-data-function))))
     (if (and data (nth 2 data) (not (nth 4 data)))
         ;; data = (here-beg here-end there-beg there-end mismatch)
-        (if (< (point) (nth 2 data))
-            (goto-char (nth 2 data))
-          (goto-char (nth 0 data)))
+        (progn
+          (goto-char (nth 2 data))
+          ;; If we jumped to a close paren, move past it so the next call
+          ;; sees it as char-before and can toggle back correctly.
+          (when (eq (syntax-class (syntax-after (point))) 5)
+            (forward-char 1)))
       ;; fallback: syntax-table based
       (cond ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
         (t
@@ -525,7 +528,7 @@ If buffer-or-name is nil return current buffer's mode."
                 (cond ((looking-at "\\s\)")
                         (forward-char 1)
                         (backward-list 1)
-                        (backward-char 1)))))))))))
+                        (backward-char 1))))))))))); ))
 
 
 (defun my-comment-region-or-line()
@@ -1260,6 +1263,66 @@ Return trimmed stdout if success, nil otherwise."
         cpm-file-path t))
     (message "saved to %s" cpm-file-path)))
 
+
+
+(defun my/eldoc-box-position-at-mouse (width height)
+  "Position eldoc-box childframe near the mouse cursor."
+  (let* ((mp (mouse-pixel-position))
+         (x  (or (cadr mp) 0))
+         (y  (or (cddr mp) 0))
+         (x  (min x (- (frame-inner-width)  width)))
+         (y  (min y (- (frame-inner-height) height)))
+         (x  (max x 0))
+         (y  (max y 0)))
+    (cons x (+ y 20))))
+
+(defun my/eldoc-box-show-type-definition ()
+  "Toggle eldoc-box display of the full type definition at point.
+Uses LSP textDocument/typeDefinition to navigate past re-exports directly
+to the interface/class/type declaration, then extracts the full block."
+  (interactive)
+  (require 'eldoc-box)
+  (if (and (bound-and-true-p eldoc-box--frame)
+           (frame-live-p eldoc-box--frame)
+           (frame-visible-p eldoc-box--frame))
+      (eldoc-box-quit-frame)
+    (unless (eglot-current-server)
+      (user-error "No LSP server active"))
+    (let* ((server     (eglot--current-server-or-lose))
+           (pos-params (eglot--TextDocumentPositionParams))
+           (locs       (or (ignore-errors
+                             (eglot--request server :textDocument/typeDefinition
+                                             pos-params :cancel-on-input t))
+                           (ignore-errors
+                             (eglot--request server :textDocument/definition
+                                             pos-params :cancel-on-input t))))
+           (loc        (cond ((vectorp locs) (and (> (length locs) 0) (aref locs 0)))
+                             ((listp locs)   (car locs))
+                             (t              locs))))
+      (if (not loc)
+          (message "No definition found for symbol at point")
+        (let* ((uri   (plist-get loc :uri))
+               (start (plist-get (plist-get loc :range) :start))
+               (line  (plist-get start :line))
+               (file  (eglot-uri-to-path uri)))
+          (with-current-buffer (find-file-noselect file t)
+            (save-excursion
+              (goto-char (point-min))
+              (forward-line line)
+              (let* ((beg  (line-beginning-position))
+                     (end  (save-excursion
+                             (when (re-search-forward "{" (+ beg 600) t)
+                               (backward-char)
+                               (when (and (boundp 'show-paren-data-function)
+                                          show-paren-data-function)
+                                 (let ((data (funcall show-paren-data-function)))
+                                   (when (and data (nth 3 data) (not (nth 4 data)))
+                                     (nth 3 data)))))))
+                     (end  (or end (line-end-position 10))))
+                (font-lock-ensure beg end)
+                (let* ((text (buffer-substring beg end))
+                       (eldoc-box-position-function #'my/eldoc-box-position-at-mouse))
+                  (eldoc-box--display text))))))))))
 
 
 (provide 'my-utils)

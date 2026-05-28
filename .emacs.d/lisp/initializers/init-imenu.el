@@ -321,6 +321,18 @@ Returns t only when the boundary is `program' or `class_body'."
              (member (treesit-node-type node) '("program" "class_body")))
          (error nil))))
 
+(defun my-imenu-js--group-pos (item)
+  "Return navigation position for group ITEM.
+Handles treesit format (\" \" self-reference child) and eglot format
+(position encoded in `breadcrumb-region' text property of the name string)."
+  (or (cdr (assoc " " (cdr item)))
+      (let* ((name (car item))
+             (region (and (stringp name)
+                          (get-text-property 0 'breadcrumb-region name))))
+        (cond ((markerp region)  region)
+              ((integerp region) region)
+              ((consp region)    (car region))))))
+
 (defun my-imenu-js--remove-insignificant (index)
   "Filter INDEX: drop non-significant leaves; collapse childless groups to leaves."
   (mapcan
@@ -331,17 +343,17 @@ Returns t only when the boundary is `program' or `class_body'."
       (t
        (let* ((children  (cdr item))
               (self-entry (assoc " " children))
-              (self-pos   (cdr self-entry))
+              (self-pos   (my-imenu-js--group-pos item))
               (rest       (seq-remove (lambda (c) (equal (car c) " ")) children))
               (filtered   (my-imenu-js--remove-insignificant rest)))
          (cond
           (filtered
-           ;; Real children remain: keep as group, restore " " for navigation.
-           (list (cons (car item) (if self-entry
-                                      (cons self-entry filtered)
-                                    filtered))))
+           ;; Preserve a navigable self-entry: treesit provides (" " . pos),
+           ;; eglot does not — synthesize one from breadcrumb-region so the
+           ;; group name remains clickable and export-checkable.
+           (let ((self (or self-entry (and self-pos (cons " " self-pos)))))
+             (list (cons (car item) (if self (cons self filtered) filtered)))))
           (self-pos
-           ;; No real children but has position: collapse to a leaf entry.
            (list (cons (car item) self-pos)))
           (t nil))))))
    index))
@@ -361,11 +373,10 @@ then dropped from output to avoid the blank Go-to line in imenu-list)."
    (lambda (item)
      (cond
       ((imenu--subalist-p item)
-       (let* ((children (cdr item))
-              (self-pos (cdr (assoc " " children)))
+       (let* ((self-pos (my-imenu-js--group-pos item))
               (exported (and self-pos (my-imenu-js--exported-p self-pos)))
               (name (if exported (concat my-imenu-js-export-marker (car item)) (car item))))
-         (list (cons name (my-imenu-js--annotate children)))))
+         (list (cons name (my-imenu-js--annotate (cdr item))))))
       ;; Rename " " self-reference to a visible symbol so it's navigable.
       ((equal (car item) " ") (list (cons "·" (cdr item))))
       ((and (consp item) (cdr item) (my-imenu-js--exported-p (cdr item)))
@@ -375,13 +386,18 @@ then dropped from output to avoid the blank Go-to line in imenu-list)."
 
 (defun my-imenu-js-setup ()
   "Wrap imenu to filter local-scope entries and annotate exports.
-Uses treesit-simple-imenu as base directly — eglot's :before-until advice
-on that function is preserved, so this works with or without eglot.
+When eglot is active, delegates to `eglot-imenu' which returns hierarchical
+DocumentSymbol data (class methods nested under their class) with no local
+variables — filtering is skipped and only export annotation is applied.
+Without eglot, falls back to `treesit-simple-imenu' with local filtering.
 Idempotent: safe to call multiple times."
   (interactive)
   (setq-local imenu-create-index-function
               (lambda ()
-                (thread-first (treesit-simple-imenu)
+                (thread-first (if (and (bound-and-true-p eglot--managed-mode)
+                                       (fboundp 'eglot-imenu))
+                                  (eglot-imenu)
+                                (treesit-simple-imenu))
                               my-imenu-js--remove-insignificant
                               my-imenu-js--annotate))))
 

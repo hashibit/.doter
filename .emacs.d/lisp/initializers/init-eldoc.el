@@ -18,13 +18,16 @@
 (use-package eldoc-box
   :config
   (setq eldoc-box-clear-with-C-g t)
+  (set-face-attribute 'eldoc-box-body nil :background "#000000")
+  (setq eldoc-box-max-pixel-width 1000)
   ;; Add extra height to childframe to prevent content truncation
   (add-hook 'eldoc-box-frame-hook
     (lambda (_main-frame)
       (let ((frame (selected-frame)))
-        (set-frame-height frame
+        (set-frame-size frame
+          (+ (frame-pixel-width frame) (* 2 (frame-char-width frame)))
           (+ (frame-pixel-height frame) (frame-char-height frame))
-          nil t))))
+          t))))
   :commands (eldoc-box-help-at-point))
 
 
