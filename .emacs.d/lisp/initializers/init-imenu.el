@@ -359,10 +359,14 @@ Handles treesit format (\" \" self-reference child) and eglot format
    index))
 
 (defun my-imenu-js--exported-p (pos)
-  "Return non-nil if the line at POS begins with an export keyword."
+  "Return non-nil if POS is at (or preceded only by decorators before) an export.
+eglot's DocumentSymbol range starts at the first decorator (@...) when one
+precedes a class, so we skip decorator lines before checking for `export'."
   (save-excursion
     (goto-char (if (markerp pos) (marker-position pos) pos))
     (beginning-of-line)
+    (while (looking-at "[ \t]*@")
+      (forward-line 1))
     (looking-at "[ \t]*export\\b")))
 
 (defun my-imenu-js--annotate (index)

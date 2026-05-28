@@ -1267,13 +1267,14 @@ Return trimmed stdout if success, nil otherwise."
 
 (defun my/eldoc-box-position-at-mouse (width height)
   "Position eldoc-box childframe near the mouse cursor."
-  (let* ((mp (mouse-pixel-position))
-         (x  (or (cadr mp) 0))
-         (y  (or (cddr mp) 0))
-         (x  (min x (- (frame-inner-width)  width)))
-         (y  (min y (- (frame-inner-height) height)))
-         (x  (max x 0))
-         (y  (max y 0)))
+  (let* ((abs   (mouse-absolute-pixel-position))
+         (edges (frame-edges nil 'native-edges))
+         (x     (- (car abs) (nth 0 edges)))
+         (y     (- (cdr abs) (nth 1 edges)))
+         (x     (min x (- (frame-inner-width)  width)))
+         (y     (min y (- (frame-inner-height) height)))
+         (x     (max x 0))
+         (y     (max y 0)))
     (cons x (+ y 20))))
 
 (defun my/eldoc-box-show-type-definition ()
