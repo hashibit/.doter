@@ -3,8 +3,8 @@
 ;; Copyright (C) 2025
 
 ;; Author: Claude & User
-;; Version: 1.1.0
-;; Package-Requires: ((emacs "26.1") (posframe "1.0.0") (vterm "0.0.1"))
+;; Version: 1.2.0
+;; Package-Requires: ((emacs "26.1") (posframe "1.0.0") (eat "0.9"))
 ;; Keywords: convenience, terminal, claude
 ;; URL:
 
@@ -38,7 +38,8 @@
 (declare-function posframe-show "posframe")
 (declare-function posframe-hide "posframe")
 (declare-function posframe-poshandler-frame-center "posframe")
-(declare-function vterm-mode "vterm")
+(declare-function eat-make "eat")
+(declare-function eat-term-send-string "eat")
 
 ;; Soft dependency handling
 (defvar claude-posframe--dependencies-available nil
@@ -49,7 +50,7 @@
   (unless claude-posframe--dependencies-available
     (setq claude-posframe--dependencies-available
       (and (require 'posframe nil t)
-        (require 'vterm nil t))))
+        (require 'eat nil t))))
   claude-posframe--dependencies-available)
 
 ;;; Customization
@@ -80,7 +81,7 @@
   :group 'claude-posframe)
 
 (defcustom claude-posframe-shell "claude"
-  "Shell command to run in the vterm buffer."
+  "Shell command to run in the eat buffer."
   :type 'string
   :group 'claude-posframe)
 
@@ -109,7 +110,7 @@
   :group 'claude-posframe)
 
 (defcustom claude-posframe-working-directory nil
-  "Working directory for the claude vterm process.
+  "Working directory for the claude eat process.
 If nil, automatically detect project directory using projectile, project.el, or vc.
 Falls back to current directory if no project is detected."
   :type '(choice (const :tag "Auto-detect project directory" nil)
@@ -117,33 +118,8 @@ Falls back to current directory if no project is detected."
   :group 'claude-posframe)
 
 (defcustom claude-posframe-fix-unicode t
-  "Whether to apply Unicode character fixes to prevent line jitter.
-Claude Code uses many special Unicode characters that can cause display issues
-if your font doesn't support them. This setting helps mitigate the problem."
+  "Whether to apply Unicode character fixes to prevent line jitter."
   :type 'boolean
-  :group 'claude-posframe)
-
-(defcustom claude-posframe-buffer-multiline-output t
-  "Whether to buffer vterm output to prevent flickering on multi-line input.
-
-When non-nil, vterm output that appears to be redrawing multi-line
-input boxes will be buffered briefly and processed in a single
-batch. This prevents the flickering that can occur when Claude redraws
-its input box as it expands to multiple lines."
-  :type 'boolean
-  :group 'claude-posframe)
-
-(defcustom claude-posframe-multiline-delay 0.01
-  "Delay in seconds before processing buffered vterm output.
-
-This controls how long vterm waits to collect output before processing
-it when `claude-posframe-buffer-multiline-output' is enabled.
-The delay should be long enough to collect bursts of updates but short
-enough to not be noticeable to the user.
-
-The default value of 0.01 seconds (10ms) provides a good balance
-between reducing flickering and maintaining responsiveness."
-  :type 'number
   :group 'claude-posframe)
 
 (defconst claude-posframe-buffer-base-name "*claude-posframe*"
@@ -153,12 +129,6 @@ between reducing flickering and maintaining responsiveness."
 
 (defvar claude-posframe--parent-frame nil
   "Store the parent frame to restore focus after hiding posframe.")
-
-(defvar-local claude-posframe--multiline-buffer nil
-  "Buffer for accumulating multi-line vterm output.")
-
-(defvar-local claude-posframe--multiline-buffer-timer nil
-  "Timer for processing buffered multi-line vterm output.")
 
 ;;; Utility Functions
 
@@ -193,20 +163,16 @@ between reducing flickering and maintaining responsiveness."
 (defun claude-posframe--get-project-directory ()
   "Get the project root directory, trying multiple methods."
   (or
-    ;; Try projectile if available
     (when (and (bound-and-true-p projectile-mode)
             (fboundp 'projectile-project-root))
       (ignore-errors (projectile-project-root)))
-    ;; Try project.el if available (Emacs 25+)
     (when (fboundp 'project-current)
       (when-let ((project (project-current)))
         (if (fboundp 'project-root)
           (project-root project)
           (car (project-roots project)))))
-    ;; Try vc as fallback
     (when (fboundp 'vc-root-dir)
       (ignore-errors (vc-root-dir)))
-    ;; Fallback to current directory
     default-directory))
 
 ;;; Core Functions
@@ -219,63 +185,16 @@ between reducing flickering and maintaining responsiveness."
                    (round (* (frame-height) claude-posframe-height-ratio)))))
     (list width height)))
 
-(defun claude-posframe--set-buffer-padding(buffer)
-  (with-current-buffer buffer
-    (setq-local header-line-format " ")
-    (setq-local mode-line-format " ")
-    ;; Set buffer-local fringe for current window
-    (when (get-buffer-window (current-buffer))
-      (let* ((fringe-width 6))  ; 固定6像素的 fringe
-        (set-window-fringes (get-buffer-window (current-buffer))
-          fringe-width fringe-width)
-        (message "Claude posframe padding applied: fringe=%d" fringe-width)))
-    ;; Use face-remap-add-relative for buffer-local face changes
-    (face-remap-add-relative 'header-line
-      :height 0.8
-      :background (face-attribute 'default :background)
-      :foreground (face-attribute 'default :foreground)
-      :underline nil
-      :box nil
-      :inherit 'default)
-    (face-remap-add-relative 'mode-line-active
-      :height 0.8
-      :background (face-attribute 'default :background)
-      :foreground (face-attribute 'default :foreground)
-      :underline nil
-      :box nil
-      :inherit 'default)
-    (face-remap-add-relative 'mode-line-inactive
-      :height 0.8
-      :background (face-attribute 'default :background)
-      :foreground (face-attribute 'default :foreground)
-      :underline nil
-      :box nil
-      :inherit 'default)))
-
-(defun claude-posframe-debug-padding ()
-  "Debug function to check padding settings."
-  (interactive)
-  (let ((buffer (get-buffer (claude-posframe--get-buffer-name))))
-    (if buffer
-      (with-current-buffer buffer
-        (message "Header line: %s | Mode line: %s | Fringes: %s | Face remaps: %d"
-          header-line-format
-          mode-line-format
-          (window-fringes (get-buffer-window buffer))
-          (length face-remapping-alist)))
-      (message "Claude posframe buffer not found"))))
-
 ;;;###autoload
 (defun claude-posframe-show (&optional switches)
   "Show the claude posframe."
   (interactive)
   (unless (claude-posframe--check-dependencies)
-    (user-error "Required dependencies (posframe, vterm) are not available"))
+    (user-error "Required dependencies (posframe, eat) are not available"))
   (let* ((buffer (claude-posframe--get-buffer switches))
           (dimensions (claude-posframe--calculate-dimensions))
           (width (car dimensions))
           (height (cadr dimensions)))
-    ;; Store current frame for focus restoration
     (setq claude-posframe--parent-frame (selected-frame))
     (posframe-show buffer
       :position (point)
@@ -286,13 +205,7 @@ between reducing flickering and maintaining responsiveness."
       :border-width claude-posframe-border-width
       :border-color claude-posframe-border-color
       :poshandler (claude-posframe--get-position-handler)
-      ;; :respect-header-line t
-      ;; :respect-mode-line t
       :accept-focus t)
-    ;; Apply padding after posframe is fully displayed
-    ;; (run-with-timer 0.01 nil
-    ;;   (lambda ()
-    ;;     (claude-posframe--set-buffer-padding buffer)))
     (when claude-posframe-auto-scroll
       (claude-posframe--ensure-scroll))
     (run-hooks 'claude-posframe-show-hook)))
@@ -300,26 +213,16 @@ between reducing flickering and maintaining responsiveness."
 ;;; Display and Interaction Functions
 
 (defun claude-posframe--ensure-scroll ()
-  "Ensure the claude posframe scrolls to bottom.
-If vterm is in copy mode, exit to insert mode."
+  "Ensure the claude posframe scrolls to bottom."
   (let ((buffer (get-buffer (claude-posframe--get-buffer-name))))
-    (when (and buffer
-            (buffer-live-p buffer)
-            (claude-posframe-visible-p))
-      (let ((windows (get-buffer-window-list buffer nil t)))
-        (when windows
-          (with-current-buffer buffer
-            ;; Exit vterm copy mode if active
-            (when (and (bound-and-true-p vterm-copy-mode)
-                    vterm-copy-mode)
-              (vterm-copy-mode -1))
-            (goto-char (point-max)))
-          (dolist (win windows)
-            (when (window-live-p win)
-              (with-selected-window win
-                (goto-char (point-max))
-                (recenter -1)))))))))
-
+    (when (and buffer (buffer-live-p buffer) (claude-posframe-visible-p))
+      (with-current-buffer buffer
+        (goto-char (point-max)))
+      (dolist (win (get-buffer-window-list buffer nil t))
+        (when (window-live-p win)
+          (with-selected-window win
+            (goto-char (point-max))
+            (recenter -1)))))))
 
 
 ;;;###autoload
@@ -329,7 +232,6 @@ If vterm is in copy mode, exit to insert mode."
   (let ((buffer (get-buffer (claude-posframe--get-buffer-name))))
     (when (and buffer (buffer-live-p buffer))
       (posframe-hide buffer)
-      ;; Restore focus to parent frame
       (when (and claude-posframe--parent-frame
               (frame-live-p claude-posframe--parent-frame))
         (select-frame-set-input-focus claude-posframe--parent-frame))
@@ -355,7 +257,7 @@ If vterm is in copy mode, exit to insert mode."
 With prefix argument ARG (C-u), start Claude with bypassed permissions."
   (interactive "P")
   (let ((switches (when (equal arg '(4))
-                    '("--permission-mode bypassPermissions"))))
+                    '("--permission-mode" "bypassPermissions"))))
     (if (claude-posframe-visible-p)
       (claude-posframe-hide)
       (claude-posframe-show switches))))
@@ -392,8 +294,7 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
 
 ;;;###autoload
 (define-minor-mode claude-posframe-mode
-  "Minor mode for Claude posframe integration.
-Provides convenient keybindings for interacting with Claude in a posframe."
+  "Minor mode for Claude posframe integration."
   :init-value nil
   :lighter " Claude"
   :keymap claude-posframe-mode-map
@@ -408,11 +309,9 @@ Provides convenient keybindings for interacting with Claude in a posframe."
   (lambda () (claude-posframe-mode 1))
   :group 'claude-posframe)
 
-;; Legacy function for backward compatibility
 ;;;###autoload
 (defun claude-posframe-setup-keybindings ()
-  "Set up default keybindings for claude-posframe.
-This function is deprecated. Use `claude-posframe-mode' instead."
+  "Deprecated. Use `claude-posframe-mode' instead."
   (interactive)
   (claude-posframe-mode 1)
   (message "Claude posframe keybindings set up (consider using claude-posframe-mode instead)"))
@@ -420,178 +319,85 @@ This function is deprecated. Use `claude-posframe-mode' instead."
 ;;; Buffer Management
 
 (defun claude-posframe--get-buffer (&optional switches)
-  "Get or create the claude vterm buffer using standard Elisp patterns."
+  "Get or create the claude eat buffer."
   (unless (claude-posframe--check-dependencies)
-    (user-error "Required dependencies (posframe, vterm) are not available"))
+    (user-error "Required dependencies (posframe, eat) are not available"))
 
   (let* ((buffer-name (claude-posframe--get-buffer-name))
           (buffer (get-buffer buffer-name))
           (current-dir (or claude-posframe-working-directory
                          (claude-posframe--get-project-directory)
-                         (expand-file-name "~")))
-          (calling-dir default-directory))
+                         (expand-file-name "~"))))
 
-    ;; Check if existing buffer has live process
-    (when (and buffer
-            (buffer-live-p buffer)
-            (with-current-buffer buffer
-              (and (boundp 'vterm--process)
-                vterm--process
-                (not (process-live-p vterm--process)))))
-      ;; Process is dead, kill the buffer to start fresh
+    ;; Kill buffer if process is dead
+    (when (and buffer (buffer-live-p buffer)
+               (not (process-live-p (get-buffer-process buffer))))
       (kill-buffer buffer)
       (setq buffer nil))
 
-    ;; Create buffer if it doesn't exist or was killed
     (unless buffer
-      (setq buffer (generate-new-buffer buffer-name))
-      (with-current-buffer buffer
-        ;; Set the working directory before initializing vterm
-        (let ((vterm-shell (if switches
-                             (concat claude-posframe-shell " " (mapconcat #'identity switches " "))
-                             claude-posframe-shell))
-               (default-directory current-dir))
-          (message "vterm-shell: %s" vterm-shell)
-          (condition-case err
-            (progn
-              (vterm-mode)
-              ;; Top padding will be set up via vterm-mode-hook
-              ;; Configure vterm for better Unicode support
+      (let ((default-directory current-dir))
+        (condition-case err
+          (progn
+            (setq buffer (apply #'eat-make buffer-name claude-posframe-shell nil switches))
+            (with-current-buffer buffer
               (when claude-posframe-fix-unicode
-                (setq-local vterm-max-scrollback 5000)
-                (setq-local vterm-buffer-name-string nil)
-                ;; Replace problematic Unicode characters with ASCII alternatives
                 (claude-posframe--setup-unicode-fixes))
-              ;; Set up Claude Code specific key bindings
-              (claude-posframe--setup-vterm-keybindings)
-              ;; Set up multi-line buffering to prevent flickering
-              (advice-add 'vterm--filter :around #'claude-posframe--multiline-buffer-filter)
-              ;; Set up process sentinel for cleanup
-              (when (and (boundp 'vterm--process) vterm--process)
-                (set-process-sentinel vterm--process #'claude-posframe--process-sentinel)))
-            (error
-              (kill-buffer buffer)
-              (signal (car err) (cdr err)))))))
+              (claude-posframe--setup-eat-keybindings)
+              (when (get-buffer-process buffer)
+                (set-process-sentinel (get-buffer-process buffer)
+                  #'claude-posframe--process-sentinel))))
+          (error
+           (when (get-buffer buffer-name) (kill-buffer buffer-name))
+           (signal (car err) (cdr err))))))
     buffer))
 
 (defun claude-posframe--setup-unicode-fixes ()
-  "Configure Unicode character replacements for Claude Code compatibility.
-Replace problematic Unicode characters that cause line jitter with ASCII alternatives.
-This fix come from: https://github.com/anthropics/claude-code/issues/247#issuecomment-3058405139"
+  "Configure Unicode character replacements for Claude Code compatibility."
   (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
     (dolist (pair
-              '((#x273B . ?*) ; ✻ TEARDROP-SPOKED ASTERISK
-                 (#x273D . ?*) ; ✽ HEAVY TEARDROP-SPOKED ASTERISK
-                 (#x2722 . ?+) ; ✢ FOUR TEARDROP-SPOKED ASTERISK
-                 (#x2736 . ?+) ; ✶ SIX-POINTED BLACK STAR
-                 (#x2733 . ?*) ; ✳ EIGHT SPOKED ASTERISK
-                 (#x2699 . ?*) ; ⚙ GEAR (sometimes used by Claude)
-                 (#x1F4DD . ?*) ; 📝 MEMO (sometimes used by Claude)
-                 (#x1F916 . ?*) ; 🤖 ROBOT FACE (sometimes used by Claude)
-                 (#x00A0 . ? ) ; NO-BREAK SPACE -> regular space
-                 ))
+              '((#x273B . ?*) (#x273D . ?*) (#x2722 . ?+) (#x2736 . ?+) (#x2733 . ?*)
+                (#x2699 . ?*) (#x1F4DD . ?*) (#x1F916 . ?*) (#x00A0 . ? )))
       (aset tbl (car pair) (vector (cdr pair))))))
 
-;;; vterm Integration
+;;; eat Integration
 
-(defun claude-posframe--vterm-send-return ()
-  "Send return key to vterm."
+(defun claude-posframe--eat-send-return ()
+  "Send return key to eat terminal."
   (interactive)
-  (vterm-send-key ""))
+  (eat-term-send-string eat-terminal "\r"))
 
-(defun claude-posframe--vterm-send-alt-return ()
-  "Send Alt+Return to vterm."
+(defun claude-posframe--eat-send-alt-return ()
+  "Send Alt+Return to eat terminal."
   (interactive)
-  (vterm-send-key "" nil t))
+  (eat-term-send-string eat-terminal "\e\r"))
 
-(defun claude-posframe--setup-vterm-keybindings ()
-  "Set up Claude Code specific key bindings in vterm buffer."
-  (let ((map (current-local-map)))
-    (when map
-      (define-key map (kbd "<return>") #'claude-posframe--vterm-send-return)
-      (define-key map (kbd "<M-return>") #'claude-posframe--vterm-send-alt-return))))
+(defun claude-posframe--setup-eat-keybindings ()
+  "Set up Claude Code specific key bindings in eat buffer."
+  (use-local-map (copy-keymap eat-semi-char-mode-map))
+  (local-set-key (kbd "<return>") #'claude-posframe--eat-send-return)
+  (local-set-key (kbd "<M-return>") #'claude-posframe--eat-send-alt-return))
 
 (defun claude-posframe--process-sentinel (process event)
-  "Handle vterm process termination."
+  "Handle eat process termination."
   (when (memq (process-status process) '(exit signal))
     (let ((buffer (process-buffer process)))
       (when (buffer-live-p buffer)
-        ;; Hide posframe if this buffer is being displayed
         (posframe-hide buffer)
-        ;; Notify user but don't block with interactive prompt in sentinel
         (message "Claude process exited in buffer %s" (buffer-name buffer))
-        ;; Auto-kill buffer after a delay to avoid blocking
         (run-with-timer 0.1 nil
           (lambda (buf)
             (when (buffer-live-p buf)
               (kill-buffer buf)))
           buffer)))))
 
-;; copied from https://github.com/stevemolitor/claude-code.el/blob/main/claude-code.el#L1534  func claude-code--vterm-multiline-buffer-filter
-(defun claude-posframe--multiline-buffer-filter (orig-fun process input)
-  "Buffer vterm output when it appears to be redrawing multi-line input.
-This prevents flickering when Claude redraws its input box as it expands
-to multiple lines. We detect this by looking for escape sequences that
-indicate cursor positioning and line clearing operations.
-
-ORIG-FUN is the original vterm--filter function.
-PROCESS is the vterm process.
-INPUT is the terminal output string."
-  (if (or (not claude-posframe-buffer-multiline-output)
-        (not (string-match-p "\\*claude-posframe" (buffer-name (process-buffer process)))))
-    ;; Feature disabled or not a Claude posframe buffer, pass through normally
-    (funcall orig-fun process input)
-    (with-current-buffer (process-buffer process)
-      ;; Check if this looks like multi-line input box redraw
-      ;; Common patterns when redrawing multi-line input:
-      ;; - ESC[K (clear to end of line)
-      ;; - ESC[<n>;<m>H (cursor positioning)
-      ;; - ESC[<n>A/B/C/D (cursor movement)
-      ;; - Multiple of these in sequence
-      (let ((has-clear-line (string-match-p "\\033\\[K" input))
-             (has-cursor-pos (string-match-p "\\033\\[[0-9]+;[0-9]+H" input))
-             (has-cursor-move (string-match-p "\\033\\[[0-9]*[ABCD]" input))
-             (escape-count (cl-count ?\033 input)))
-
-        ;; If we see multiple escape sequences that look like redrawing,
-        ;; or we're already buffering, add to buffer
-        (if (or (and (>= escape-count 3)
-                  (or has-clear-line has-cursor-pos has-cursor-move))
-              claude-posframe--multiline-buffer)
-          (progn
-            ;; Add to buffer
-            (setq claude-posframe--multiline-buffer
-              (concat claude-posframe--multiline-buffer input))
-            ;; Cancel existing timer
-            (when claude-posframe--multiline-buffer-timer
-              (cancel-timer claude-posframe--multiline-buffer-timer))
-            ;; Set timer with configurable delay
-            (setq claude-posframe--multiline-buffer-timer
-              (run-at-time claude-posframe-multiline-delay nil
-                (lambda (buf)
-                  (when (buffer-live-p buf)
-                    (with-current-buffer buf
-                      (when claude-posframe--multiline-buffer
-                        (let ((inhibit-redisplay t)
-                               (data claude-posframe--multiline-buffer))
-                          ;; Clear buffer first to prevent recursion
-                          (setq claude-posframe--multiline-buffer nil
-                            claude-posframe--multiline-buffer-timer nil)
-                          ;; Process all buffered data at once
-                          (funcall orig-fun
-                            (get-buffer-process buf)
-                            data))))))
-                (current-buffer))))
-          ;; Not multi-line redraw, process normally
-          (funcall orig-fun process input))))))
-
 ;;; Send Commands to Claude
 
 (defun claude-posframe-do-send-command (text)
-  "Send TEXT to the claude vterm buffer."
+  "Send TEXT to the claude eat buffer."
   (let ((buffer (claude-posframe--get-buffer)))
     (with-current-buffer buffer
-      (vterm-send-string text))
+      (eat-term-send-string eat-terminal text))
     (claude-posframe-show)))
 
 (defun claude-posframe-send-region (beg end)
@@ -601,8 +407,7 @@ INPUT is the terminal output string."
          (selection (buffer-substring-no-properties beg end)))
     (if file-name
       (claude-posframe-do-send-command (format "@%s:%d-%d\n" file-name (line-number-at-pos beg) (line-number-at-pos end)))
-      (claude-posframe-do-send-command (format "%s\n" selection)))
-    ))
+      (claude-posframe-do-send-command (format "%s\n" selection)))))
 
 
 (defun claude-posframe--get-buffer-file-name ()
@@ -621,32 +426,23 @@ INPUT is the terminal output string."
 ;;; Cleanup and Initialization
 (defun claude-posframe--cleanup ()
   "Clean up claude posframe resources."
-  ;; Remove vterm filter advice
-  (advice-remove 'vterm--filter #'claude-posframe--multiline-buffer-filter)
-  ;; Clean up all project-specific buffers
   (dolist (buffer (buffer-list))
     (when (string-match-p "\*claude-posframe:" (buffer-name buffer))
       (when (buffer-live-p buffer)
         (posframe-hide buffer)
         (kill-buffer buffer))))
-  ;; Also clean up the default buffer if it exists
   (let ((buffer (get-buffer claude-posframe-buffer-base-name)))
     (when (and buffer (buffer-live-p buffer))
       (posframe-hide buffer)
       (kill-buffer buffer))))
 
-;; Register cleanup on Emacs exit
 (add-hook 'kill-emacs-hook #'claude-posframe--cleanup)
 
-;; Auto-enable mode for programming modes (optional)
 ;;;###autoload
 (defun claude-posframe-auto-enable ()
   "Automatically enable claude-posframe-mode for programming modes."
   (when (derived-mode-p 'prog-mode 'text-mode)
     (claude-posframe-mode 1)))
-
-;; Uncomment the following line to auto-enable for programming modes:
-;; (add-hook 'after-change-major-mode-hook #'claude-posframe-auto-enable)
 
 (provide 'claude-posframe)
 ;;; claude-posframe.el ends here

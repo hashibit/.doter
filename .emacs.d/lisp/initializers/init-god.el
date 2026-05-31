@@ -55,7 +55,7 @@
                          "*Compile"
                          "*EGLOT"
                          "*terminal*"
-                         "*vterm"
+                         "*eat"
                          "*claude"
                          "*emacs"
                          "*eshell*"
@@ -156,7 +156,7 @@
 
 (setq should-not-display-dark-background-modes (list
                                                  "dired-mode"
-                                                 "vterm-mode"
+                                                 "eat-mode"
                                                  "eldoc-box-mode"
                                                  "xwidget-webkit-mode"
                                                  "minibuffer-mode"

@@ -18,7 +18,7 @@ It returns the buffer (for elisp programing)."
   (interactive)
   (let (($buf (generate-new-buffer "untitled")))
     (switch-to-buffer $buf)
-    (funcall 'text-mode)
+    (funcall 'fundamental-mode)
     (setq buffer-offer-save t)
     $buf))
 

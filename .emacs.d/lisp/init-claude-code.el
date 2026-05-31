@@ -29,9 +29,8 @@
        (side . right)
        (window-width . 90)
        (window-parameters . ((no-other-window . nil)))))
-  (setq claude-code-terminal-backend 'vterm)
-  (setq claude-code-vterm-buffer-multiline-output nil)
-  (setq claude-code-sandbox-program "claude")
+  (setq claude-code-terminal-backend 'eat)
+(setq claude-code-sandbox-program "claude")
   (setq claude-code-newline-keybinding-style 'newline-on-alt-return)
 
   (defun my-send-command-with-buffer-or-region-context (cmd &optional arg)
@@ -53,20 +52,21 @@ With prefix ARG, switch to Claude buffer after sending."
               (claude-buffer (claude-code--do-send-command cmd-with-context)))
         (unless (get-buffer-window claude-buffer) (claude-code-toggle)))))
 
-  (defun my-select-claude-window ()
-    "Select the claude-code window if visible."
-    (let ((claude-window (seq-find (lambda (win)
-                                     (string-match-p "^\\*claude:" (buffer-name (window-buffer win))))
-                           (window-list))))
-      (when claude-window (select-window claude-window)
-        (when (eq claude-code-terminal-backend 'vterm)
-          (vterm-clear-scrollback)
-          (vterm-clear)))))
+  ;; (defun my-select-claude-window ()
+  ;;   "Select the claude-code window if visible."
+  ;;   (let ((claude-window (seq-find (lambda (win)
+  ;;                                    (string-match-p "^\\*claude:" (buffer-name (window-buffer win))))
+  ;;                          (window-list))))
+  ;;     (when claude-window
+  ;;       (select-window claude-window)
+  ;;       (when (eq claude-code-terminal-backend 'eat)
+  ;;         (goto-char (point-max))))))
 
   (advice-add 'claude-code-send-region :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
   (advice-add 'my-send-command-with-buffer-or-region-context :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
 
-  (advice-add 'claude-code-toggle :after #'my-select-claude-window)
+  (setq claude-code-toggle-auto-select t)
+  ;; (advice-add 'claude-code-toggle :after #'my-select-claude-window)
   )
 
 

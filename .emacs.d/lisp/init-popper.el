@@ -28,7 +28,7 @@
                   "^\\*shell.*\\*$"  shell-mode  ;shell as a popup
                   "^\\*term.*\\*$"   term-mode   ;term as a popup
                   flymake-diagnostics-buffer-mode
-                  "^\\*vterm.*\\*$"  vterm-mode  ;vterm as a popup
+                  "^\\*eat.*\\*$"    eat-mode    ;eat as a popup
                   )))
   (popper-mode +1)
   (popper-echo-mode +1)

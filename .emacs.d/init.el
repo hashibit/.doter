@@ -521,7 +521,7 @@
 ;;; ===================================================================
 
 ;;; Terminal Emulator
-(require 'init-vterm)
+(require 'init-eat)
 
 ;;; Special Mode Tools
 (require 'init-markdown)
