@@ -60,6 +60,7 @@ With prefix ARG, switch to Claude buffer after sending."
                            (window-list))))
       (when claude-window (select-window claude-window)
         (when (eq claude-code-terminal-backend 'vterm)
+          (vterm-clear-scrollback)
           (vterm-clear)))))
 
   (advice-add 'claude-code-send-region :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
