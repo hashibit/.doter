@@ -745,7 +745,7 @@
   '(whitespace-tab ((t (:foreground unspecified :background unspecified :inherit shadow))))
   '(whitespace-trailing ((t (:foreground unspecified :background unspecified :inherit shadow))))
   '(widget-field ((t (:background "#C6B8AD" :foreground "black"))))
-  '(window-divider ((t (:inherit shadow))))
+  '(window-divider ((t (:foreground "#2d3748" :inherit shadow))))
   '(window-divider-first-pixel ((t (:inherit shadow))))
   '(window-divider-last-pixel ((t (:inherit shadow))))
   '(yas-field-highlight-face ((t (:inherit my-highlight-font-words-face)))))

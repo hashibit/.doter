@@ -41,6 +41,13 @@
             (when (and window (not (one-window-p)))
               (delete-window window))))
         nil t)))
+  (add-hook 'vterm-mode-hook
+    (lambda ()
+      (add-hook 'window-configuration-change-hook
+                (lambda ()
+                  (when (derived-mode-p 'vterm-mode)
+                    (goto-char (point-max))))
+                nil t)))
 
   (define-prefix-command 'my-vterm-ctrl-s-key)
   (define-key vterm-mode-map (kbd "C-s") 'my-vterm-ctrl-s-key)

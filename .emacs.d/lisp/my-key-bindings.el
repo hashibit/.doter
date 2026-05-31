@@ -69,7 +69,16 @@
 (bind-key* (kbd "s-o") #'claude-code-toggle)
 
 
-(bind-key* (kbd "s-c") #'kill-ring-save)
+
+(defun my-s-c()
+      (interactive)
+      (if (derived-mode-p 'vterm-mode)
+          (progn
+            (unless vterm-copy-mode (vterm-copy-mode 1))
+            (my-vterm-copy-and-exit))
+        (call-interactively #'kill-ring-save)))
+
+(bind-key* (kbd "s-c") #'my-s-c)
 (bind-key* (kbd "s-v") #'yank)
 (bind-key* (kbd "s-a") #'mark-whole-buffer)
 
