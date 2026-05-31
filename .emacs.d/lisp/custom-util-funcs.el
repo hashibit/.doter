@@ -17,6 +17,7 @@ New buffer will be named “untitled” or “untitled<2>”, “untitled<3>”,
 It returns the buffer (for elisp programing)."
   (interactive)
   (let (($buf (generate-new-buffer "untitled")))
+    (message "new buffer created: %s" (buffer-name $buf))
     (switch-to-buffer $buf)
     (funcall 'fundamental-mode)
     (setq buffer-offer-save t)

@@ -26,6 +26,9 @@
 
   (setq eat-kill-buffer-on-exit t)
   (setq eat-scroll-to-bottom-on-output nil)
+  ;; Batch terminal output updates to reduce redisplay overhead
+  (setq eat-minimum-latency 0.008
+        eat-maximum-latency 0.033)
 
   (add-to-list 'display-buffer-alist
     '("^\\*eat" (display-buffer-same-window)))
@@ -47,7 +50,6 @@
       (refresh-current-mode)))
 
   (add-hook 'eat-mode-hook #'my-toggle-legendary-buffer-for-eat)
-  (add-hook 'window-buffer-change-functions #'my-toggle-legendary-buffer-for-eat)
 
   ;; Semi-char mode keybindings
   (setq eat-enable-yank-to-terminal t)
@@ -73,6 +75,27 @@
 
   (add-hook 'eat-mode-hook #'diego--eat-font-setup)
   (add-hook 'eat-mode-hook (lambda () (face-remap-add-relative 'nobreak-space :underline nil)))
+
+  ;; Override eat ANSI colors to match ansi-color-names-vector (dark theme readable)
+  (with-eval-after-load 'eat
+    (custom-set-faces
+      '(eat-term-color-0  ((t (:foreground "black"))))
+      '(eat-term-color-1  ((t (:foreground "tomato"))))
+      '(eat-term-color-2  ((t (:foreground "PaleGreen2"))))
+      '(eat-term-color-3  ((t (:foreground "gold1"))))
+      '(eat-term-color-4  ((t (:foreground "DeepSkyBlue1"))))
+      '(eat-term-color-5  ((t (:foreground "MediumOrchid1"))))
+      '(eat-term-color-6  ((t (:foreground "cyan"))))
+      '(eat-term-color-7  ((t (:foreground "white"))))
+      ;; Bright variants (8-15)
+      '(eat-term-color-8  ((t (:foreground "gray50"))))
+      '(eat-term-color-9  ((t (:foreground "tomato"))))
+      '(eat-term-color-10 ((t (:foreground "PaleGreen2"))))
+      '(eat-term-color-11 ((t (:foreground "gold1"))))
+      '(eat-term-color-12 ((t (:foreground "DeepSkyBlue1"))))
+      '(eat-term-color-13 ((t (:foreground "MediumOrchid1"))))
+      '(eat-term-color-14 ((t (:foreground "cyan"))))
+      '(eat-term-color-15 ((t (:foreground "white"))))))
 
   )
 
