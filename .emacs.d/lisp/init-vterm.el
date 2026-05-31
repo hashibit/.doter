@@ -21,7 +21,17 @@
         (copy-region-as-kill (line-beginning-position) (line-end-position)))))
 
   (setq vterm-timer-delay 0.001
-    vterm-max-scrollback 10000)
+    vterm-max-scrollback 10000
+    vterm-kill-buffer-on-exit t)
+
+  (add-hook 'vterm-mode-hook
+    (lambda ()
+      (add-hook 'kill-buffer-hook
+        (lambda ()
+          (let ((window (get-buffer-window (current-buffer))))
+            (when (and window (not (one-window-p)))
+              (delete-window window))))
+        nil t)))
 
   (define-prefix-command 'my-vterm-ctrl-s-key)
   (define-key vterm-mode-map (kbd "C-s") 'my-vterm-ctrl-s-key)
@@ -35,6 +45,7 @@
 
   (define-key vterm-copy-mode-map [return] #'vterm-copy-mode)
   (define-key vterm-copy-mode-map "q" #'vterm-copy-mode)
+  (define-key vterm-copy-mode-map (kbd "<escape>") #'vterm-copy-mode)
 
   (define-key vterm-mode-map (kbd "C-s [")  #'vterm-copy-mode)
   (define-key vterm-copy-mode-map (kbd "y")  #'vterm-copy-mode-done)
@@ -75,6 +86,7 @@
         (aset tbl (car pair) (vector (cdr pair))))))
 
   (add-hook 'vterm-mode-hook #'diego--vterm-font-setup)
+  (add-hook 'vterm-mode-hook (lambda () (face-remap-add-relative 'nobreak-space :underline nil)))
   )
 
 (use-package multi-vterm

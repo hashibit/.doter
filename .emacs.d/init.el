@@ -159,11 +159,15 @@
 (menu-bar-mode -1)
 (smerge-mode -1)
 (tab-bar-mode 1)
+(server-start)
 
 (defun my-tab-name-formatter (tab index)
   (let* ((current (eq (car tab) 'current-tab))
           (buffer (and current (window-buffer)))
-          (name (if buffer (buffer-name buffer) (alist-get 'name tab)))
+          (explicit-name (alist-get 'explicit-name tab))
+          (name (if (and buffer (not explicit-name))
+                    (buffer-name buffer)
+                  (alist-get 'name tab)))
           (modified (and buffer (buffer-modified-p buffer))))
     (propertize
       (format " %s %s " name (if modified "*" ""))
@@ -382,6 +386,10 @@
 (column-number-mode 1)
 (global-auto-revert-mode 1)
 (superword-mode 1)  ; treats underscores as part of words
+
+(setq switch-to-prev-buffer-skip
+  (lambda (window buffer bury-or-kill)
+    (string-match-p "\\`\\*" (buffer-name buffer))))
 
 ;;; Text and Programming Modes
 (require 'init-whitespace-mode)
@@ -733,7 +741,7 @@
   '(treemacs-git-untracked-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
   '(treemacs-root-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))
   '(treemacs-tags-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(vertical-border ((t (:inherit shadow :foreground "#1a202c"))))
+  '(vertical-border ((t (:inherit shadow :foreground "#2d3748"))))
   '(whitespace-tab ((t (:foreground unspecified :background unspecified :inherit shadow))))
   '(whitespace-trailing ((t (:foreground unspecified :background unspecified :inherit shadow))))
   '(widget-field ((t (:background "#C6B8AD" :foreground "black"))))
