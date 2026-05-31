@@ -131,6 +131,14 @@
   (advice-add 'pixel-scroll-precision :after #'me/vterm-toggle-scroll))
 
 
+(advice-add 'set-window-vscroll :after
+(defun me/vterm-toggle-scroll (&rest _)
+    (when (eq major-mode 'vterm-mode)
+      (if (> (window-end) (buffer-size))
+          (when vterm-copy-mode (vterm-copy-mode-done nil))
+        (vterm-copy-mode 1)))))
+
+
 (provide 'init-vterm)
 
 ;;; init-vterm.el ends here

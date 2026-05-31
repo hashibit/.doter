@@ -71,12 +71,20 @@
 
 
 (defun my-s-c()
-      (interactive)
-      (if (derived-mode-p 'vterm-mode)
-          (progn
-            (unless vterm-copy-mode (vterm-copy-mode 1))
-            (my-vterm-copy-and-exit))
-        (call-interactively #'kill-ring-save)))
+  (interactive)
+  (if (derived-mode-p 'vterm-mode)
+    (progn
+      (unless vterm-copy-mode
+        (if (use-region-p)
+          (let ((start (region-beginning))
+                 (end (region-end)))
+            (vterm-copy-mode 1)
+            (goto-char start)
+            (set-mark-command nil)
+            (goto-char end))
+          (vterm-copy-mode 1)))
+      (my-vterm-copy-and-exit))
+    (call-interactively #'kill-ring-save)))
 
 (bind-key* (kbd "s-c") #'my-s-c)
 (bind-key* (kbd "s-v") #'yank)

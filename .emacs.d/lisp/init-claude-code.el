@@ -58,10 +58,13 @@ With prefix ARG, switch to Claude buffer after sending."
     (let ((claude-window (seq-find (lambda (win)
                                      (string-match-p "^\\*claude:" (buffer-name (window-buffer win))))
                            (window-list))))
-      (when claude-window (select-window claude-window))))
+      (when claude-window (select-window claude-window)
+        (when (eq claude-code-terminal-backend 'vterm)
+          (vterm-clear)))))
 
   (advice-add 'claude-code-send-region :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
   (advice-add 'my-send-command-with-buffer-or-region-context :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
+
   (advice-add 'claude-code-toggle :after #'my-select-claude-window)
   )
 
