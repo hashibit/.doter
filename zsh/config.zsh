@@ -390,4 +390,7 @@ fi
     export EMACS_TERM_BUFFER_NAME=$(emacsclient --eval "(buffer-name (window-buffer (selected-window)))" 2>/dev/null | tr -d '"')
     export COLORTERM=truecolor
     export FORCE_COLOR=3
-  fi
+fi
+
+
+

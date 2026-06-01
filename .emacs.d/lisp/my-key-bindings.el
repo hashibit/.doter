@@ -30,6 +30,7 @@
 ;; so we change to C-c o
 (bind-key* (kbd "C-c o") #'my-occur)
 (bind-key* (kbd "C-c C-s") #'my-rg-at-point)
+(bind-key* (kbd "C-c C-,") #'tab-rename)
 
 (bind-key* (kbd "s-j") #'my-toggle-vterm)
 (bind-key* (kbd "C-'") #'my-toggle-vterm)
@@ -89,7 +90,7 @@
 (defun my-s-v ()
   (interactive)
   (if (derived-mode-p 'eat-mode)
-      (eat-yank)
+    (eat-yank)
     (yank)))
 (bind-key* (kbd "s-v") #'my-s-v)
 (bind-key* (kbd "s-a") #'mark-whole-buffer)
@@ -305,7 +306,7 @@
     (define-key god-local-mode-map (kbd "C-x C-p") #'my-mc/mark-previous-like-this)
 
     (define-key god-local-mode-map (kbd "SPC SPC") #'my-mark-ring)
-    (define-key god-local-mode-map (kbd "SPC b") #'counsel-switch-buffer)
+    (define-key god-local-mode-map (kbd "SPC b") #'my-project-switch-to-buffer)
     (define-key god-local-mode-map (kbd "SPC C-b") #'projectile-switch-to-buffer)
     (define-key god-local-mode-map (kbd "SPC B") #'ibuffer)
     ;; (define-key god-local-mode-map (kbd "SPC B") #'helm-buffers-list)
@@ -362,7 +363,7 @@
     (define-key god-local-mode-map (kbd "q q") #'my-quit-other-window)  ;; delete other window
 
     (define-key god-local-mode-map (kbd ", w") #'my-save-buffer)
-    (define-key god-local-mode-map (kbd ", b") #'flip-buffer-to-window)
+    (define-key god-local-mode-map (kbd ", b") #'my-flip-buffer-to-window-in-project)
     (define-key god-local-mode-map (kbd ", B") #'(lambda () (interactive) (flip-buffer-to-window t)))
 
     (define-key god-local-mode-map (kbd ", s") #'emacs-surround)

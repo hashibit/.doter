@@ -62,10 +62,24 @@
   (keymap-unset eat-semi-char-mode-map "M-`")
   (keymap-unset eat-semi-char-mode-map "M-:")
 
+  ;; In emacs-mode (semi-char off): C-s-c switches back and sends ctrl-c
+  (define-key eat-mode-map (kbd "C-s-c")
+    (lambda () (interactive)
+      (eat-switch-to-semi-char-mode)
+      (my-eat-send-ctrl-c)))
+
   ;; Return to bottom when switching back from emacs-mode to semi-char-mode
   (advice-add 'eat-switch-to-semi-char-mode :after
     (lambda (&rest _)
       (goto-char (point-max))))
+
+  ;; When switching to a tab, scroll eat buffer to bottom
+  (defun my-eat-scroll-to-bottom-on-tab-switch (&rest _)
+    (let ((buf (window-buffer (selected-window))))
+      (with-current-buffer buf
+        (when (and (derived-mode-p 'eat-mode) eat--semi-char-mode)
+          (goto-char (point-max))))))
+  (advice-add 'tab-bar-select-tab :after #'my-eat-scroll-to-bottom-on-tab-switch)
 
   ;; Font/display setup for Claude Code flickering fix
   (defun diego--eat-font-setup ()

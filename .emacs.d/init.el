@@ -626,16 +626,18 @@
 ;;; Custom Key Functions
 (defun my-escape-key ()
   (interactive)
-  (my-init-god-mode-for-new-buffer)  ;; ESC always forces god-mode on
-  (when isearch-mode (isearch-abort) (isearch-abort))  ;; must double abort
-  (when (my-god-this-is-normal-editor-buffer (buffer-name))
-    (when (bound-and-true-p multiple-cursors-mode) (multiple-cursors-mode 0))
-    (when (bound-and-true-p iedit-mode) (iedit-done)) ;; exit iedit mode, if needed.
-    (ignore-errors (company-cancel))
-    (ignore-errors (remove-all-highlight)))
-  (ignore-errors (flymake-start)) ;; but show errors
-  (keyboard-quit)
-  (keyboard-quit-context+)) ;; from custom-util-funcs.el
+  (if (derived-mode-p 'eat-mode)
+      (eat-self-input 1 ?\e)
+    (my-init-god-mode-for-new-buffer)  ;; ESC always forces god-mode on
+    (when isearch-mode (isearch-abort) (isearch-abort))  ;; must double abort
+    (when (my-god-this-is-normal-editor-buffer (buffer-name))
+      (when (bound-and-true-p multiple-cursors-mode) (multiple-cursors-mode 0))
+      (when (bound-and-true-p iedit-mode) (iedit-done)) ;; exit iedit mode, if needed.
+      (ignore-errors (company-cancel))
+      (ignore-errors (remove-all-highlight)))
+    (ignore-errors (flymake-start)) ;; but show errors
+    (keyboard-quit)
+    (keyboard-quit-context+))) ;; from custom-util-funcs.el
 
 ;;; Global Key Bindings
 (bind-key (kbd "<escape>") #'my-escape-key)

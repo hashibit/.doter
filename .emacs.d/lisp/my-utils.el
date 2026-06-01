@@ -153,8 +153,21 @@
   (let ((recent (if include-special-buffer
                   (nth 1 (buffer-list))
                   (my-most-recent-normal-buffer))))
-    (switch-to-buffer (or recent (other-buffer (current-buffer)))))
-  )
+    (switch-to-buffer (or recent (other-buffer (current-buffer))))))
+
+(defun my-flip-buffer-to-window-in-project ()
+  "Flip to the most recently visited normal buffer in the current project."
+  (interactive)
+  (let* ((proj (project-current))
+         (proj-bufs (when proj (project-buffers proj)))
+         (bufs (seq-filter
+                (lambda (buf)
+                  (and (my-god-this-is-normal-editor-buffer (buffer-name buf))
+                       (not (eq buf (current-buffer)))
+                       (or (null proj) (memq buf proj-bufs))))
+                (buffer-list)))
+         (recent (car bufs)))
+    (switch-to-buffer (or recent (other-buffer (current-buffer))))))
 
 
 
@@ -897,10 +910,11 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-break-to-multiple-lines(arg)
   (interactive "*P")
-  (sp-split-sexp arg)
-  (insert-char ?+)
-  (newline-and-indent)
-  )
+  (if (derived-mode-p 'eat-mode)
+      (claude-code--eat-send-alt-return)
+    (sp-split-sexp arg)
+    (insert-char ?+)
+    (newline-and-indent)))
 
 
 
@@ -1322,6 +1336,23 @@ to the interface/class/type declaration, then extracts the full block."
                 (let* ((text (buffer-substring beg end))
                        (eldoc-box-position-function #'my/eldoc-box-position-at-mouse))
                   (eldoc-box--display text))))))))))
+
+
+
+(defun my-project-switch-to-buffer ()
+    (interactive)
+    (let* ((bufs (if (project-current)
+                     (mapcar #'buffer-name (project-buffers (project-current)))
+                   (mapcar #'buffer-name (buffer-list))))
+           (filtered (seq-filter
+                      (lambda (name)
+                        (not (seq-some (lambda (pat) (string-match-p pat name))
+                                       ivy-ignore-buffers)))
+                      bufs)))
+      (ivy-read "Buffer: " filtered
+                :action #'switch-to-buffer
+                :caller 'my-project-switch-to-buffer)))
+
 
 
 (provide 'my-utils)
