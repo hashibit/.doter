@@ -1,12 +1,16 @@
 ;;; Emacs Lisp Mode Hook
 (defun my-elisp-mode-hook ()
-  (setq lisp-indent-offset 2))
+  (setq lisp-indent-offset 2)
+  (my-enable-symbol-overlay-highlight)
+  )
 
 (add-hook 'emacs-lisp-mode-hook 'my-elisp-mode-hook)
 (add-hook 'lisp-mode-hook 'my-elisp-mode-hook)
 
 (use-package lispy
-  :hook (emacs-lisp-mode . lispy-mode)
+  :hook
+  (emacs-lisp-mode . lispy-mode)
+  (lisp-mode . lispy-mode)
   :config
   (setcdr lispy-goto-mode-map nil)
   (setcdr lispy-other-mode-map nil)

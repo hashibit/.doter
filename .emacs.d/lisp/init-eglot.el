@@ -133,6 +133,15 @@
             (setq current (locate-dominating-file parent "Cargo.toml")))))
       found))
 
+  (defun my-eglot-mpls-open-preview ()
+    "调用 mpls 语言服务器打开 Markdown 预览"
+    (interactive)
+    (if (eglot-current-server)
+        ;; 向 mpls 发送打开预览的自定义命令
+        (eglot-execute (eglot-current-server)
+                       '(:command "open-preview" :arguments []))
+      (message "Eglot 未在该缓冲区启动")))
+
   (defun my-rust-project-try (dir)
     "Project backend that returns the topmost Cargo workspace root."
     (when (and dir
@@ -183,8 +192,10 @@
   ;; Swift-specific server configuration
   (add-to-list 'eglot-server-programs '(swift-mode . ("xcrun" "sourcekit-lsp")))
 
-  ;; Markdown-specific server configuration
-  (add-to-list 'eglot-server-programs '(markdown-mode . ("mpls" "--tabs")))
+  ;; Markdown-specific server configuration, donot auto preview, manually preview with C-c C-p
+  (add-to-list 'eglot-server-programs '(markdown-mode . ("mpls" "--tabs" "--no-auto")))
+  (with-eval-after-load 'markdown-mode
+    (define-key markdown-mode-map (kbd "C-c C-p") #'my-eglot-mpls-open-preview))
 
   ;; Python server configuration
   (add-to-list 'eglot-server-programs '(python-ts-mode . ("basedpyright-langserver" "--stdio")))

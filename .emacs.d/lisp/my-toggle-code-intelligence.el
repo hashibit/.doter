@@ -62,7 +62,8 @@
 
 (defun my-enable-symbol-overlay-highlight ()
   (interactive)
-  (when (derived-mode-p 'emacs-lisp-mode)
+  (when (or (derived-mode-p 'emacs-lisp-mode)
+            (derived-mode-p 'lisp-mode))
     (ignore-errors
       (symbol-overlay-mode 1))))
 
