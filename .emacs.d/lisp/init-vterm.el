@@ -97,6 +97,7 @@
                    (#x2722 . ?+) ; ✢ FOUR TEARDROP-SPOKED ASTERISK
                    (#x2736 . ?+) ; ✶ SIX-POINTED BLACK STAR
                    (#x2733 . ?*) ; ✳ EIGHT SPOKED ASTERISK
+                   (#x23FA . ?*) ; ⏺ RECORD BUTTON
                    ))
         (aset tbl (car pair) (vector (cdr pair))))))
 

@@ -154,10 +154,6 @@ directory is ROOT (no cd outside a project)."
                  eat-floating-buffer-name))
          (buffer (get-buffer-create name)))
     (with-current-buffer buffer
-      ;; Depth 0: close the frame before eat's own `eat--kill-buffer'
-      ;; (depth 90) kills the buffer — otherwise the child frame would
-      ;; be left on screen showing a replacement buffer.
-      (add-hook 'eat-exit-hook #'eat-floating--on-process-exit 0 t)
       ;; `eat-exec' does not set the buffer mode, so enable it first.
       (unless (and (derived-mode-p 'eat-mode)
                    (get-buffer-process buffer))
@@ -166,7 +162,26 @@ directory is ROOT (no cd outside a project)."
           ;; `default-directory', so this cd applies on first open.
           (setq-local default-directory root))
         (eat-mode)
-        (eat-exec buffer name eat-floating-shell-command nil nil)))
+        (eat-exec buffer name eat-floating-shell-command nil nil))
+
+      ;; Buffer-local setup goes after `eat-mode': the major mode's
+      ;; `kill-all-local-variables' would wipe it otherwise.
+
+      ;; Depth 0: close the frame before eat's own `eat--kill-buffer'
+      ;; (depth 90) kills the buffer — otherwise the child frame would
+      ;; be left on screen showing a replacement buffer.
+      (add-hook 'eat-exit-hook #'eat-floating--on-process-exit 0 t)
+
+      ;; Replace special emoji with plain text.
+      (let ((tbl (or buffer-display-table
+                     (setq buffer-display-table (make-display-table)))))
+        (dolist (pair '((#x273B . ?*)        ; ✻ TEARDROP-SPOKED ASTERISK
+                        (#x273D . ?*)        ; ✽ HEAVY TEARDROP-SPOKED ASTERISK
+                        (#x2722 . ?+)        ; ✢ FOUR TEARDROP-SPOKED ASTERISK
+                        (#x2736 . ?+)        ; ✶ SIX-POINTED BLACK STAR
+                        (#x2733 . ?*)        ; ✳ EIGHT SPOKED ASTERISK
+                        (#x23FA . ?\u25CF))) ; ⏺ RECORD BUTTON
+          (aset tbl (car pair) (vector (cdr pair))))))
     buffer))
 
 (defun eat-floating--show-buffer (buffer &optional focus)
