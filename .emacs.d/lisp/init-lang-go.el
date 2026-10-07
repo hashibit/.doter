@@ -37,7 +37,7 @@
   (defun my-go-before-save ()
     (when (derived-mode-p 'go-ts-mode)
       ;; 整理 imports（作用于整个 buffer）
-      (eglot-code-action-organize-imports (point-min) (point-max))
+      (ignore-errors (eglot-code-action-organize-imports (point-min) (point-max)))
       ;; 或者模拟交互式, 自动传point (call-interactively #'eglot-code-action-organize-imports)
       (eglot-format-buffer)))
 
