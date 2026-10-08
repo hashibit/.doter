@@ -1,31 +1,26 @@
-(setq mc/list-file (expand-file-name "~/.emacs.d/.local/.mc-lists.el"))
-(setq mc/match-cursor-style nil)
+;;; -*- lexical-binding: t -*-
+(declare-function er/mark-symbol "expand-region")
+(declare-function mc/mark-next-like-this-word "mc-mark-more")
+(declare-function mc/mark-previous-like-this-word "mc-mark-more")
+(declare-function mc/skip-to-next-like-this "mc-mark-more")
+(declare-function mc/cursor-end "multiple-cursors-core")
+(declare-function mc/cycle "mc-cycle-cursors")
+(declare-function mc/first-fake-cursor-after "mc-cycle-cursors")
+(declare-function mc/last-fake-cursor-before "mc-cycle-cursors")
+(declare-function mc/furthest-cursor-before-point "multiple-cursors-core")
+(declare-function mc/furthest-cursor-after-point "multiple-cursors-core")
+(declare-function mc/all-fake-cursors "multiple-cursors-core")
+(eval-when-compile (require 'multiple-cursors-core nil t))
+
 (use-package multiple-cursors
   :ensure t
-  :config
+  :custom
+  (mc/list-file (locate-user-emacs-file ".local/.mc-lists.el"))
+  (mc/match-cursor-style nil)
   :bind (("C-x C-n" . mc/mark-next-like-this) ("C-c C-SPC" . mc/edit-lines))
   :init
   (add-hook 'multiple-cursors-mode-enabled-hook #'my-disable-code-intelligence)
   (add-hook 'multiple-cursors-mode-disabled-hook #'my-enable-code-intelligence))
-
-(use-package multiple-cursors-core
-  :bind
-  (:map
-    mc/keymap
-    ("TAB" . 'mc/cycle-forward)
-    ("<backtab>" . 'mc/cycle-backward)
-    ("RET" . 'newline)
-    ;; give RET back to the newline function, use C-c C-c to exit
-    ("C-c C-c" . 'multiple-cursors-mode)
-    ;; exit
-    ("C-x C-n" . 'my-mc/mark-next-like-this)
-    ("C-x C-p" . 'my-mc/mark-previous-like-this)
-    ("C-x C-a" . 'mc/mark-all-like-this)
-    ("C-x C-s" . 'my-mc/skip-to-next-like-this)
-    ("C-x C-r" . 'mc/skip-to-previous-like-this)
-    ("C-x C-x" . 'mc/unmark-next-like-this)
-    ("C-x C-d" . 'mc/unmark-previous-like-this)))
-
 
 (defun my-mc/mark-next-like-this (arg)
   (interactive "p")
@@ -63,7 +58,7 @@
     "We're already at the last cursor"))
 
 
-(defun my-mc/skip-to-next-like-this (arg)
+(defun my-mc/skip-to-next-like-this (_arg)
   (interactive "p")
   ;; copy from multiple-cursors-20211112.2223/mc-cycle-cursors.el
   (mc/cycle
@@ -76,5 +71,24 @@
     (mc/furthest-cursor-after-point)
     (mc/first-fake-cursor-after (point-min))
     "We're already at the last cursor."))
+
+
+(use-package multiple-cursors-core
+  :bind
+  (:map
+    mc/keymap
+    ("TAB" . mc/cycle-forward)
+    ("<backtab>" . mc/cycle-backward)
+    ("RET" . newline)
+    ;; give RET back to the newline function, use C-c C-c to exit
+    ("C-c C-c" . multiple-cursors-mode)
+    ;; exit
+    ("C-x C-n" . my-mc/mark-next-like-this)
+    ("C-x C-p" . my-mc/mark-previous-like-this)
+    ("C-x C-a" . mc/mark-all-like-this)
+    ("C-x C-s" . my-mc/skip-to-next-like-this)
+    ("C-x C-r" . mc/skip-to-previous-like-this)
+    ("C-x C-x" . mc/unmark-next-like-this)
+    ("C-x C-d" . mc/unmark-previous-like-this)))
 
 (provide 'init-multi-cursor)

@@ -1,5 +1,11 @@
+;;; -*- lexical-binding: t -*-
+
+(declare-function centaur-tabs-view "centaur-tabs-functions")
+(declare-function centaur-tabs-current-tabset "centaur-tabs-functions")
+(declare-function centaur-tabs-buffer-select-tab "centaur-tabs-functions")
+
 (defun my-centaur-select-tab (n)
-  (interactive)
+  (interactive "p")
   (let* ((tabs-view (centaur-tabs-view (centaur-tabs-current-tabset t)))
           (tabs-count (length tabs-view))
           (n
@@ -14,22 +20,24 @@
 
 (defmacro def-centaur-select-tab-funs (numbers)
   `(progn
-     ,@(cl-loop
-          for number in numbers collect
-          `
-          (defun ,(read (format "my-centaur-select-tab-%s" number)) ()
-            (interactive)
-            (my-centaur-select-tab ,number)))))
+     ,@(mapcar
+        (lambda (number)
+          `(defun ,(intern (format "my-centaur-select-tab-%s" number)) ()
+             (interactive)
+             (my-centaur-select-tab ,number)))
+        numbers)))
 
 (def-centaur-select-tab-funs (1 2 3 4 5 6 7 8 9))
 
 
 ;; have to set here!
-(setq centaur-tabs-bar-height 22)
-(setq centaur-tabs-height 22)
+(defvar centaur-tabs-bar-height 22)
+(defvar centaur-tabs-height 22)
+(setq centaur-tabs-bar-height 22
+      centaur-tabs-height 22)
 
 (use-package centaur-tabs
-  :demand
+  :demand t
   :init (setq centaur-tabs-enable-key-bindings t)
   :config
   (setq
@@ -79,11 +87,10 @@
   ;;   ;; only one group
   ;;   (list "GROUP"))
   ;; ;; disable some mouse event
-  (define-key centaur-tabs-mode-map (vector centaur-tabs-display-line 'mouse-3   ) 'ignore)
-  (define-key centaur-tabs-mode-map (vector centaur-tabs-display-line 'mouse-5   ) 'ignore)
-  (define-key centaur-tabs-mode-map (vector centaur-tabs-display-line 'mouse-4   ) 'ignore)
-  (define-key centaur-tabs-mode-map (vector centaur-tabs-display-line 'wheel-down) 'ignore)
-  (define-key centaur-tabs-mode-map (vector centaur-tabs-display-line 'wheel-up  ) 'ignore)
+  (dolist (event '("mouse-3" "mouse-5" "mouse-4" "wheel-down" "wheel-up"))
+    (keymap-set centaur-tabs-mode-map
+                (format "<%s> <%s>" centaur-tabs-display-line event)
+                #'ignore))
   :bind
   ("s-h" . centaur-tabs-backward)
   ("s-l" . centaur-tabs-forward)

@@ -1,11 +1,8 @@
+;;; -*- lexical-binding: t -*-
+(require 'seq)
+
 (defun find-overlays-specifying (prop pos)
-  (let ((overlays (overlays-at pos)) found)
-    (while overlays
-      (let ((overlay (car overlays)))
-        (if (overlay-get overlay prop)
-          (setq found (cons overlay found))))
-      (setq overlays (cdr overlays)))
-    found))
+  (seq-filter (lambda (ov) (overlay-get ov prop)) (overlays-at pos)))
 
 (defun highlight-current-line ()
   (interactive)
@@ -36,9 +33,9 @@
 
 
 
-(global-set-key [f8] 'highlight-or-dehighlight-line)
+(keymap-global-set "<f8>" #'highlight-or-dehighlight-line)
 
-(global-set-key [f9] 'remove-all-highlight)
+(keymap-global-set "<f9>" #'remove-all-highlight)
 
 
 ;; (setq unhighlight-timer nil)

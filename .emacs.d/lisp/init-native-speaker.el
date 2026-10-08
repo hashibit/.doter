@@ -15,6 +15,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (defvar ns/socket-path "/tmp/nativespeaker.sock"
   "Path to the NativeSpeaker Unix domain socket.")
 
@@ -45,7 +47,7 @@ Reads the PID file and probes it with `kill -0'."
 
 ;;; ── Connection ────────────────────────────────────────────────────────────────
 
-(defun ns/connect ()
+(cl-defun ns/connect ()
   "Open a Unix-domain socket connection to NativeSpeaker.
 Returns t on success, nil on failure.  Never blocks — if the server is not
 alive the call fails immediately via the PID check."
@@ -154,7 +156,7 @@ alive the call fails immediately via the PID check."
               (lambda ()
                 (when (buffer-live-p buf)
                   (with-current-buffer buf
-                    (ns/eat-flush))))))))
+                    (ns/eat-flush)))))))))
 
 (defun ns/on-post-prompt (&rest _)
   "Record input-start and clear HUD when a new shell prompt appears."
@@ -184,9 +186,15 @@ Capped at 1000 chars.  NativeSpeaker extracts the last sentence internally."
 (defun ns/text-flush ()
   (ns/send-if-changed (string-trim (ns/text-current))))
 
+(defun ns/text-flush-in-buffer (buf)
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (ns/text-flush))))
+
 (defun ns/text-on-change (&rest _)
   (when (timerp ns/text-debounce-timer) (cancel-timer ns/text-debounce-timer))
-  (setq ns/text-debounce-timer (run-with-timer 0.5 nil #'ns/text-flush)))
+  (setq ns/text-debounce-timer
+        (run-with-timer 0.5 nil #'ns/text-flush-in-buffer (current-buffer))))
 
 ;;;###autoload
 (define-minor-mode native-speaker-mode

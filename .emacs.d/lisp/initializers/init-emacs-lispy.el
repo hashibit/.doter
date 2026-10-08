@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;;; Emacs Lisp Mode Hook
 (defun my-elisp-mode-hook ()
   (setq lisp-indent-offset 2)
@@ -23,10 +24,10 @@
   (setcdr lispy-mode-map-paredit nil)
   (setcdr lispy-mode-map-parinfer nil)
   (setcdr lispy-mode-map-c-digits nil)
-  (define-key lispy-mode-map (kbd "M") 'special-lispy-alt-multiline)
-  (define-key lispy-mode-map (kbd "s-m") 'special-lispy-alt-multiline)
-  (define-key lispy-mode-map (kbd "s-j") 'lispy-down)
-  (define-key lispy-mode-map (kbd "s-k") 'lispy-up))
+  (keymap-set lispy-mode-map "M" #'special-lispy-alt-multiline)
+  (keymap-set lispy-mode-map "s-m" #'special-lispy-alt-multiline)
+  (keymap-set lispy-mode-map "s-j" #'lispy-down)
+  (keymap-set lispy-mode-map "s-k" #'lispy-up))
 
 
 (use-package elisp-autofmt

@@ -1,4 +1,4 @@
-
+;;; -*- lexical-binding: t -*-
 
 ;;
 ;; remove wave and add PROPER underline
@@ -9,9 +9,9 @@
 (defun theme-tweaks-flatten-underline+ (face)
   "Change underline style of FACE from wave to straight line."
   (let ((underline (face-attribute face :underline)))
-    (when (eq (plist-get underline :style) 'wave)
-      (plist-put underline :style 'line)
-      (set-face-attribute face nil :underline underline))))
+    (when (and (consp underline) (eq (plist-get underline :style) 'wave))
+      (set-face-attribute face nil
+                          :underline (plist-put (copy-sequence underline) :style 'line)))))
 
 ;; initial flattening
 (mapatoms
@@ -96,7 +96,7 @@
     (set-display-table-slot display-table 5 ?│)
     (set-window-display-table (selected-window) display-table)))
 
-(add-hook 'window-configuration-change-hook 'my-change-window-divider)
+(add-hook 'window-configuration-change-hook #'my-change-window-divider)
 
 
 
@@ -155,6 +155,7 @@
 
 
 
+(defvar doom-modeline-buffer-file-name-style)
 (unless (display-graphic-p)
   ;; (setq doom-modeline-height 1)
   ;; (setq doom-modeline-icon nil)

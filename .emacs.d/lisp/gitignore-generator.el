@@ -51,9 +51,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
 # Build
 dist/
@@ -138,7 +135,6 @@ htmlcov/
 
      (rust . "# Build output
 target/
-Cargo.lock
 
 # Editor
 .vscode/
@@ -294,15 +290,21 @@ yarn-debug.log*
 ;; 主要功能函数
 ;; =============================================================================
 
+(declare-function projectile-project-root "projectile")
+
+(defun my/gitignore--project-root ()
+  "当前项目根目录：projectile > project.el > `default-directory'."
+  (or (and (fboundp 'projectile-project-root)
+           (ignore-errors (projectile-project-root)))
+      (when-let* ((project (project-current)))
+        (project-root project))
+      default-directory))
+
 (defun my/generate-gitignore (&optional project-type)
   "在当前项目根目录生成 .gitignore 文件。
 如果 PROJECT-TYPE 为 nil，则提示用户选择项目类型。"
   (interactive)
-  (let* ((project-root (or (when (fboundp 'projectile-project-root)
-                             (projectile-project-root))
-                         (when (fboundp 'project-root)
-                           (project-root (project-current)))
-                         default-directory))
+  (let* ((project-root (my/gitignore--project-root))
           (gitignore-path (expand-file-name ".gitignore" project-root))
           (type (or project-type
                   (intern (completing-read
@@ -329,11 +331,7 @@ yarn-debug.log*
 (defun my/add-to-gitignore (pattern)
   "添加一个模式到当前项目的 .gitignore 文件。"
   (interactive "s添加到 .gitignore: ")
-  (let* ((project-root (or (when (fboundp 'projectile-project-root)
-                             (projectile-project-root))
-                         (when (fboundp 'project-root)
-                           (project-root (project-current)))
-                         default-directory))
+  (let* ((project-root (my/gitignore--project-root))
           (gitignore-path (expand-file-name ".gitignore" project-root)))
 
     (if (not (file-exists-p gitignore-path))
@@ -351,11 +349,7 @@ yarn-debug.log*
                                "选择要追加的模板: "
                                (mapcar #'car my/gitignore-templates)
                                nil t))))
-  (let* ((project-root (or (when (fboundp 'projectile-project-root)
-                             (projectile-project-root))
-                         (when (fboundp 'project-root)
-                           (project-root (project-current)))
-                         default-directory))
+  (let* ((project-root (my/gitignore--project-root))
           (gitignore-path (expand-file-name ".gitignore" project-root))
           (template (alist-get type my/gitignore-templates)))
 
@@ -376,11 +370,7 @@ yarn-debug.log*
 
 (defun my/detect-project-type ()
   "自动检测当前项目类型。"
-  (let ((project-root (or (when (fboundp 'projectile-project-root)
-                            (projectile-project-root))
-                        (when (fboundp 'project-root)
-                          (project-root (project-current)))
-                        default-directory)))
+  (let ((project-root (my/gitignore--project-root)))
     (cond
       ((or (file-exists-p (expand-file-name "project.clj" project-root))
          (file-exists-p (expand-file-name "deps.edn" project-root))

@@ -15,8 +15,24 @@
           ("\\.cljs\\'" . clojure-ts-mode)
           ("\\.cljc\\'" . clojure-ts-mode)
           ("\\.edn\\'" . clojure-ts-mode))
+  :custom
+  ;; clojure-ts-mode 自己的缩进设置 (没有 align-arguments 对应项，用默认 semantic)
+  (clojure-ts-align-forms-automatically t)
+  (clojure-ts-semantic-indent-rules
+   '(("defroutes" . ((:inner 0)))
+     ("GET" . ((:block 2)))
+     ("POST" . ((:block 2)))
+     ("PUT" . ((:block 2)))
+     ("DELETE" . ((:block 2)))
+     ("HEAD" . ((:block 2)))
+     ("ANY" . ((:block 2)))
+     ("OPTIONS" . ((:block 2)))
+     ("PATCH" . ((:block 2)))
+     ("rfn" . ((:block 2)))
+     ("let-routes" . ((:block 1)))
+     ("context" . ((:block 2)))))
   :config
-  ;; 缩进设置
+  ;; 缩进设置 (clojure-mode，cider 等仍会用到)
   (setq clojure-indent-style 'align-arguments
     clojure-align-forms-automatically t)
 
@@ -51,10 +67,12 @@
           ("C-c C-d" . cider-doc)
           ("C-c C-j" . cider-javadoc)
           ("C-c M-." . cider-find-var)
-          ("C-c M-," . cider-pop-back)
-          ("C-c C-t n" . cider-test-run-ns-tests)
-          ("C-c C-t p" . cider-test-run-project-tests)
-          ("C-c C-t t" . cider-test-run-test))
+          ("C-c M-," . cider-pop-back))
+  ;; cider 2.0 起 C-c C-t 是 cider-test-menu (transient)，其中 n/p/t 即下面三个命令；
+  ;; 再绑定 C-c C-t n 会报 "non-prefix key" 并中断 cider 加载
+  ;; ("C-c C-t n" . cider-test-run-ns-tests)
+  ;; ("C-c C-t p" . cider-test-run-project-tests)
+  ;; ("C-c C-t t" . cider-test-run-test)
   :init
   :custom
   ;; 不要操作我的 xref，我用 EGLOT 管理
@@ -69,19 +87,17 @@
     cider-repl-history-size 1000
     cider-repl-history-file (expand-file-name "cider-history" user-emacs-directory))
 
-  ;; 自动保存 REPL 历史
-  (add-hook 'kill-emacs-hook
-    (lambda ()
-      (when (and (fboundp 'cider-repl-history-save)
-              cider-repl-history-file)
-        (cider-repl-history-save))))
+  ;; 自动保存 REPL 历史：设置了 cider-repl-history-file 后 cider 自己会在
+  ;; kill-buffer-hook / kill-emacs-hook 中保存 (cider-repl-history-save-all)
+  ;; (add-hook 'kill-emacs-hook
+  ;;   (lambda ()
+  ;;     (when (and (fboundp 'cider-repl-history-save)
+  ;;             cider-repl-history-file)
+  ;;       (cider-repl-history-save))))
 
   ;; 不要操作我的 M-. 那是 xref 的快捷键
-  (add-hook 'cider-mode-hook
-    (lambda()
-      (define-key cider-mode-map (kbd "M-.") nil)
-      (define-key cider-mode-map (kbd "M-,") nil)
-      ))
+  (keymap-set cider-mode-map "M-." nil)
+  (keymap-set cider-mode-map "M-," nil)
 
   ;; 补全配置
   (setq cider-prompt-for-symbol nil
@@ -107,7 +123,7 @@
     nrepl-hide-special-buffers t)
 
   ;; 格式化代码快捷键
-  (define-key cider-mode-map (kbd "C-c C-f") #'cider-format-buffer)
+  (keymap-set cider-mode-map "C-c C-f" #'cider-format-buffer)
   )
 
 ;; =============================================================================
@@ -119,8 +135,8 @@
   :after cider
   :config
   ;; REPL 快捷键
-  (define-key cider-repl-mode-map (kbd "C-c C-o") #'cider-repl-clear-buffer)
-  (define-key cider-repl-mode-map (kbd "C-c M-o") #'cider-repl-clear-output))
+  (keymap-set cider-repl-mode-map "C-c C-o" #'cider-repl-clear-buffer)
+  (keymap-set cider-repl-mode-map "C-c M-o" #'cider-repl-clear-output))
 
 ;; =============================================================================
 ;; clj-kondo 集成
@@ -146,8 +162,8 @@
 
 ;; 快捷键绑定
 (with-eval-after-load 'cider
-  (define-key cider-mode-map (kbd "C-c C-r r") #'my/cider-repl-reset)
-  (define-key cider-mode-map (kbd "C-c C-r f") #'my/cider-refresh)
+  (keymap-set cider-mode-map "C-c C-r r" #'my/cider-repl-reset)
+  (keymap-set cider-mode-map "C-c C-r f" #'my/cider-refresh)
   )
 
 (provide 'init-lang-clojure)

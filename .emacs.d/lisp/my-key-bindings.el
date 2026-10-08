@@ -1,30 +1,34 @@
+;;; -*- lexical-binding: t -*-
 (require 'my-utils)
 
+(defvar dired-mode-map)
+(defvar rectangle-mark-mode-map)
+(defvar god-local-mode-map)
+(defvar projectile-mode-map)
 
 
-(eval-after-load "dired"
-  '(progn
-     (define-prefix-command 'my-god-mode-leader-key-1)
-     (define-key dired-mode-map (kbd "SPC") 'my-god-mode-leader-key-1)
-     (define-key dired-mode-map (kbd "SPC b") #'switch-to-buffer)
-     (define-key dired-mode-map (kbd "SPC B") #'ibuffer)
-     ;; (define-key dired-mode-map (kbd "SPC k") #'kill-this-buffer)
-     (define-key dired-mode-map (kbd "SPC k") #'kill-current-buffer)
-     (define-key dired-mode-map (kbd "SPC K") #'my-only-current-buffer)
-     (define-key dired-mode-map (kbd "SPC M-k") #'my-only-current-buffer-include-specials)
-     (define-key dired-mode-map (kbd "SPC f") #'my-projectile-find-file)
-     (define-key dired-mode-map (kbd "SPC p") #'my-find-files)
-     (define-key dired-mode-map (kbd "SPC m") #'deadgrep)
-     (define-key dired-mode-map (kbd "SPC L") #'display-line-numbers-mode)
-     (define-key dired-mode-map (kbd "SPC T") #'toggle-truncate-lines)
-     (define-key dired-mode-map (kbd "SPC x") #'delete-window)   ;; delete this window
-     ))
+
+(with-eval-after-load 'dired
+  (define-prefix-command 'my-god-mode-leader-key-1)
+  (keymap-set dired-mode-map "SPC" 'my-god-mode-leader-key-1)
+  (keymap-set dired-mode-map "SPC b" #'switch-to-buffer)
+  (keymap-set dired-mode-map "SPC B" #'ibuffer)
+  ;; (keymap-set dired-mode-map "SPC k" #'kill-this-buffer)
+  (keymap-set dired-mode-map "SPC k" #'kill-current-buffer)
+  (keymap-set dired-mode-map "SPC K" #'my-only-current-buffer)
+  (keymap-set dired-mode-map "SPC M-k" #'my-only-current-buffer-include-specials)
+  (keymap-set dired-mode-map "SPC f" #'my-projectile-find-file)
+  (keymap-set dired-mode-map "SPC p" #'my-find-files)
+  (keymap-set dired-mode-map "SPC m" #'deadgrep)
+  (keymap-set dired-mode-map "SPC L" #'display-line-numbers-mode)
+  (keymap-set dired-mode-map "SPC T" #'toggle-truncate-lines)
+  (keymap-set dired-mode-map "SPC x" #'delete-window))   ;; delete this window
 
 
 
 (bind-key* (kbd "C-c C-v") #'rectangle-mark-mode)
 (with-eval-after-load 'rect
-  (define-key rectangle-mark-mode-map (kbd "i") 'string-rectangle))
+  (keymap-set rectangle-mark-mode-map "i" 'string-rectangle))
 
 ;; C-c C-o is preserved by ivy-occur, which is usefull when you want save ivy results to a temp buffer.
 ;; so we change to C-c o
@@ -44,7 +48,7 @@
 (bind-key* (kbd "C-h C-w") #'ignore)
 (bind-key* (kbd "C-x C-b") #'ibuffer)
 (bind-key* (kbd "C-x C-f") #'my-find-files)
-(bind-key* (kbd "C-x C-k") #'kill-this-buffer)
+(bind-key* (kbd "C-x C-k") #'kill-current-buffer)
 (bind-key* (kbd "C-c b") #'switch-to-buffer)
 (bind-key* (kbd "C-M-b") #'switch-to-buffer)
 
@@ -66,9 +70,11 @@
 (bind-key* (kbd "s-n") #'+funcs/new-empty-buffer)
 (bind-key* (kbd "s-N") #'make-frame)
 
-(bind-key* (kbd "s-T") (lambda () (interactive)
+(defun my-eat-new-in-same-window ()
+  (interactive)
   (let ((display-buffer-overriding-action '(display-buffer-same-window)))
-    (eat nil t))))
+    (eat nil t)))
+(bind-key* (kbd "s-T") #'my-eat-new-in-same-window)
 
 (defun my-split-window-right ()
   (interactive)
@@ -106,25 +112,26 @@
 
 (bind-key* (kbd "s-h") #'tab-previous)
 (bind-key* (kbd "s-l") #'tab-next)
-(bind-key* (kbd "s-1") #'(lambda() (interactive) (tab-bar-select-tab 1)))
-(bind-key* (kbd "s-2") #'(lambda() (interactive) (tab-bar-select-tab 2)))
-(bind-key* (kbd "s-3") #'(lambda() (interactive) (tab-bar-select-tab 3)))
-(bind-key* (kbd "s-4") #'(lambda() (interactive) (tab-bar-select-tab 4)))
-(bind-key* (kbd "s-5") #'(lambda() (interactive) (tab-bar-select-tab 5)))
-(bind-key* (kbd "s-6") #'(lambda() (interactive) (tab-bar-select-tab 6)))
-(bind-key* (kbd "s-7") #'(lambda() (interactive) (tab-bar-select-tab 7)))
-(bind-key* (kbd "s-8") #'(lambda() (interactive) (tab-bar-select-tab 8)))
-(bind-key* (kbd "s-9") #'(lambda() (interactive) (tab-bar-select-tab (length (tab-bar-tabs)))))
+;; tab-bar-select-tab 从按键的数字读取 tab 序号
+(bind-key* (kbd "s-1") #'tab-bar-select-tab)
+(bind-key* (kbd "s-2") #'tab-bar-select-tab)
+(bind-key* (kbd "s-3") #'tab-bar-select-tab)
+(bind-key* (kbd "s-4") #'tab-bar-select-tab)
+(bind-key* (kbd "s-5") #'tab-bar-select-tab)
+(bind-key* (kbd "s-6") #'tab-bar-select-tab)
+(bind-key* (kbd "s-7") #'tab-bar-select-tab)
+(bind-key* (kbd "s-8") #'tab-bar-select-tab)
+(bind-key* (kbd "s-9") #'tab-last)
 
 (bind-key* (kbd "s-b") #'treemacs)
 
-(bind-key* (kbd "s-[") #'indent-rigidly-left)
-(bind-key* (kbd "s-]") #'indent-rigidly-right)
+(bind-key* (kbd "s-[") #'my-indent-rigidly-left)
+(bind-key* (kbd "s-]") #'my-indent-rigidly-right)
 
 (bind-key* (kbd "C-c C-t") #'emacs-translate-dwim)
 
 ;; 定义向左缩进函数（每次移动 tab-width 个空格）
-(defun indent-rigidly-left (start end)
+(defun my-indent-rigidly-left (start end)
   "向左 rigidly 缩进选中区域一个 tab-width。"
   (interactive
     (if (use-region-p)
@@ -136,7 +143,7 @@
     ))
 
 ;; 定义向右缩进函数（每次移动 tab-width 个空格）
-(defun indent-rigidly-right (start end)
+(defun my-indent-rigidly-right (start end)
   "向右 rigidly 缩进选中区域一个 tab-width。"
   (interactive
     (if (use-region-p)
@@ -160,265 +167,279 @@
 
 
 
-(defvar my-keys-minor-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "M-x") #'my-M-x)
-    (define-key map (kbd "C-M-.") #'xref-find-definitions-other-window )
-    (define-key map (kbd "C-M-h") #'my-toggle-er/mark-defun)
-    (define-key map (kbd "C-s h")  #'centaur-tabs-backward)
-    (define-key map (kbd "C-s l")  #'centaur-tabs-forward)
-    (define-key map (kbd "C-s n")  #'centaur-tabs--create-new-tab)
-    (define-key map (kbd "C-s x")  #'centaur-tabs--kill-this-buffer-dont-ask)
+(defvar-keymap my-keys-minor-mode-map
+  :doc "my-keys-minor-mode keymap."
+  "M-x" #'my-M-x
+  "C-M-." #'xref-find-definitions-other-window
+  "C-M-h" #'my-toggle-er/mark-defun
+  "C-s h" #'centaur-tabs-backward
+  "C-s l" #'centaur-tabs-forward
+  "C-s n" #'centaur-tabs--create-new-tab
+  "C-s x" #'centaur-tabs--kill-this-buffer-dont-ask
 
 
-    (define-key map (kbd "s-d") #'my-mc/mark-next-like-this)
+  "s-d" #'my-mc/mark-next-like-this
 
-    (define-key map (kbd "s-S") #'projectile-ripgrep)
-    (define-key map (kbd "s-F") #'rg)
+  "s-S" #'projectile-ripgrep
+  "s-F" #'rg
 
-    ;; (define-key map (kbd "C-M-f") #'projectile-find-file)
-    ;; (define-key map (kbd "C-x C-b") #'switch-to-buffer)
+  ;; "C-M-f" #'projectile-find-file
+  ;; "C-x C-b" #'switch-to-buffer
 
-    (define-key map (kbd "C-h .") #'eldoc-doc-buffer)
+  "C-h ." #'eldoc-doc-buffer
 
+  ;; "C-a" 'mwim-beginning-of-code-or-line
+  ;; "C-e" 'mwim-end-of-code-or-line
+  "<home>" 'mwim-beginning-of-line-or-code
+  "<end>" 'mwim-end-of-line-or-code
 
-    (define-key lisp-mode-map (kbd "C-c C-e") #'eval-region)
-
-    ;; (define-key map (kbd "C-a") 'mwim-beginning-of-code-or-line)
-    ;; (define-key map (kbd "C-e") 'mwim-end-of-code-or-line)
-    (define-key map (kbd "<home>") 'mwim-beginning-of-line-or-code)
-    (define-key map (kbd "<end>") 'mwim-end-of-line-or-code)
-
-    (define-key map (kbd "C-c .") 'er/expand-region)
+  "C-c ." 'er/expand-region
 
 
-    (define-key map (kbd "M-/") 'my-comment-region-or-line)
-    (define-key map (kbd "s-/") 'my-comment-region-or-line)
+  "M-/" 'my-comment-region-or-line
+  "s-/" 'my-comment-region-or-line
 
 
-    (define-key map (kbd "C-s-,") 'xref-go-back)
-    (define-key map (kbd "C-s-.") 'xref-go-forward)
-    (define-key map (kbd "s-J") 'my-treemacs-add-and-display-current-project)
+  "C-s-," 'xref-go-back
+  "C-s-." 'xref-go-forward
+  "s-J" 'my-treemacs-add-and-display-current-project
 
-    ;; (define-key map (kbd "M-i") #'er/mark-symbol)
-    ;; (define-key map (kbd "C-M-;") 'avy-goto-word-0)
-    (define-key map (kbd "M-s") 'my-save-buffer)
-    (define-key map (kbd "C-j") 'my-save-buffer)
-    (define-key map (kbd "C-c j") 'my-save-buffer-without-hooks)
-    (define-key map (kbd "M-q") 'my-toggle-god-mode)
+  ;; "M-i" #'er/mark-symbol
+  ;; "C-M-;" 'avy-goto-word-0
+  "M-s" 'my-save-buffer
+  "C-j" 'my-save-buffer
+  "C-c j" 'my-save-buffer-without-hooks
+  "M-q" 'my-toggle-god-mode
 
-    ;; (define-key map (kbd "M-u") 'upcase-dwim)
-    ;; (define-key map (kbd "M-l") 'downcase-dwim)
+  ;; "M-u" 'upcase-dwim
+  ;; "M-l" 'downcase-dwim
+  )
 
+(with-eval-after-load 'god-mode
+  (define-prefix-command 'my-god-mode-leader-key)
+  (define-prefix-command 'my-god-mode-dummmy-key)
+  (define-prefix-command 'my-god-mode-eglot-key)
+  (define-prefix-command 'my-god-mode-viewer-key)
+  (define-prefix-command 'my-god-mode-delete-key)
+  (define-prefix-command 'my-god-mode-window-key)
+  (define-prefix-command 'my-god-mode-spsexp-key)
 
-    (define-prefix-command 'my-god-mode-leader-key)
-    (define-prefix-command 'my-god-mode-dummmy-key)
-    (define-prefix-command 'my-god-mode-eglot-key)
-    (define-prefix-command 'my-god-mode-viewer-key)
-    (define-prefix-command 'my-god-mode-delete-key)
-    (define-prefix-command 'my-god-mode-window-key)
-    (define-prefix-command 'my-god-mode-spsexp-key)
+  (keymap-set god-local-mode-map "SPC" 'my-god-mode-leader-key)
+  (keymap-set god-local-mode-map "," 'my-god-mode-dummmy-key)
+  (keymap-set god-local-mode-map "g" 'my-god-mode-eglot-key)
+  (keymap-set god-local-mode-map "z" 'my-god-mode-viewer-key)
+  (keymap-set god-local-mode-map "d" 'my-god-mode-delete-key)
+  (keymap-set god-local-mode-map "q" 'my-god-mode-window-key)
+  (keymap-set god-local-mode-map "S" 'my-god-mode-spsexp-key)
 
-    (define-key god-local-mode-map (kbd "SPC") 'my-god-mode-leader-key)
-    (define-key god-local-mode-map (kbd ",")   'my-god-mode-dummmy-key)
-    (define-key god-local-mode-map (kbd "g")   'my-god-mode-eglot-key)
-    (define-key god-local-mode-map (kbd "z")   'my-god-mode-viewer-key)
-    (define-key god-local-mode-map (kbd "d")   'my-god-mode-delete-key)
-    (define-key god-local-mode-map (kbd "q")   'my-god-mode-window-key)
-    (define-key god-local-mode-map (kbd "S")   'my-god-mode-spsexp-key)
+  ;; God mode key mappings
+  (keymap-set god-local-mode-map "B" #'switch-to-buffer)
+  (keymap-set god-local-mode-map "Q" #'my-quit-other-window)
 
-    ;; God mode key mappings
-    (define-key god-local-mode-map (kbd "B") #'switch-to-buffer)
-    (define-key god-local-mode-map (kbd "Q") #'my-quit-other-window)
+  (keymap-set god-local-mode-map "f" #'avy-goto-word-0)
+  (keymap-set god-local-mode-map "t" #'avy-goto-char-in-line)
+  (keymap-set god-local-mode-map "w" #'my-forward-to-word)
+  (keymap-set god-local-mode-map "b" #'backward-word)
+  (keymap-set god-local-mode-map "k" #'my-previous-line)
+  (keymap-set god-local-mode-map "j" #'my-next-line)
+  (keymap-set god-local-mode-map "l" #'my-forward-char-no-cross-line)
+  (keymap-set god-local-mode-map "h" #'my-backward-char-no-cross-line)
+  (keymap-set god-local-mode-map "L" #'mwim-end-of-code-or-line)
+  (keymap-set god-local-mode-map "H" #'mwim-beginning-of-code-or-line)
+  (keymap-set god-local-mode-map "$" #'mwim-end-of-code-or-line)
+  (keymap-set god-local-mode-map "0" #'mwim-beginning-of-code-or-line)
 
-    (define-key god-local-mode-map (kbd "f") #'avy-goto-word-0)
-    (define-key god-local-mode-map (kbd "t") #'avy-goto-char-in-line)
-    (define-key god-local-mode-map (kbd "w") #'my-forward-to-word)
-    (define-key god-local-mode-map (kbd "b") #'backward-word)
-    (define-key god-local-mode-map (kbd "k") #'my-previous-line)
-    (define-key god-local-mode-map (kbd "j") #'my-next-line)
-    (define-key god-local-mode-map (kbd "l") #'my-forward-char-no-cross-line)
-    (define-key god-local-mode-map (kbd "h") #'my-backward-char-no-cross-line)
-    (define-key god-local-mode-map (kbd "L") #'mwim-end-of-code-or-line)
-    (define-key god-local-mode-map (kbd "H") #'mwim-beginning-of-code-or-line)
-    (define-key god-local-mode-map (kbd "$") #'mwim-end-of-code-or-line)
-    (define-key god-local-mode-map (kbd "0") #'mwim-beginning-of-code-or-line)
+  (keymap-set god-local-mode-map "v" #'my-set-mark-command-or-deactivate-mark)
+  (keymap-set god-local-mode-map "V" #'my-select-current-line-and-forward-line)
+  (keymap-set god-local-mode-map "J" #'my-join-lines)
+  (keymap-set god-local-mode-map "y" #'my-copy-whole-line-or-region)
+  (keymap-set god-local-mode-map "Y" #'my-copy-whole-line-or-region-to-tmux)
+  (keymap-set god-local-mode-map "p" #'my-yank-but-check-newline-bellow)
+  (keymap-set god-local-mode-map "P" #'my-yank-but-check-newline-above) ;; same as yank
+  (keymap-set god-local-mode-map "u" #'undo-tree-undo)
+  (keymap-set god-local-mode-map "C-r" #'undo-tree-redo)
+  (keymap-set god-local-mode-map "o" #'my-god-below-newline-and-insert-mode)
+  (keymap-set god-local-mode-map "O" #'my-god-above-newline-and-insert-mode)
+  (keymap-set god-local-mode-map "a" #'mwim-beginning-of-code-or-line)
+  (keymap-set god-local-mode-map "e" #'mwim-end-of-code-or-line)
+  (keymap-set god-local-mode-map "i" #'my-quit-god-mode)
+  (keymap-set god-local-mode-map "m" #'my-goto-match-paren)
 
-    (define-key god-local-mode-map (kbd "v") #'my-set-mark-command-or-deactivate-mark)
-    (define-key god-local-mode-map (kbd "V") #'my-select-current-line-and-forward-line)
-    (define-key god-local-mode-map (kbd "J") #'my-join-lines)
-    (define-key god-local-mode-map (kbd "y") #'my-copy-whole-line-or-region)
-    (define-key god-local-mode-map (kbd "Y") #'my-copy-whole-line-or-region-to-tmux)
-    (define-key god-local-mode-map (kbd "p") #'my-yank-but-check-newline-bellow)
-    (define-key god-local-mode-map (kbd "P") #'my-yank-but-check-newline-above) ;; same as yank
-    (define-key god-local-mode-map (kbd "u") #'undo-tree-undo)
-    (define-key god-local-mode-map (kbd "C-r") #'undo-tree-redo)
-    (define-key god-local-mode-map (kbd "o") #'my-god-below-newline-and-insert-mode)
-    (define-key god-local-mode-map (kbd "O") #'my-god-above-newline-and-insert-mode)
-    (define-key god-local-mode-map (kbd "a") #'mwim-beginning-of-code-or-line)
-    (define-key god-local-mode-map (kbd "e") #'mwim-end-of-code-or-line)
-    (define-key god-local-mode-map (kbd "i") #'my-quit-god-mode)
-    (define-key god-local-mode-map (kbd "m") #'my-goto-match-paren)
+  (keymap-set god-local-mode-map "`" #'popper-toggle-but-other-window)
+  (keymap-set god-local-mode-map "M-`" #'popper-cycle-but-other-window)
 
-    (define-key god-local-mode-map (kbd "`") #'popper-toggle-but-other-window)
-    (define-key god-local-mode-map (kbd "M-`") #'popper-cycle-but-other-window)
+  (keymap-set god-local-mode-map "s" #'my-replace-char)
+  (keymap-set god-local-mode-map "x" #'my-delete-char-or-kill-region)
 
-    (define-key god-local-mode-map (kbd "s") #'my-replace-char)
-    (define-key god-local-mode-map (kbd "x") #'my-delete-char-or-kill-region)
+  (keymap-set god-local-mode-map "<f8>" #'highlight-or-dehighlight-line)
+  (keymap-set god-local-mode-map "<f9>" #'remove-all-highlight)
 
-    (define-key god-local-mode-map (kbd "<f8>") #'highlight-or-dehighlight-line)
-    (define-key god-local-mode-map (kbd "<f9>") #'remove-all-highlight)
+  (keymap-set god-local-mode-map "d d" #'my-kill-whole-line-or-kill-region)
+  (keymap-set god-local-mode-map "d j" #'my-kill-whole-line-and-below) ;; TODO point position after kill?
+  (keymap-set god-local-mode-map "d k" #'my-kill-whole-line-and-above)
+  (keymap-set god-local-mode-map "d w" #'my-kill-word)
+  (keymap-set god-local-mode-map "d b" #'backward-kill-word)
+  (keymap-set god-local-mode-map "d H" #'my-delete-to-beginning)
+  (keymap-set god-local-mode-map "d L" #'my-delete-to-end)
+  (keymap-set god-local-mode-map "d G" #'my-delete-to-eof)
 
-    (define-key god-local-mode-map (kbd "d d") #'my-kill-whole-line-or-kill-region)
-    (define-key god-local-mode-map (kbd "d j") #'(lambda () (interactive) (kill-whole-line 2))) ;; TODO point position after kill?
-    (define-key god-local-mode-map (kbd "d k") #'(lambda () (interactive) (kill-whole-line -2)))
-    (define-key god-local-mode-map (kbd "d w") #'my-kill-word)
-    (define-key god-local-mode-map (kbd "d b") #'backward-kill-word)
-    (define-key god-local-mode-map (kbd "d H") #'my-delete-to-beginning)
-    (define-key god-local-mode-map (kbd "d L") #'my-delete-to-end)
-    (define-key god-local-mode-map (kbd "d G") #'my-delete-to-eof)
+  (keymap-set god-local-mode-map "S d" #'sp-delete-sexp)
+  (keymap-set god-local-mode-map "S u" #'sp-unwrap-sexp)
+  (keymap-set god-local-mode-map "S f" #'sp-forward-sexp)
+  (keymap-set god-local-mode-map "S b" #'sp-backward-sexp)
 
-    (define-key god-local-mode-map (kbd "S d") #'sp-delete-sexp)
-    (define-key god-local-mode-map (kbd "S u") #'sp-unwrap-sexp)
-    (define-key god-local-mode-map (kbd "S f") #'sp-forward-sexp)
-    (define-key god-local-mode-map (kbd "S b") #'sp-backward-sexp)
+  ;; (keymap-set god-local-mode-map "<RET>" #'next-line)
 
-    ;; (define-key god-local-mode-map (kbd "<RET>") #'next-line)
+  (keymap-set god-local-mode-map "z o" #'my-hs-toggle-hiding)
+  (keymap-set god-local-mode-map "z m" #'my-hs-toggle-level)
+  (keymap-set god-local-mode-map "z z" #'recenter)
 
-    (define-key god-local-mode-map (kbd "z o") #'my-hs-toggle-hiding)
-    (define-key god-local-mode-map (kbd "z m") #'my-hs-toggle-level)
-    (define-key god-local-mode-map (kbd "z z") #'recenter)
+  (keymap-set god-local-mode-map "A" #'my-god-mwin-end-and-insert-mode)
+  (keymap-set god-local-mode-map "I" #'my-god-mwin-beginning-and-insert-mode)
+  (keymap-set god-local-mode-map "E" #'eval-region)
 
-    (define-key god-local-mode-map (kbd "A") #'my-god-mwin-end-and-insert-mode)
-    (define-key god-local-mode-map (kbd "I") #'my-god-mwin-beginning-and-insert-mode)
-    (define-key god-local-mode-map (kbd "E") #'eval-region)
+  (keymap-set god-local-mode-map "S i" #'counsel-imenu)
+  (keymap-set god-local-mode-map "F" #'my-projectile-find-file)
+  (keymap-set god-local-mode-map "M-F" #'my-projectile-switch-project-find-file)
 
-    (define-key god-local-mode-map (kbd "S") #'counsel-imenu)
-    (define-key god-local-mode-map (kbd "F") #'my-projectile-find-file)
-    (define-key god-local-mode-map (kbd "M-F") #'my-projectile-switch-project-find-file)
+  (keymap-set god-local-mode-map "*" #'my-search-selection)
+  (keymap-set god-local-mode-map "/" #'isearch-forward)
+  (keymap-set god-local-mode-map "n" #'my-isearch-forward)
+  (keymap-set god-local-mode-map "N" #'my-isearch-backward)
+  (keymap-set god-local-mode-map ":" #'goto-line)
+  (keymap-set god-local-mode-map "RET" #'next-line)
+  (keymap-set god-local-mode-map "TAB" #'indent-for-tab-command)
+  (keymap-set god-local-mode-map "DEL" #'backward-char)
 
-    (define-key god-local-mode-map (kbd "*") #'my-search-selection)
-    (define-key god-local-mode-map (kbd "/") #'isearch-forward)
-    (define-key god-local-mode-map (kbd "n") #'my-isearch-forward)
-    (define-key god-local-mode-map (kbd "N") #'my-isearch-backward)
-    (define-key god-local-mode-map (kbd ":") #'goto-line)
-    (define-key god-local-mode-map (kbd "RET") #'next-line)
-    (define-key god-local-mode-map (kbd "TAB") #'indent-for-tab-command)
-    (define-key god-local-mode-map (kbd "DEL") #'backward-char)
+  (keymap-set god-local-mode-map "C-." #'repeat)
+  (keymap-set god-local-mode-map "C-~" #'my-toggle-case-char)
 
-    (define-key god-local-mode-map (kbd "C-.") #'repeat)
-    (define-key god-local-mode-map (kbd "C-~") #'my-toggle-case-char)
+  (keymap-set god-local-mode-map "C-n" #'my-next-line-or-mc/mark-next-like-this)
+  (keymap-set god-local-mode-map "C-p" #'my-prev-line-or-mc/mark-next-like-this)
 
-    (define-key god-local-mode-map (kbd "C-n") #'my-next-line-or-mc/mark-next-like-this)
-    (define-key god-local-mode-map (kbd "C-p") #'my-prev-line-or-mc/mark-next-like-this)
+  (keymap-set god-local-mode-map "C-x C-n" #'my-mc/mark-next-like-this)
+  (keymap-set god-local-mode-map "C-x C-p" #'my-mc/mark-previous-like-this)
 
-    (define-key god-local-mode-map (kbd "C-x C-n") #'my-mc/mark-next-like-this)
-    (define-key god-local-mode-map (kbd "C-x C-p") #'my-mc/mark-previous-like-this)
+  (keymap-set god-local-mode-map "SPC SPC" #'my-mark-ring)
+  (keymap-set god-local-mode-map "SPC b" #'my-project-switch-to-buffer)
+  (keymap-set god-local-mode-map "SPC C-b" #'projectile-switch-to-buffer)
+  (keymap-set god-local-mode-map "SPC B" #'ibuffer)
+  ;; (keymap-set god-local-mode-map "SPC B" #'helm-buffers-list)
+  ;; (keymap-set god-local-mode-map "SPC k" #'kill-this-buffer)
+  (keymap-set god-local-mode-map "SPC k" #'kill-current-buffer)
+  (keymap-set god-local-mode-map "SPC K" #'my-only-current-buffer)
+  (keymap-set god-local-mode-map "SPC P P" #'xah-copy-file-path)
+  (keymap-set god-local-mode-map "SPC M-k" #'my-only-current-buffer-include-specials)
 
-    (define-key god-local-mode-map (kbd "SPC SPC") #'my-mark-ring)
-    (define-key god-local-mode-map (kbd "SPC b") #'my-project-switch-to-buffer)
-    (define-key god-local-mode-map (kbd "SPC C-b") #'projectile-switch-to-buffer)
-    (define-key god-local-mode-map (kbd "SPC B") #'ibuffer)
-    ;; (define-key god-local-mode-map (kbd "SPC B") #'helm-buffers-list)
-    ;; (define-key god-local-mode-map (kbd "SPC k") #'kill-this-buffer)
-    (define-key god-local-mode-map (kbd "SPC k") #'kill-current-buffer)
-    (define-key god-local-mode-map (kbd "SPC K") #'my-only-current-buffer)
-    (define-key god-local-mode-map (kbd "SPC P P") #'xah-copy-file-path)
-    (define-key god-local-mode-map (kbd "SPC M-k") #'my-only-current-buffer-include-specials)
+  (keymap-set god-local-mode-map "C-\\" #'my-toggle-eldoc-box-help-at-point)
+  (keymap-set god-local-mode-map "SPC R" #'revert-buffer)
+  (keymap-set god-local-mode-map "SPC C-r" #'revert-buffer-quick)
+  (keymap-set god-local-mode-map "SPC C-s-r" #'my-revert-buffer-no-confirm)
 
-    (define-key god-local-mode-map (kbd "C-\\") #'my-toggle-eldoc-box-help-at-point)
-    (define-key god-local-mode-map (kbd "SPC R") #'revert-buffer)
-    (define-key god-local-mode-map (kbd "SPC C-r") #'revert-buffer-quick)
-    (define-key god-local-mode-map (kbd "SPC C-s-r") #'my-revert-buffer-no-confirm)
+  (keymap-set god-local-mode-map "SPC M-f" #'my-projectile-switch-project-find-file)
+  (keymap-set god-local-mode-map "SPC f" #'my-projectile-find-file)
+  (keymap-set god-local-mode-map "SPC p" #'my-find-files)
+  (keymap-set god-local-mode-map "SPC m" #'deadgrep)
+  (keymap-set god-local-mode-map "SPC r" #'rg-dwim)
+  (keymap-set god-local-mode-map "SPC o" #'cff-find-other-file)    ;; switch between c header/source file
+  (keymap-set god-local-mode-map "SPC L" #'display-line-numbers-mode)
+  (keymap-set god-local-mode-map "SPC t" #'my-toggle-truncate-lines-and-word-wrap)
+  (keymap-set god-local-mode-map "SPC T" #'my-untabify-buffer)
+  (keymap-set god-local-mode-map "SPC x" #'delete-window)   ;; delete this window
 
-    (define-key god-local-mode-map (kbd "SPC M-f") #'my-projectile-switch-project-find-file)
-    (define-key god-local-mode-map (kbd "SPC f") #'my-projectile-find-file)
-    (define-key god-local-mode-map (kbd "SPC p") #'my-find-files)
-    (define-key god-local-mode-map (kbd "SPC m") #'deadgrep)
-    (define-key god-local-mode-map (kbd "SPC r") #'rg-dwim)
-    (define-key god-local-mode-map (kbd "SPC o") #'cff-find-other-file)    ;; switch between c header/source file
-    (define-key god-local-mode-map (kbd "SPC L") #'display-line-numbers-mode)
-    (define-key god-local-mode-map (kbd "SPC t") #'my-toggle-truncate-lines-and-word-wrap)
-    (define-key god-local-mode-map (kbd "SPC T") #'my-untabify-buffer)
-    (define-key god-local-mode-map (kbd "SPC x") #'delete-window)   ;; delete this window
+  (keymap-set god-local-mode-map "SPC l" #'centaur-tabs-forward)
+  (keymap-set god-local-mode-map "SPC h" #'centaur-tabs-backward)
 
-    (define-key god-local-mode-map (kbd "SPC l") #'centaur-tabs-forward)
-    (define-key god-local-mode-map (kbd "SPC h") #'centaur-tabs-backward)
-
-    (define-key god-local-mode-map (kbd "SPC 2") #'treemacs)
-    (define-key god-local-mode-map (kbd "SPC 3") #'side-ibuffer)
-    (define-key god-local-mode-map (kbd "SPC n") #'my-neotree-toggle)
-    (define-key god-local-mode-map (kbd "SPC N") #'my-neotree-find)
-    (define-key god-local-mode-map (kbd "SPC s") #'counsel-imenu)
-    (define-key god-local-mode-map (kbd "SPC S") #'my-occur)
-    (define-key god-local-mode-map (kbd "SPC i") #'imenu-list-smart-toggle)
-    (define-key god-local-mode-map (kbd "SPC I") #'my-imenu-filter-struct-eglot)
-
-
-    (define-key god-local-mode-map (kbd "SPC a s") #'my-eat-claude-send-region)
-    (define-key god-local-mode-map (kbd "SPC a b") #'my-eat-claude-send-buffer)
-
-    (define-key god-local-mode-map (kbd "@") #'my-treemacs-add-and-display-current-project)
-    (define-key god-local-mode-map (kbd "SPC @") #'treemacs-add-and-display-current-project)
-
-    ;; (define-key god-local-mode-map (kbd "q l") #'windmove-right)
-    ;; (define-key god-local-mode-map (kbd "q h") #'windmove-left)
-    ;; (define-key god-local-mode-map (kbd "q k") #'windmove-up)
-    ;; (define-key god-local-mode-map (kbd "q j") #'windmove-down)
-    ;; (define-key god-local-mode-map (kbd "q v") #'split-window-right)
-    ;; (define-key god-local-mode-map (kbd "q s") #'split-window-below)
-    ;; (define-key god-local-mode-map (kbd "q t") #'transpose-frame)
-    ;; (define-key god-local-mode-map (kbd "q TAB") #'other-window)
-    ;; (define-key god-local-mode-map (kbd "q x") #'delete-window)         ;; delete this window
-    (define-key god-local-mode-map (kbd "q q") #'my-quit-other-window)  ;; delete other window
-
-    (define-key god-local-mode-map (kbd ", w") #'my-save-buffer)
-    (define-key god-local-mode-map (kbd ", b") #'my-flip-buffer-to-window-in-project)
-    (define-key god-local-mode-map (kbd ", B") #'(lambda () (interactive) (flip-buffer-to-window t)))
-
-    (define-key god-local-mode-map (kbd ", s") #'emacs-surround)
-
-    (define-key god-local-mode-map (kbd ", r r") #'httpd-start)
-    (define-key god-local-mode-map (kbd ", r k") #'httpd-stop)
-    (define-key god-local-mode-map (kbd ", ,") #'my-quit-other-window)
-
-    (define-key god-local-mode-map (kbd ", i \"") #'er/mark-inside-quotes)
-    (define-key god-local-mode-map (kbd ", a \"") #'er/mark-outside-quotes)
-
-    (define-key god-local-mode-map (kbd "g d") #'xref-find-definitions)
-    (define-key god-local-mode-map (kbd "g r") #'xref-find-references)
-    (define-key god-local-mode-map (kbd "g R") #'eglot-rename)
-    (define-key god-local-mode-map (kbd "g i") #'eglot-find-implementation)
-    (define-key god-local-mode-map (kbd "g a") #'eglot-code-actions)
-    (define-key god-local-mode-map (kbd "g q") #'eglot-reconnect)
-    (define-key god-local-mode-map (kbd "g g") #'beginning-of-buffer)
-    (define-key god-local-mode-map (kbd "G") #'end-of-buffer)
-    (define-key god-local-mode-map (kbd "g G") #'end-of-buffer)
-    ;; (define-key god-local-mode-map (kbd "C-e") #'scroll-up-line)
-    ;; (define-key god-local-mode-map (kbd "C-y") #'scroll-down-line)
-    ;; (define-key god-local-mode-map (kbd "C-a") #'increment-number-at-point)
-
-    ;; (define-key god-local-mode-map (kbd "C-, C-h") #'switch-to-prev-buffer)
-    ;; (define-key god-local-mode-map (kbd "C-, C-l") #'switch-to-next-buffer)
-
-    ;; (my-key-chord-define god-local-mode-map ",,"  #'er/mark-symbol)
-
-    ;; (define-key god-local-mode-map (kbd "C-m") #'next-line)
-
-    ;; (define-key god-local-mode-map (kbd "C-d") #'scroll-up-command)
-    ;; (define-key god-local-mode-map (kbd "C-u") #'scroll-down-command)
-    ;; (define-key god-local-mode-map (kbd "C-f") #'scroll-full-page-up)
-    ;; (define-key god-local-mode-map (kbd "C-b") #'scroll-full-page-down)
-
-    (define-key god-local-mode-map (kbd ";") #'scroll-up-command)
-    (define-key god-local-mode-map (kbd "'") #'scroll-down-command)
-    ;; (define-key god-local-mode-map (kbd "\\") #'recenter-top-bottom)
+  (keymap-set god-local-mode-map "SPC 2" #'treemacs)
+  (keymap-set god-local-mode-map "SPC 3" #'side-ibuffer)
+  (keymap-set god-local-mode-map "SPC n" #'my-neotree-toggle)
+  (keymap-set god-local-mode-map "SPC N" #'my-neotree-find)
+  (keymap-set god-local-mode-map "SPC s" #'counsel-imenu)
+  (keymap-set god-local-mode-map "SPC S" #'my-occur)
+  (keymap-set god-local-mode-map "SPC i" #'imenu-list-smart-toggle)
+  (keymap-set god-local-mode-map "SPC I" #'my-imenu-filter-struct-eglot)
 
 
-    ;; projectile
-    (define-key projectile-mode-map (kbd "C-c f") 'projectile-command-map)
-    map)
-  "my-keys-minor-mode keymap.")
+  (keymap-set god-local-mode-map "SPC a s" #'my-eat-claude-send-region)
+  (keymap-set god-local-mode-map "SPC a b" #'my-eat-claude-send-buffer)
+
+  (keymap-set god-local-mode-map "@" #'my-treemacs-add-and-display-current-project)
+  (keymap-set god-local-mode-map "SPC @" #'treemacs-add-and-display-current-project)
+
+  ;; (keymap-set god-local-mode-map "q l" #'windmove-right)
+  ;; (keymap-set god-local-mode-map "q h" #'windmove-left)
+  ;; (keymap-set god-local-mode-map "q k" #'windmove-up)
+  ;; (keymap-set god-local-mode-map "q j" #'windmove-down)
+  ;; (keymap-set god-local-mode-map "q v" #'split-window-right)
+  ;; (keymap-set god-local-mode-map "q s" #'split-window-below)
+  ;; (keymap-set god-local-mode-map "q t" #'transpose-frame)
+  ;; (keymap-set god-local-mode-map "q TAB" #'other-window)
+  ;; (keymap-set god-local-mode-map "q x" #'delete-window)         ;; delete this window
+  (keymap-set god-local-mode-map "q q" #'my-quit-other-window)  ;; delete other window
+
+  (keymap-set god-local-mode-map ", w" #'my-save-buffer)
+  (keymap-set god-local-mode-map ", b" #'my-flip-buffer-to-window-in-project)
+  (keymap-set god-local-mode-map ", B" #'my-flip-buffer-to-window-include-special)
+
+  (keymap-set god-local-mode-map ", s" #'emacs-surround)
+
+  (keymap-set god-local-mode-map ", r r" #'httpd-start)
+  (keymap-set god-local-mode-map ", r k" #'httpd-stop)
+  (keymap-set god-local-mode-map ", ," #'my-quit-other-window)
+
+  (keymap-set god-local-mode-map ", i \"" #'er/mark-inside-quotes)
+  (keymap-set god-local-mode-map ", a \"" #'er/mark-outside-quotes)
+
+  (keymap-set god-local-mode-map "g d" #'xref-find-definitions)
+  (keymap-set god-local-mode-map "g r" #'xref-find-references)
+  (keymap-set god-local-mode-map "g R" #'eglot-rename)
+  (keymap-set god-local-mode-map "g i" #'eglot-find-implementation)
+  (keymap-set god-local-mode-map "g a" #'eglot-code-actions)
+  (keymap-set god-local-mode-map "g q" #'eglot-reconnect)
+  (keymap-set god-local-mode-map "g g" #'beginning-of-buffer)
+  (keymap-set god-local-mode-map "G" #'end-of-buffer)
+  (keymap-set god-local-mode-map "g G" #'end-of-buffer)
+  ;; (keymap-set god-local-mode-map "C-e" #'scroll-up-line)
+  ;; (keymap-set god-local-mode-map "C-y" #'scroll-down-line)
+  ;; (keymap-set god-local-mode-map "C-a" #'increment-number-at-point)
+
+  ;; (keymap-set god-local-mode-map "C-, C-h" #'switch-to-prev-buffer)
+  ;; (keymap-set god-local-mode-map "C-, C-l" #'switch-to-next-buffer)
+
+  ;; (my-key-chord-define god-local-mode-map ",,"  #'er/mark-symbol)
+
+  ;; (keymap-set god-local-mode-map "C-m" #'next-line)
+
+  ;; (keymap-set god-local-mode-map "C-d" #'scroll-up-command)
+  ;; (keymap-set god-local-mode-map "C-u" #'scroll-down-command)
+  ;; (keymap-set god-local-mode-map "C-f" #'scroll-full-page-up)
+  ;; (keymap-set god-local-mode-map "C-b" #'scroll-full-page-down)
+
+  (keymap-set god-local-mode-map ";" #'scroll-up-command)
+  (keymap-set god-local-mode-map "'" #'scroll-down-command)
+  ;; (keymap-set god-local-mode-map "\\" #'recenter-top-bottom)
+  )
+
+(with-eval-after-load 'lisp-mode
+  (keymap-set lisp-mode-map "C-c C-e" #'eval-region))
+(with-eval-after-load 'elisp-mode
+  (keymap-set emacs-lisp-mode-map "C-c C-e" #'eval-region))
+
+;; projectile
+(with-eval-after-load 'projectile
+  (keymap-set projectile-mode-map "C-c f" 'projectile-command-map))
+
+(defun my-kill-whole-line-and-below ()
+  (interactive)
+  (kill-whole-line 2))
+
+(defun my-kill-whole-line-and-above ()
+  (interactive)
+  (kill-whole-line -2))
+
+(defun my-flip-buffer-to-window-include-special ()
+  (interactive)
+  (flip-buffer-to-window t))
 
 (define-minor-mode my-keys-minor-mode
   "A minor mode so that my key settings override annoying major modes."
@@ -428,25 +449,22 @@
 
 
 
-(defvar my-special-buffer-keys-minor-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ";") #'scroll-up-command)
-    (define-key map (kbd "'") #'scroll-down-command)
-    (define-key map (kbd "/") #'isearch-forward)
-    (define-key map (kbd "k") #'previous-line)
-    (define-key map (kbd "j") #'next-line)
-    (define-key map (kbd "l") #'my-forward-char-no-cross-line)
-    (define-key map (kbd "h") #'my-backward-char-no-cross-line)
-    (define-key map (kbd "L") #'mwim-end-of-code-or-line)
-    (define-key map (kbd "H") #'mwim-beginning-of-code-or-line)
-    (define-key map (kbd "v") #'my-set-mark-command-or-deactivate-mark)
-    (define-key map (kbd "V") #'my-select-current-line-and-forward-line)
+(defvar-keymap my-special-buffer-keys-minor-mode-map
+  :doc "my-special-buffer-keys-minor-mode keymap."
+  ";" #'scroll-up-command
+  "'" #'scroll-down-command
+  "/" #'isearch-forward
+  "k" #'previous-line
+  "j" #'next-line
+  "l" #'my-forward-char-no-cross-line
+  "h" #'my-backward-char-no-cross-line
+  "L" #'mwim-end-of-code-or-line
+  "H" #'mwim-beginning-of-code-or-line
+  "v" #'my-set-mark-command-or-deactivate-mark
+  "V" #'my-select-current-line-and-forward-line
 
-    (define-key map (kbd "f") #'avy-goto-word-0)
-    (define-key map (kbd "M-x") #'my-M-x)
-
-    map)
-  "my-special-buffer-keys-minor-mode keymap.")
+  "f" #'avy-goto-word-0
+  "M-x" #'my-M-x)
 (define-minor-mode my-special-buffer-keys-minor-mode
   "A minor mode add some bindings for special-buffers."
   :init-value nil
@@ -487,12 +505,9 @@
 
 (unless (display-graphic-p)
   (with-eval-after-load 'centaur-tabs
-    (define-key my-keys-minor-mode-map (kbd "C-s h") #'centaur-tabs-backward)
-    (define-key my-keys-minor-mode-map (kbd "C-s l") #'centaur-tabs-forward)
-    (define-key my-keys-minor-mode-map (kbd "C-s n") #'centaur-tabs--create-new-tab)
-    (define-key my-special-buffer-keys-minor-mode-map (kbd "C-s h") #'centaur-tabs-backward)
-    (define-key my-special-buffer-keys-minor-mode-map (kbd "C-s l") #'centaur-tabs-forward)
-    (define-key my-special-buffer-keys-minor-mode-map (kbd "C-s n") #'centaur-tabs--create-new-tab)
+    (keymap-set my-special-buffer-keys-minor-mode-map "C-s h" #'centaur-tabs-backward)
+    (keymap-set my-special-buffer-keys-minor-mode-map "C-s l" #'centaur-tabs-forward)
+    (keymap-set my-special-buffer-keys-minor-mode-map "C-s n" #'centaur-tabs--create-new-tab)
     )
   )
 

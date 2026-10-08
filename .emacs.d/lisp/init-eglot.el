@@ -14,65 +14,14 @@
 (when (bound-and-true-p read-process-output-max)
   (setq read-process-output-max (* 1024 1024)))
 
+(declare-function eglot-current-server "eglot")
+(declare-function eglot-execute "eglot")
+(declare-function eglot--lsp-xrefs-for-method "eglot")
+(declare-function pyvenv-activate "pyvenv")
+(defvar eglot--lsp-xref-refs)
+(defvar markdown-mode-map)
 
-
-
-
-(use-package eglot
-  :ensure t
-  :commands (eglot eglot-ensure)
-  :custom
-  (eglot-code-action-indicator "")
-
-  :hook
-  ;; Enable eglot for various programming languages
-  ((c-ts-mode c++-ts-mode) . eglot-ensure)
-
-  ((go-mode go-ts-mode) . (lambda()
-                            (setq eglot-workspace-configuration
-                              '((gopls (usePlaceholders . t))))
-                            (eglot-ensure)))
-
-  ;; (python-ts-mode . eglot-ensure)
-  (python-ts-mode . (lambda ()
-                      (my-python-eglot-setup)
-                      (eglot-ensure)))
-
-  (zig-mode . eglot-ensure)
-  (markdown-mode . eglot-ensure)
-  (tsx-ts-mode . my-eglot-ensure-deferred)
-  (js-ts-mode . my-eglot-ensure-deferred)
-  (typescript-ts-mode . my-eglot-ensure-deferred)
-  (jtsx-typescript-mode . my-eglot-ensure-deferred)
-  (jtsx-tsx-mode . my-eglot-ensure-deferred)
-  (jtsx-jsx-mode . my-eglot-ensure-deferred)
-  (clojure-ts-mode . eglot-ensure)
-
-  (swift-mode . (lambda ()
-                  (unless (and buffer-file-name
-                            (string= (file-name-extension buffer-file-name) "swiftinterface"))
-                    (eglot-ensure))))
-
-  ((rust-mode rust-ts-mode) . (lambda ()
-                               (setq-local eglot-workspace-configuration
-                                 '(:rust-analyzer
-                                    ( :checkOnSave (:enable :json-false)
-                                      :procMacro (:enable t)
-                                      :cargo ( :buildScripts (:enable t)
-                                               :features "all")
-                                      :diagnostics (:experimental (:enable :json-false))
-                                      :completion (:autoimport (:enable t))
-                                      :files (:watcher "server"))))
-                               (eglot-ensure)))
-
-  :config
-
-  (cl-defmethod eglot-register-capability
-    (_server (_method (eql workspace/didChangeWatchedFiles)) _id &key watchers)
-    (ignore watchers)
-    (list t "client-side watch refused; server polls"))
-
-  (defun my-python-locate-venv ()
+(defun my-python-locate-venv ()
   "Locate the local virtualenv Python executable using project.el and uv standards."
   (when-let* ((project (project-current))
               (project-root (project-root project))
@@ -82,22 +31,99 @@
     (when (file-executable-p python-exec)
       python-exec)))
 
-  (defun my-python-eglot-setup ()
-    "Set up Eglot workspace configuration for Python using local venv."
-    (if-let ((venv-python (my-python-locate-venv)))
-      (progn
-        (message "✅ Eglot: Using project venv Python: %s" venv-python)
-        (setq-local eglot-workspace-configuration
-          `(:python
-             (:pythonPath ,venv-python)
-             :python.analysis
-             (:logLevel "trace")))
-        ;; 可选：激活 pyvenv
-        (when (bound-and-true-p pyvenv-mode)
-          (pyvenv-activate (file-name-directory (directory-file-name venv-python)))))
-      ;; 回退机制：没找到本地虚拟环境则清除临时配置
-      (setq-local eglot-workspace-configuration nil)
-      (message "ℹ️ Eglot: No local .venv found, using fallback/global server.")))
+(defun my-python-eglot-setup ()
+  "Report which Python Eglot will use and activate the local venv.
+Server settings come from `my-eglot-workspace-configuration'."
+  (if-let* ((venv-python (my-python-locate-venv)))
+    (progn
+      (message "✅ Eglot: Using project venv Python: %s" venv-python)
+      ;; 可选：激活 pyvenv
+      (when (bound-and-true-p pyvenv-mode)
+        (pyvenv-activate (file-name-directory (directory-file-name venv-python)))))
+    (message "ℹ️ Eglot: No local .venv found, using fallback/global server.")))
+
+(defun my-eglot-workspace-configuration (_server)
+  "Return the workspace configuration plist for every Eglot server.
+Eglot calls this with `default-directory' bound to the project root."
+  (let ((venv-python (expand-file-name ".venv/bin/python")))
+    `(:gopls (:usePlaceholders t)
+      :rust-analyzer
+      ( :checkOnSave (:enable :json-false)
+        :procMacro (:enable t)
+        :cargo ( :buildScripts (:enable t)
+                 :features "all")
+        :diagnostics (:experimental (:enable :json-false))
+        :completion (:autoimport (:enable t))
+        :files (:watcher "server"))
+      ,@(when (file-executable-p venv-python)
+          `(:python (:pythonPath ,venv-python)
+            :python.analysis (:logLevel "trace"))))))
+
+(defun my-python-eglot-ensure ()
+  "Set up the Python venv, then start Eglot."
+  (my-python-eglot-setup)
+  (eglot-ensure))
+
+(defun my-swift-eglot-ensure ()
+  "Start Eglot for Swift buffers, except .swiftinterface files."
+  (unless (and buffer-file-name
+               (string= (file-name-extension buffer-file-name) "swiftinterface"))
+    (eglot-ensure)))
+
+;; 延迟启动 eglot，避免打开文件时同步等待 LSP 初始化导致卡顿。
+;; TypeScript/TSX 项目的 typescript-language-server 启动和分析较慢，
+;; 用 idle timer 让文件先显示出来，LSP 在 Emacs 空闲时再连。
+(defun my-eglot--ensure-in-buffer (buffer)
+  "Call `eglot-ensure' in BUFFER if it is still live."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (eglot-ensure))))
+
+(defun my-eglot-ensure-deferred ()
+  "Call `eglot-ensure' after a short idle period so file opens instantly."
+  (run-with-idle-timer 0.3 nil #'my-eglot--ensure-in-buffer (current-buffer)))
+
+(use-package eglot
+  :ensure t
+  :commands (eglot eglot-ensure)
+  :custom
+  (eglot-code-action-indicator "")
+  ;; Don't interfere with company configuration
+  (eglot-stay-out-of '(company))
+  ;; Performance and behavior settings
+  (eglot-autoshutdown t)
+  ;; Disable folding ranges and inlay hints
+  (eglot-ignored-server-capabilities '(:foldingRangeProvider :inlayHintProvider))
+  ;; Drop jsonrpc log to improve performance
+  (eglot-events-buffer-config '(:size 0 :format full))
+
+  :hook
+  ;; Enable eglot for various programming languages
+  ((c-ts-mode c++-ts-mode) . eglot-ensure)
+  ((go-mode go-ts-mode) . eglot-ensure)
+  ;; (python-ts-mode . eglot-ensure)
+  (python-ts-mode . my-python-eglot-ensure)
+  (zig-mode . eglot-ensure)
+  (markdown-mode . eglot-ensure)
+  (tsx-ts-mode . my-eglot-ensure-deferred)
+  (js-ts-mode . my-eglot-ensure-deferred)
+  (typescript-ts-mode . my-eglot-ensure-deferred)
+  (jtsx-typescript-mode . my-eglot-ensure-deferred)
+  (jtsx-tsx-mode . my-eglot-ensure-deferred)
+  (jtsx-jsx-mode . my-eglot-ensure-deferred)
+  (clojure-ts-mode . eglot-ensure)
+  (swift-mode . my-swift-eglot-ensure)
+  ((rust-mode rust-ts-mode) . eglot-ensure)
+
+  :config
+  ;; gopls / rust-analyzer / python settings, see `my-eglot-workspace-configuration'
+  (setq-default eglot-workspace-configuration #'my-eglot-workspace-configuration)
+
+  ;; 性能取舍：拒绝所有 server 的 didChangeWatchedFiles 注册，让 server 自己轮询
+  (cl-defmethod eglot-register-capability
+    (_server (_method (eql workspace/didChangeWatchedFiles)) _id &key watchers)
+    (ignore watchers)
+    (list t "client-side watch refused; server polls"))
 
   ;; Swift: use .xcodeproj directory as project root for sourcekit-lsp.
   ;; Without this, monorepo git root becomes rootUri and sourcekit-lsp
@@ -105,20 +131,14 @@
   (defun my-swift-project-try (dir)
     "Project backend: find nearest directory containing .xcodeproj."
     (when (and dir
-            (buffer-file-name)
-            (string-match-p "\\.swift\\'" (buffer-file-name)))
-      (let ((found nil)
-            (current dir))
-        (while (and current (not found))
-          (let ((match (directory-files current nil "\\.xcodeproj\\'" t)))
-            (if match
-              (setq found current)
-              (let ((parent (file-name-directory (directory-file-name current))))
-                (if (string= parent current)
-                  (setq current nil)
-                  (setq current parent))))))
-        (when found
-          (cons 'transient found)))))
+               (buffer-file-name)
+               (string-match-p "\\.swift\\'" (buffer-file-name)))
+      (when-let* ((found (locate-dominating-file
+                          dir
+                          (lambda (d)
+                            (ignore-errors
+                              (directory-files d nil "\\.xcodeproj\\'" t 1))))))
+        (cons 'transient found))))
   (add-hook 'project-find-functions #'my-swift-project-try)
 
   (defun my-rust-project-root (dir)
@@ -148,7 +168,7 @@
             (buffer-file-name)
             (string-match-p "\\.rs\\'" (buffer-file-name))
             (locate-dominating-file dir "Cargo.toml"))
-      (when-let ((root (my-rust-project-root dir)))
+      (when-let* ((root (my-rust-project-root dir)))
         (cons 'transient root))))
   (add-hook 'project-find-functions #'my-rust-project-try)
 
@@ -164,20 +184,8 @@
       ))
   (advice-add 'eglot-ensure :around #'my/around-eglot-ensure)
 
-  ;; 延迟启动 eglot，避免打开文件时同步等待 LSP 初始化导致卡顿。
-  ;; TypeScript/TSX 项目的 typescript-language-server 启动和分析较慢，
-  ;; 用 idle timer 让文件先显示出来，LSP 在 Emacs 空闲时再连。
-  (defun my-eglot-ensure-deferred ()
-    "Call `eglot-ensure' after a short idle period so file opens instantly."
-    (run-with-idle-timer 0.3 nil #'eglot-ensure))
-
-  ;; Face configuration moved to custom-set-faces
-
   ;; Server configurations for specific languages
-
-  ;; Configure gopls
-  (add-to-list 'eglot-server-programs
-    '(go-ts-mode . ("gopls")))
+  ;; gopls 已在 eglot-server-programs 默认值中 (go-mode/go-ts-mode)
 
   ;; Configure clangd parameters
   (add-to-list 'eglot-server-programs
@@ -195,32 +203,19 @@
   ;; Markdown-specific server configuration, donot auto preview, manually preview with C-c C-p
   (add-to-list 'eglot-server-programs '(markdown-mode . ("mpls" "--tabs" "--no-auto")))
   (with-eval-after-load 'markdown-mode
-    (define-key markdown-mode-map (kbd "C-c C-p") #'my-eglot-mpls-open-preview))
+    (keymap-set markdown-mode-map "C-c C-p" #'my-eglot-mpls-open-preview))
 
   ;; Python server configuration
   (add-to-list 'eglot-server-programs '(python-ts-mode . ("basedpyright-langserver" "--stdio")))
 
   ;; 自定义查找引用行为：不包含定义
+  ;; 注意：依赖 eglot 内部实现 (eglot--lsp-xref-refs / eglot--lsp-xrefs-for-method)，升级 eglot 后可能失效
   (cl-defmethod xref-backend-references ((_backend (eql eglot)) _identifier)
     (or
       eglot--lsp-xref-refs
       (eglot--lsp-xrefs-for-method
         :textDocument/references
-        :extra-params `(:context (:includeDeclaration :json-false)))))
-
-  ;; Swift hook moved to :hook section above
-
-  ;; Don't interfere with company configuration
-  (setq eglot-stay-out-of '(company))
-  ;; Don't show indicator
-  ;; Performance and behavior settings
-  (setq eglot-autoshutdown t
-    eglot-ignored-server-capabilities '(:foldingRangeProvider)
-    ;; Drop jsonrpc log to improve performance
-    eglot-events-buffer-size 1)
-
-  ;; Disable inlay hints by default
-  (add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1))))
+        :extra-params `(:context (:includeDeclaration :json-false))))))
 
 
 ;; (use-package sideline

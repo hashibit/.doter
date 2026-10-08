@@ -28,56 +28,50 @@
 (defun my-highlight-all-matches-now ()
   "立即高亮所有匹配."
   (when (and isearch-mode
-             isearch-string
-             (> (length isearch-string) 2)  ; 至少3个字符才高亮
-             (not (string= isearch-string my-isearch-last-string)))
-
+             (not (equal isearch-string my-isearch-last-string)))
     ;; 清除旧的高亮
     (my-remove-all-isearch-overlays)
+    (setq my-isearch-last-string isearch-string)
 
-    (let ((case-fold-search isearch-case-fold-search)
-          (pattern (if isearch-regexp
-                       isearch-string
-                     (regexp-quote isearch-string)))
-          (max-matches 500)  ; 限制最大匹配数，避免卡死
-          (match-count 0))
+    (when (> (length isearch-string) 2)  ; 至少3个字符才高亮
+      (let ((case-fold-search isearch-case-fold-search)
+            (pattern (if isearch-regexp
+                         isearch-string
+                       (regexp-quote isearch-string)))
+            (max-matches 500)  ; 限制最大匹配数，避免卡死
+            (match-count 0))
 
-      (save-excursion
-        (save-restriction
-          (widen)  ; 确保搜索整个 buffer
-          (goto-char (point-min))
+        (save-excursion
+          (save-restriction
+            (widen)  ; 确保搜索整个 buffer
+            (goto-char (point-min))
 
-          ;; 安全的搜索循环
-          (condition-case nil
-              (while (and (< match-count max-matches)
-                          (re-search-forward pattern nil t))
-                (let* ((beg (match-beginning 0))
-                       (end (match-end 0)))
+            ;; 安全的搜索循环
+            (condition-case nil
+                (while (and (< match-count max-matches)
+                            (not (eobp))
+                            (re-search-forward pattern nil t))
+                  (let ((beg (match-beginning 0))
+                        (end (match-end 0)))
+                    (if (= end beg)
+                        ;; 避免零长度匹配导致的无限循环
+                        (unless (eobp) (forward-char 1))
+                      (let ((ov (make-overlay beg end)))
+                        (overlay-put ov 'face 'lazy-highlight)
+                        (overlay-put ov 'priority 1000)
+                        (push ov my-isearch-all-overlays)
+                        (setq match-count (1+ match-count))))))
+              (error
+               ;; 如果正则表达式有问题，清除高亮
+               (my-remove-all-isearch-overlays)))))
 
-                  ;; 避免零长度匹配导致的无限循环
-                  (when (> end beg)
-                    (let ((ov (make-overlay beg end)))
-                      (overlay-put ov 'face 'lazy-highlight)
-                      (overlay-put ov 'priority 1000)
-                      (push ov my-isearch-all-overlays)
-                      (setq match-count (1+ match-count)))))
-
-                ;; 防止无限循环的保险
-                (when (= (point) (match-end 0))
-                  (forward-char 1)))
-            (error
-             ;; 如果正则表达式有问题，清除高亮
-             (my-remove-all-isearch-overlays)))))
-
-      (setq my-isearch-last-string isearch-string)
-
-      ;; 如果匹配太多，显示警告
-      (when (>= match-count max-matches)
-        (message "Too many matches (>%d), some may not be highlighted" max-matches)))))
+        ;; 如果匹配太多，显示警告
+        (when (>= match-count max-matches)
+          (message "Too many matches (>%d), some may not be highlighted" max-matches))))))
 
 (defun my-isearch-highlight-all-matches ()
   "在 isearch 模式中高亮所有匹配项."
-  (when (and isearch-mode (> (length isearch-string) 0))
+  (when isearch-mode
     (my-highlight-all-matches-delayed)))
 
 (defun my-isearch-cleanup ()

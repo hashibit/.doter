@@ -217,9 +217,11 @@ when already visible, its buffer is switched in place instead."
   (when eat-floating-prewarm
     (eat-floating--ensure-buffer)))
 
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (run-with-idle-timer 5 nil #'eat-floating--prewarm)))
+(defun eat-floating--schedule-prewarm ()
+  "Schedule `eat-floating--prewarm' at idle time."
+  (run-with-idle-timer 5 nil #'eat-floating--prewarm))
+
+(add-hook 'emacs-startup-hook #'eat-floating--schedule-prewarm)
 
 (defun eat-floating--create-frame ()
   "Create the centered floating child frame and return it."
@@ -271,17 +273,23 @@ when already visible, its buffer is switched in place instead."
 (defun eat-floating-toggle ()
   "Show or hide the floating Eat terminal for the current project.
 When the frame is already visible with a different project's session,
-switch to the current project's session instead of hiding."
+switch to the current project's session instead of hiding.
+When the floating frame itself is selected, always hide it."
   (interactive)
-  (let ((buffer (eat-floating--ensure-buffer)))
-    (if (and (frame-live-p eat-floating-frame)
-             (frame-visible-p eat-floating-frame))
-        (if (eq (window-buffer (frame-selected-window eat-floating-frame))
-                buffer)
-            (eat-floating--close-frame)
-          ;; Visible but showing another project's session: switch.
-          (eat-floating--show-buffer buffer t))
-      (eat-floating--show-buffer buffer t))))
+  (if (and (frame-live-p eat-floating-frame)
+           (eq (selected-frame) eat-floating-frame))
+      ;; The terminal's `default-directory' follows the shell, so it
+      ;; does not identify a project: just hide.
+      (eat-floating--close-frame)
+    (let ((buffer (eat-floating--ensure-buffer)))
+      (if (and (frame-live-p eat-floating-frame)
+               (frame-visible-p eat-floating-frame))
+          (if (eq (window-buffer (frame-selected-window eat-floating-frame))
+                  buffer)
+              (eat-floating--close-frame)
+            ;; Visible but showing another project's session: switch.
+            (eat-floating--show-buffer buffer t))
+        (eat-floating--show-buffer buffer t)))))
 
 ;;;###autoload
 (defun eat-floating-kill ()

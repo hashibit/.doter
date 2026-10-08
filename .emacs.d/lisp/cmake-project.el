@@ -1,4 +1,4 @@
-;;; cmake-project.el --- Integrates CMake build process with Emacs
+;;; cmake-project.el --- Integrates CMake build process with Emacs -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012, 2013 Alexander Lamaison
 
@@ -181,7 +181,9 @@ prevent a fatal Flymake shutdown."
     (let ((gens-chunk (match-string 1 help-text)))
       (while (string-match
               "\\s-+\\([^=\n]+?\\)\\s-*=[^\n]+?\n\\([^\\']*\\)\\'" gens-chunk)
-        (setq out (add-to-list 'out (match-string 1 gens-chunk) 1))
+        (let ((gen (match-string 1 gens-chunk)))
+          (unless (member gen out)
+            (setq out (append out (list gen)))))
         (setq gens-chunk (match-string 2 gens-chunk)))
       out)))
 

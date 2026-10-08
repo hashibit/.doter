@@ -1,3 +1,7 @@
+;;; redef.el --- Redefined lisp indent function -*- lexical-binding: t -*-
+
+(defvar calculate-lisp-indent-last-sexp)
+
 (defun Fuco1/lisp-indent-function (indent-point state)
   "This function is the normal value of the variable `lisp-indent-function'.
 The function `calculate-lisp-indent' calls this to determine
@@ -66,10 +70,12 @@ Lisp function does not specify a special indentation."
           (cond ((or (eq method 'defun)
                    (and (null method)
                      (> (length function) 3)
-                     (string-match "\\`def" function)))
+                     (string-match-p "\\`def" function)))
                   (lisp-indent-defform state indent-point))
             ((integerp method)
               (lisp-indent-specform method state
                 indent-point normal-indent))
             (method
               (funcall method indent-point state))))))))
+
+(provide 'redef)

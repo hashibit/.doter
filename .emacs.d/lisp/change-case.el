@@ -85,7 +85,7 @@
 ;;; PascalCase
 (defun change-case--get-pascal-case-inner-partition (sentence &optional start)
   (let ((case-fold-search nil))
-    (if-let ((pos (string-match (rx upper-case) sentence (or start 1))))
+    (if-let* ((pos (string-match (rx upper-case) sentence (or start 1))))
 	(cons pos
 	      (change-case--get-pascal-case-inner-partition sentence (+ pos 1))))))
 
@@ -95,7 +95,7 @@
 		(cons (length sentence) nil))))
 
 (defun change-case--get-pair-list (sequence)
-  (if-let ((start (nth 0 sequence))
+  (if-let* ((start (nth 0 sequence))
 	   (end (nth 1 sequence)))
       (cons
        (cons start end)
@@ -190,7 +190,7 @@
 (defun change-case (&optional start end)
   (interactive (if (use-region-p)
 		   (list (region-beginning) (region-end))
-		 (if-let (bounds (bounds-of-thing-at-point 'symbol))
+		 (if-let* ((bounds (bounds-of-thing-at-point 'symbol)))
 		     (list (car bounds) (cdr bounds))
 		   (list (point-min (point-max))))))
 

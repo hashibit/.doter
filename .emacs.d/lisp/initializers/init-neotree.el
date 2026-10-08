@@ -1,3 +1,6 @@
+;;; -*- lexical-binding: t -*-
+
+(defvar neo-window-width)
 
 
 (defun my-neotree-window-narrow ()
@@ -13,8 +16,8 @@
   )
 
 
-(defun darker-background-for-sidebar ()
-  (face-remap-add-relative 'default '(:background "#1E2127")))
+(defun my-darker-background-for-sidebar ()
+  (face-remap-add-relative 'default :background "#1E2127"))
 
 (use-package neotree
   :ensure t
@@ -23,10 +26,10 @@
   ;; (setq neo-auto-indent-point 't)
   (setq neo-confirm-create-file 'off-p)
   (setq neo-confirm-create-directory 'off-p)
-  (setq neo-smart-open 't)
+  (setq neo-smart-open t)
   (setq neo-window-fixed-size nil)
   (setq neo-show-hidden-files t)
-  ;; (add-hook 'neotree-mode-hook #'darker-background-for-sidebar)
+  ;; (add-hook 'neotree-mode-hook #'my-darker-background-for-sidebar)
   ;; (setq neo-window-width (/ (display-pixel-width) 4))
   ;; (setq neo-window-width 45)
   ;; (setq neo-toggle-window-keep-p 't)
@@ -34,16 +37,16 @@
   :bind
   (:map
     neotree-mode-map
-    ("L" . 'my-neotree-window-enlarge)
-    ("H" . 'my-neotree-window-narrow)
-    ("u" . 'neotree-select-up-node)
-    ("f" . 'neotree-hidden-file-toggle)
-    ("c n" . 'neotree-create-node)
-    ("a" . 'neotree-create-node)))
+    ("L" . my-neotree-window-enlarge)
+    ("H" . my-neotree-window-narrow)
+    ("u" . neotree-select-up-node)
+    ("f" . neotree-hidden-file-toggle)
+    ("c n" . neotree-create-node)
+    ("a" . neotree-create-node)))
 
 
 
-(defun neotree-project-dir ()
+(defun my-neotree-project-dir ()
   "Open NeoTree using the git root."
   (interactive)
   (let
@@ -62,7 +65,7 @@
   (if
     (and (fboundp 'neo-global--window-exists-p)
       (neo-global--window-exists-p))
-    (neotree-project-dir)
+    (my-neotree-project-dir)
     (neotree-show)))
 
 (defun my-neotree-find ()

@@ -1,7 +1,7 @@
+;;; -*- lexical-binding: t -*-
 
 
 (use-package blamer
-  :defer t
   :bind (("s-i" . blamer-show-commit-info)
           ("C-c i" . blamer-show-posframe-commit-info))
   :defer 20

@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 (use-package markdown-xwidget
   :after markdown-ts-mode
   :config

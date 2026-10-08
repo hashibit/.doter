@@ -1,13 +1,18 @@
 ;; -*- lexical-binding: t -*-
 
 (use-package expand-region
-  :bind (("M-i" . 'er/expand-region)))
+  ;; my-toggle-er/* call er/* directly, so load at startup
+  :demand t
+  :bind (("M-i" . er/expand-region)))
 
-(advice-add 'er/expand-region :before (lambda (&rest r) (my-remove-all-highlight)))
-(advice-add 'er/mark-inside-pairs :before (lambda (&rest r) (my-remove-all-highlight)))
+(defun my-er-remove-all-highlight (&rest _)
+  (my-remove-all-highlight))
+
+(advice-add 'er/expand-region :before #'my-er-remove-all-highlight)
+(advice-add 'er/mark-inside-pairs :before #'my-er-remove-all-highlight)
 
 
-(defun my-toggle-er/mark-defun (arg)
+(defun my-toggle-er/mark-defun (_arg)
   (interactive "p")
   (if (use-region-p)
     (progn
@@ -16,7 +21,7 @@
     (point-to-register 'a)
     (er/mark-defun)))
 
-(defun my-toggle-er/mark-inside-paren (arg)
+(defun my-toggle-er/mark-inside-paren (_arg)
   (interactive "p")
   (if (use-region-p)
     (progn
@@ -31,7 +36,7 @@
     )
   )
 
-(defun my-toggle-er/mark-outside-paren (arg)
+(defun my-toggle-er/mark-outside-paren (_arg)
   (interactive "p")
   (if (use-region-p)
     (progn

@@ -983,7 +983,7 @@ You can do these operations at One Key!
              (not (cl-some (lambda (m) (ignore-errors (symbol-value m))) ahs-disabled-minor-modes))
              (not (memq this-command ahs-disabled-commands))
              (not (cl-some (lambda (flag) (symbol-value flag)) ahs-disabled-flags)))
-    (when-let ((hl (ahs-highlight-p)))
+    (when-let* ((hl (ahs-highlight-p)))
       (ht-set ahs-window-map (selected-window) hl)
       (ahs-highlight (nth 0 hl) (nth 1 hl) (nth 2 hl)))))
 
@@ -1433,7 +1433,7 @@ If FORCE is non-nil, delete all in the current buffer."
     (dolist (overlay overlays)
       (if (ahs-inside-overlay-p overlay)
           (push overlay newlist)
-        (if-let ((func-temp (overlay-get overlay 'isearch-open-invisible-temporary)))
+        (if-let* ((func-temp (overlay-get overlay 'isearch-open-invisible-temporary)))
             (funcall func-temp overlay t)
           (ahs-store-property overlay 'isearch-invisible  'invisible)
           (ahs-store-property overlay 'isearch-intangible 'intangible))))

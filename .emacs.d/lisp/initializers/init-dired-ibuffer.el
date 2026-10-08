@@ -1,4 +1,7 @@
+;;; -*- lexical-binding: t -*-
 (require 'ibuffer)
+(require 'ibuf-ext)
+(defvar dired-dwim-target)
 
 (setq ibuffer-formats '((mark modified " "
                          (name 24 24 :left :elide)
@@ -20,24 +23,32 @@
     :reader nil)
   (buffer-file-name buf))
 
+(defun my-side-ibuffer-revert (&rest _)
+  (ibuffer-update nil t))
+
+(defun my-side-ibuffer-visit-and-quit-other ()
+  (interactive)
+  (ibuffer-visit-buffer-other-window)
+  (my-quit-other-window))
+
+(defvar-keymap my-side-ibuffer-map
+  :parent ibuffer-mode-map
+  "q" #'kill-current-buffer
+  "v" #'ibuffer-visit-buffer-other-window-noselect
+  "o" #'ibuffer-visit-buffer-other-window
+  "<mouse-1>" #'ibuffer-visit-buffer-other-window
+  "RET" #'my-side-ibuffer-visit-and-quit-other)
+
 (defun side-ibuffer ()
   (interactive)
   (let ((buffer
           (save-window-excursion
             (ibuffer nil "*side-ibuffer*" '((my-visiting-file . t)))
-            (setq-local buffer-stale-function
-              (lambda (&rest ignore) t))
-            (setq-local revert-buffer-function
-              (lambda (&rest ignore)
-                (ibuffer-update nil t)))
+            (setq-local buffer-stale-function #'always)
+            (setq-local revert-buffer-function #'my-side-ibuffer-revert)
             (auto-revert-mode -1)
             (setq-local display-buffer-base-action '(display-buffer-use-some-window))
-            (use-local-map (copy-keymap ibuffer-mode-map))
-            (local-set-key "q" #'(lambda() (interactive) (kill-this-buffer)))
-            (local-set-key "v" #'(lambda() (interactive) (ibuffer-visit-buffer-other-window-noselect)))
-            (local-set-key "o" #'(lambda() (interactive) (ibuffer-visit-buffer-other-window)))
-            (local-set-key (kbd "<mouse-1>") #'(lambda() (interactive) (ibuffer-visit-buffer-other-window)))
-            (local-set-key (kbd "RET") #'(lambda() (interactive) (ibuffer-visit-buffer-other-window) (my-quit-other-window)))
+            (use-local-map my-side-ibuffer-map)
             (current-buffer))))
     (pop-to-buffer buffer
       '(display-buffer-in-side-window
@@ -62,8 +73,9 @@
         ;; so that all non pathnames are at the end
         "~"))))
 
+(keymap-set ibuffer-mode-map "s p" #'ibuffer-do-sort-by-filename-or-dired)
+
 (defun my-ibuffer-hook ()
-  (define-key ibuffer-mode-map (kbd "s p") 'ibuffer-do-sort-by-filename-or-dired)
   ;; sort now please!
   (ibuffer-do-sort-by-filename-or-dired))
 

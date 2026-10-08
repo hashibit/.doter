@@ -8,18 +8,19 @@
 
 ;;; Code:
 
+(declare-function rust-ts-flymake "rust-ts-mode")
+(declare-function treesit-font-lock-recompute-features "treesit")
+
+(defun my-rust-ts-mode-setup ()
+  "Buffer-local setup for `rust-ts-mode'."
+  ;; 诊断交给 eglot (rust-analyzer)，不用 clippy-driver
+  (remove-hook 'flymake-diagnostic-functions #'rust-ts-flymake t)
+  ;; Don't highlight ERROR nodes — incomplete syntax while typing is normal
+  (treesit-font-lock-recompute-features nil '(error)))
+
+(add-hook 'rust-ts-mode-hook #'my-rust-ts-mode-setup)
+
 (use-package rust-mode
-  :config
-  (add-hook 'rust-ts-mode-hook
-    (lambda ()
-      (remove-hook 'flymake-diagnostic-functions #'rust-ts-flymake t)
-      (setq-local flymake-diagnostic-functions
-        (delq 'rust-ts-flymake flymake-diagnostic-functions))
-      ;; Don't highlight ERROR nodes — incomplete syntax while typing is normal
-      (setq-local treesit-font-lock-feature-list
-        (mapcar (lambda (group) (remq 'error group))
-                treesit-font-lock-feature-list))
-      (treesit-font-lock-recompute-features)))
   :ensure t)
 
 

@@ -1,6 +1,9 @@
+;;; -*- lexical-binding: t -*-
 ;;; 增强的 winner-mode 配置
 ;;; 同时保存和恢复窗口布局、光标位置和滚动位置
 
+(require 'cl-lib)
+(require 'ring)
 (require 'winner)
 
 ;; 启用 winner-mode
@@ -13,7 +16,7 @@
 (defvar enhanced-winner-current-index 0
   "Current index in the enhanced winner ring.")
 
-(defstruct enhanced-window-info
+(cl-defstruct enhanced-window-info
   buffer
   point
   window-start
@@ -88,8 +91,7 @@
 ;; 自动保存钩子
 (defun enhanced-winner--auto-save ()
   "自动保存窗口配置的钩子函数。"
-  (unless (or (eq this-command 'enhanced-winner-undo)
-            (eq this-command 'enhanced-winner-redo)
+  (unless (or (memq this-command '(enhanced-winner-undo enhanced-winner-redo))
             (minibufferp))
     (enhanced-winner--save-configuration)))
 
@@ -97,12 +99,12 @@
 (add-hook 'window-configuration-change-hook #'enhanced-winner--auto-save)
 
 ;; 重新绑定快捷键
-(define-key winner-mode-map (kbd "C-c <left>") #'enhanced-winner-undo)
-(define-key winner-mode-map (kbd "C-c <right>") #'enhanced-winner-redo)
+(keymap-set winner-mode-map "C-c <left>" #'enhanced-winner-undo)
+(keymap-set winner-mode-map "C-c <right>" #'enhanced-winner-redo)
 
 ;; 也可以绑定到其他键
-(global-set-key (kbd "C-x 4 u") #'enhanced-winner-undo)
-(global-set-key (kbd "C-x 4 r") #'enhanced-winner-redo)
+(keymap-global-set "C-x 4 u" #'enhanced-winner-undo)
+(keymap-global-set "C-x 4 r" #'enhanced-winner-redo)
 
 ;; 显示当前状态的辅助函数
 (defun enhanced-winner-show-info ()
@@ -149,6 +151,6 @@
   (enhanced-winner--save-configuration)
   (message "Current window configuration saved"))
 
-(global-set-key (kbd "C-x 4 s") #'enhanced-winner-save-now)
+(keymap-global-set "C-x 4 s" #'enhanced-winner-save-now)
 
 (provide 'enhanced-winner-mode)

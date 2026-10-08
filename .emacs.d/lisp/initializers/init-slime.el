@@ -1,7 +1,11 @@
+;;; -*- lexical-binding: t -*-
 
 ;;
 ;; brew install roswell
 ;;
+
+(defun my-slime-pulse-line (&rest _)
+  (pulse-momentary-highlight-one-line (point)))
 
 (use-package slime
   :ensure t
@@ -24,14 +28,11 @@
                      slime-editing-map
                      (bound-and-true-p slime-autodoc-mode-map)))
     (when map
-      (define-key map (kbd "SPC") nil)))
+      (keymap-set map "SPC" nil)))
   ;; 兼容一下 xref
-  (define-key slime-mode-map [remap xref-find-references] #'slime-who-calls)
+  (keymap-set slime-mode-map "<remap> <xref-find-references>" #'slime-who-calls)
   ;; 高亮 who calls 列表项
-  (advice-add 'slime-goto-location-position :after
-              (lambda (&rest _)
-                (when (fboundp 'pulse-momentary-highlight-one-line)
-                  (pulse-momentary-highlight-one-line (point)))))
+  (advice-add 'slime-goto-location-position :after #'my-slime-pulse-line)
   )
 
 (use-package slime-company

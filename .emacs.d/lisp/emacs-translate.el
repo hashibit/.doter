@@ -47,7 +47,8 @@
   (format "*Translation-%s*" (buffer-name)))
 
 (defun emacs-translate--read-language ()
-  "Let user choose target language; return prompt name.  Default is first (English)."
+  "Let user choose target language; return prompt name.
+Default is first (English)."
   (let* ((choices (mapcar #'car emacs-translate-language-alist))
          (default (car choices))
          (selected (completing-read
@@ -62,7 +63,8 @@
 
 ;;;###autoload
 (defun emacs-translate-buffer (&optional target-lang)
-  "Translate current buffer to TARGET-LANG; show result in *Translation-<buffer name>*.
+  "Translate current buffer to TARGET-LANG.
+Show result in *Translation-<buffer name>*.
 If TARGET-LANG is nil, prompt for target language (default: English).
 Uses gptel for the LLM request (see gptel-backend, gptel-model)."
   (interactive)
@@ -80,9 +82,10 @@ Uses gptel for the LLM request (see gptel-backend, gptel-model)."
                           (message "Translation request failed")
                         (let ((buf (get-buffer-create result-buf-name)))
                           (with-current-buffer buf
-                            (funcall source-mode)
-                            (erase-buffer)
-                            (insert (string-trim response))
+                            (delay-mode-hooks (funcall source-mode))
+                            (let ((inhibit-read-only t))
+                              (erase-buffer)
+                            (insert (string-trim response)))
                             (goto-char (point-min))
                             (set-buffer-file-coding-system 'utf-8)
                             (view-mode 1))

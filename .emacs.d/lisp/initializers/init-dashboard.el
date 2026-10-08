@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 
 ;; use-package with package.el:
 (use-package dashboard

@@ -1,7 +1,19 @@
 ;;; -*- lexical-binding: t -*-
 
-(setq imenu-list-size 0.20)
-(setq imenu-list-auto-update nil)
+(require 'imenu)
+
+(defvar imenu-list-buffer-name)
+(declare-function imenu-list-quit-window "imenu-list")
+(declare-function imenu-list-get-buffer-create "imenu-list")
+(declare-function imenu-list-major-mode "imenu-list")
+(declare-function eglot-current-server "eglot")
+(declare-function eglot-imenu "eglot")
+(declare-function eglot-uri-to-path "eglot")
+(declare-function jsonrpc-async-request "jsonrpc")
+(declare-function posframe-show "posframe")
+(declare-function posframe-hide "posframe")
+(declare-function treesit-simple-imenu "treesit")
+(declare-function treesit-node-at "treesit")
 
 (defun my-imenu-list-smart-toggle-refresh ()
   (interactive)
@@ -11,47 +23,67 @@
   (imenu-list-minor-mode 1)
   (select-window (get-buffer-window (imenu-list-get-buffer-create))))
 
+(defun my-imenu-list-enlarge-window ()
+  (interactive)
+  (enlarge-window-horizontally (/ (frame-width) 3)))
+
+(defun my-imenu-list-shrink-window ()
+  (interactive)
+  (shrink-window-horizontally (/ (frame-width) 3)))
+
 (use-package imenu-list
   :defer t
+  :custom
+  (imenu-list-size 0.20)
+  (imenu-list-auto-update nil)
   :bind ((:map imenu-list-major-mode-map
-               ("H" . (lambda () (interactive) (enlarge-window-horizontally (/ (frame-width) 3))))
+               ("H" . my-imenu-list-enlarge-window)
                ("M" . imenu-list-resize-window)
-               ("L" . (lambda () (interactive) (shrink-window-horizontally (/ (frame-width) 3))))
+               ("L" . my-imenu-list-shrink-window)
                ("m" . my-imenu-list-smart-toggle-refresh))))
 
 ;;; Struct method filter sidebar
 
 (defface my-imenu-group-face
   '((t :inherit font-lock-type-face :weight bold))
-  "Face for impl block headers in struct method sidebar.")
+  "Face for impl block headers in struct method sidebar."
+  :group 'imenu)
 
 (defface my-imenu-file-face
   '((t :foreground "#57D8D4" :weight bold))
-  "Face for file name headers in struct method sidebar.")
+  "Face for file name headers in struct method sidebar."
+  :group 'imenu)
 
 (defface my-imenu-method-face
   '((t :inherit font-lock-function-name-face))
-  "Face for method names in struct method sidebar.")
+  "Face for method names in struct method sidebar."
+  :group 'imenu)
 
 (defface my-imenu-field-face
   '((t :inherit font-lock-variable-name-face))
-  "Face for field names in struct method sidebar.")
+  "Face for field names in struct method sidebar."
+  :group 'imenu)
 
 (defface my-imenu-method-hover-face
   '((t :inherit highlight))
-  "Face for hovered method in struct method sidebar.")
+  "Face for hovered method in struct method sidebar."
+  :group 'imenu)
+
+(defvar my-imenu-peek--visible nil
+  "Whether the imenu peek posframe is currently visible.")
+
+(defun my-imenu--pos-buffer (src)
+  "Return the buffer for SRC, a buffer or a file name."
+  (if (bufferp src) src (find-file-noselect src)))
 
 (defun my-imenu-jump ()
   "Jump to the item under point in the struct methods buffer."
   (interactive)
   (when my-imenu-peek--visible
     (my-imenu-peek--hide))
-  (when-let ((data (get-text-property (point) 'my-imenu-pos)))
-    (pop-to-buffer (car data))
+  (when-let* ((data (get-text-property (point) 'my-imenu-pos)))
+    (pop-to-buffer (my-imenu--pos-buffer (car data)))
     (goto-char (cadr data))))
-
-(defvar my-imenu-peek--visible nil
-  "Whether the imenu peek posframe is currently visible.")
 
 (defun my-imenu-peek--poshandler (info)
   "Position posframe so its right edge aligns with the sidebar's left edge."
@@ -78,8 +110,8 @@
 
 (defun my-imenu-peek--show ()
   "Show posframe preview for the item under point."
-  (when-let ((data (get-text-property (point) 'my-imenu-pos)))
-    (let* ((src (car data))
+  (when-let* ((data (get-text-property (point) 'my-imenu-pos)))
+    (let* ((src (my-imenu--pos-buffer (car data)))
            (pos (cadr data))
            (context-lines 10)
            (content
@@ -122,17 +154,24 @@
   (interactive)
   (if my-imenu-peek--visible (my-imenu-peek--hide) (my-imenu-peek--show)))
 
+(defun my-imenu-quit-sidebar ()
+  "Hide the peek posframe and quit the sidebar window."
+  (interactive)
+  (when my-imenu-peek--visible (my-imenu-peek--hide))
+  (quit-window))
+
+(defvar-keymap my-imenu-sidebar-map
+  :doc "Extra keys for the struct method sidebar."
+  "RET" #'my-imenu-jump
+  "SPC" #'my-imenu-peek
+  "q"   #'my-imenu-quit-sidebar)
+
 (defun my-imenu--finalize-sidebar (buf)
   "Set up keybindings in BUF and display it as a right-side sidebar."
   (with-current-buffer buf
     (imenu-list-major-mode)
     (goto-char (point-min))
-    (local-set-key (kbd "RET") #'my-imenu-jump)
-    (local-set-key (kbd "SPC") #'my-imenu-peek)
-    (local-set-key (kbd "q") (lambda ()
-                               (interactive)
-                               (when my-imenu-peek--visible (my-imenu-peek--hide))
-                               (quit-window))))
+    (use-local-map (make-composed-keymap my-imenu-sidebar-map (current-local-map))))
   (display-buffer buf '(display-buffer-in-side-window (side . right) (window-width . 35))))
 
 (defvar my-imenu-method-group-patterns
@@ -150,7 +189,7 @@
 
 (defun my-imenu-method-group-p (group-name src-buffer)
   "Return non-nil if GROUP-NAME represents a method-bearing group in SRC-BUFFER."
-  (when-let ((pattern (alist-get (buffer-local-value 'major-mode src-buffer)
+  (when-let* ((pattern (alist-get (buffer-local-value 'major-mode src-buffer)
                                  my-imenu-method-group-patterns)))
     (string-match-p pattern group-name)))
 
@@ -165,7 +204,7 @@ If region is active, use the selected text as input."
   (let* ((items (imenu--make-index-alist t))
          (filtered (seq-filter (lambda (item)
                                  (and (imenu--subalist-p item)
-                                      (string-match-p struct-name (car item))))
+                                      (string-match-p (regexp-quote struct-name) (car item))))
                                items))
          (buf (get-buffer-create "*Ilist-struct-methods*"))
          (src (current-buffer)))
@@ -198,20 +237,39 @@ If region is active, use the selected text as input."
     (expand-file-name (url-unhex-string
                        (replace-regexp-in-string "\\`file://" "" uri)))))
 
+(defun my-imenu--collect-file-groups (struct-name path)
+  "Return imenu groups in PATH matching STRUCT-NAME as (NAME METHOD-P . ITEMS).
+ITEMS positions are integers, so PATH's buffer can be killed afterwards;
+it is killed if it was not already open."
+  (let* ((existing (find-buffer-visiting path))
+         (file-buf (or existing (find-file-noselect path))))
+    (unwind-protect
+        (with-current-buffer file-buf
+          (let ((items (imenu--make-index-alist t)))
+            (mapcar (lambda (group)
+                      (cons (car group)
+                            (cons (my-imenu-method-group-p (car group) file-buf)
+                                  (mapcar (lambda (method)
+                                            (let ((pos (cdr method)))
+                                              (cons (car method)
+                                                    (if (markerp pos) (marker-position pos) pos))))
+                                          (cdr group)))))
+                    (seq-filter (lambda (item)
+                                  (and (imenu--subalist-p item)
+                                       (string-match-p (regexp-quote struct-name) (car item))))
+                                items))))
+      (unless existing (kill-buffer file-buf)))))
+
 (defun my-imenu--render-from-files (struct-name paths src-buf)
-  "Run imenu on each path in PATHS, collect groups matching STRUCT-NAME, render sidebar."
+  "Run imenu on PATHS, collect groups matching STRUCT-NAME, render sidebar.
+Fall back to the current file of SRC-BUF when nothing matches."
   (let ((buf (get-buffer-create "*Ilist-struct-methods*"))
         (root (or (when (project-current) (project-root (project-current))) ""))
         all-groups)
     (dolist (path paths)
       (when (file-exists-p path)
-        (let* ((file-buf (find-file-noselect path))
-               (items (with-current-buffer file-buf (imenu--make-index-alist t)))
-               (matches (seq-filter (lambda (item)
-                                      (and (imenu--subalist-p item)
-                                           (string-match-p (regexp-quote struct-name) (car item))))
-                                    items)))
-          (when matches (push (cons path matches) all-groups)))))
+        (when-let* ((matches (my-imenu--collect-file-groups struct-name path)))
+          (push (cons path matches) all-groups))))
     (if (null all-groups)
         (progn
           (message "No impl blocks found for %s, falling back to current file" struct-name)
@@ -220,24 +278,23 @@ If region is active, use the selected text as input."
         (read-only-mode -1)
         (erase-buffer)
         (pcase-dolist (`(,path . ,groups) (nreverse all-groups))
-          (let* ((file-buf (find-file-noselect path))
-                 (short (file-relative-name path root))
-                 (hdr-start (point)))
+          (let ((src (or (find-buffer-visiting path) path))
+                (short (file-relative-name path root))
+                (hdr-start (point)))
             (insert "── " short " ──\n")
             (add-text-properties hdr-start (1- (point)) '(face my-imenu-file-face))
-            (dolist (group groups)
+            (pcase-dolist (`(,group-name ,is-method . ,methods) groups)
               (let ((group-start (point)))
-                (insert (car group) "\n")
+                (insert group-name "\n")
                 (add-text-properties group-start (1- (point)) '(face my-imenu-group-face)))
-              (let ((is-method (my-imenu-method-group-p (car group) file-buf)))
-                (dolist (method (cdr group))
-                  (let ((item-start (point))
-                        (item-face (if is-method 'my-imenu-method-face 'my-imenu-field-face)))
-                    (insert "  " (car method) "\n")
-                    (add-text-properties item-start (1- (point))
-                                         `(face ,item-face
-                                           mouse-face my-imenu-method-hover-face
-                                           my-imenu-pos (,file-buf ,(cdr method)))))))))))
+              (dolist (method methods)
+                (let ((item-start (point))
+                      (item-face (if is-method 'my-imenu-method-face 'my-imenu-field-face)))
+                  (insert "  " (car method) "\n")
+                  (add-text-properties item-start (1- (point))
+                                       `(face ,item-face
+                                         mouse-face my-imenu-method-hover-face
+                                         my-imenu-pos (,src ,(cdr method))))))))))
       (my-imenu--finalize-sidebar buf))))
 
 (defun my-imenu-filter-struct-eglot (struct-name)
@@ -388,6 +445,15 @@ then dropped from output to avoid the blank Go-to line in imenu-list)."
       (t (list item))))
    index))
 
+(defun my-imenu-js--create-index ()
+  "Build the JS/TS imenu index: filter local entries and annotate exports."
+  (thread-first (if (and (bound-and-true-p eglot--managed-mode)
+                         (fboundp 'eglot-imenu))
+                    (eglot-imenu)
+                  (treesit-simple-imenu))
+                my-imenu-js--remove-insignificant
+                my-imenu-js--annotate))
+
 (defun my-imenu-js-setup ()
   "Wrap imenu to filter local-scope entries and annotate exports.
 When eglot is active, delegates to `eglot-imenu' which returns hierarchical
@@ -396,25 +462,20 @@ variables — filtering is skipped and only export annotation is applied.
 Without eglot, falls back to `treesit-simple-imenu' with local filtering.
 Idempotent: safe to call multiple times."
   (interactive)
-  (setq-local imenu-create-index-function
-              (lambda ()
-                (thread-first (if (and (bound-and-true-p eglot--managed-mode)
-                                       (fboundp 'eglot-imenu))
-                                  (eglot-imenu)
-                                (treesit-simple-imenu))
-                              my-imenu-js--remove-insignificant
-                              my-imenu-js--annotate))))
+  (setq-local imenu-create-index-function #'my-imenu-js--create-index))
 
 (dolist (hook '(js-ts-mode-hook jtsx-typescript-mode-hook jtsx-tsx-mode-hook jtsx-jsx-mode-hook))
   (add-hook hook #'my-imenu-js-setup))
 
 ;; eglot sets imenu-create-index-function buffer-locally when it connects,
 ;; overwriting the wrapper above.  Re-apply after eglot takes over.
-(add-hook 'eglot-managed-mode-hook
-          (lambda ()
-            (when (and eglot--managed-mode
-                       (memq major-mode '(js-ts-mode jtsx-typescript-mode
-                                          jtsx-tsx-mode jtsx-jsx-mode)))
-              (my-imenu-js-setup))))
+(defun my-imenu-js-reapply-after-eglot ()
+  "Re-install `my-imenu-js--create-index' once eglot manages a JS/TS buffer."
+  (when (and (bound-and-true-p eglot--managed-mode)
+             (memq major-mode '(js-ts-mode jtsx-typescript-mode
+                                jtsx-tsx-mode jtsx-jsx-mode)))
+    (my-imenu-js-setup)))
+
+(add-hook 'eglot-managed-mode-hook #'my-imenu-js-reapply-after-eglot)
 
 (provide 'init-imenu)

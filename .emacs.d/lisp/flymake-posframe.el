@@ -85,7 +85,7 @@ Only the `foreground' is used in this face."
 
 (defun flymake-posframe-display ()
   (when flymake-mode
-    (if-let ((diag (get-char-property (point) 'flymake-diagnostic)))
+    (if-let* ((diag (get-char-property (point) 'flymake-diagnostic)))
         (unless (and (eq diag flymake-posframe-last-diag)
                      (frame-visible-p (buffer-local-value 'posframe--frame (get-buffer flymake-posframe-buffer))))
           (setq flymake-posframe-last-diag diag)

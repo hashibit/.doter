@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 (use-package display-line-numbers
   :defer t
   :config

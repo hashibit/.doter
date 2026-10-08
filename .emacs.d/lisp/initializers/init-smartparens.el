@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 (require 'smartparens-config)
 (require 'sp-sublimetext-like)
 
@@ -45,6 +46,18 @@ respectively."
                     (single-quote . "'")
                     (double-quote . "\"")
                     (back-quote . "`")))
+
+;; "_" 不是 smartparens 的 pair，sp-wrap-with-pair 用不了，手动包裹
+(defun my-wrap-region-with-underscores (start stop)
+  (interactive "r")
+  (save-excursion
+    (goto-char stop)
+    (insert "_")
+    (goto-char start)
+    (insert "_"))
+  (goto-char (+ 1 start))
+  (push-mark (+ 1 stop))
+  (setq deactivate-mark t))
 
 (bind-keys :map smartparens-mode-map
   ("C-c (" . my-wrap-region-with-parens)

@@ -10,8 +10,10 @@
 
 ;;; Code:
 
+(require 'custom-util-funcs)
+
 ;; Java development environment paths
-(defvar java-local-dir (expand-file-name "~/.emacs.d/.local"))
+(defvar java-local-dir (locate-user-emacs-file ".local"))
 (defvar java-dev-dir (file-name-concat java-local-dir "java"))
 (defvar java-lombok-dir (file-name-concat java-dev-dir "lombok"))
 (defvar java-test-runner-dir (file-name-concat java-dev-dir "test-runner"))
@@ -39,14 +41,21 @@
 (defvar java-google-style-formatter (file-name-concat java-local-dir "eclipse-java-google-style.xml"))
 
 ;; Java runtime configuration
+(defun java--env-java-home ()
+  "Return $JAVA_HOME when it is set and non-empty."
+  (let ((home (getenv "JAVA_HOME")))
+    (unless (string-empty-p (or home ""))
+      home)))
+
 (defvar java-runtime-path
-  (or (getenv "JAVA_HOME")
+  (or (java--env-java-home)
     (cond
       ((eq system-type 'darwin)
         (or (and (file-exists-p "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home")
               "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home")
           (and (file-exists-p "/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home")
-            "/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home")))
+            "/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home")
+          (car (ignore-errors (process-lines "/usr/libexec/java_home" "-v" "21")))))
       ((eq system-type 'gnu/linux)
         (or (and (file-exists-p "/usr/lib/jvm/java-21-openjdk-amd64")
               "/usr/lib/jvm/java-21-openjdk-amd64")
@@ -78,22 +87,30 @@
       (make-directory dir t)
       (message "Created directory: %s" dir))))
 
+(defvar url-http-response-status)
+
 (defun java-setup-download-file (url destination)
-  "从 URL 下载文件到 DESTINATION。"
+  "从 URL 下载文件到 DESTINATION。成功返回 t。"
   (let ((download-buffer (url-retrieve-synchronously url t)))
     (when download-buffer
-      (with-current-buffer download-buffer
-        (goto-char (point-min))
-        ;; 跳过 HTTP 头
-        (re-search-forward "^$" nil 'move)
-        (forward-char)
-        (delete-region (point-min) (point))
-        ;; 写入文件
-        (let ((coding-system-for-write 'binary))
-          (write-region (point-min) (point-max) destination))
-        (kill-buffer))
-      (message "Downloaded: %s" destination)
-      t)))
+      (unwind-protect
+          (with-current-buffer download-buffer
+            (let ((status (bound-and-true-p url-http-response-status)))
+              (if (not (and (integerp status) (<= 200 status 299)))
+                  (progn
+                    (message "Download failed (HTTP %s): %s" status url)
+                    nil)
+                (goto-char (point-min))
+                ;; 跳过 HTTP 头
+                (re-search-forward "^$" nil 'move)
+                (forward-char)
+                (delete-region (point-min) (point))
+                ;; 写入文件
+                (let ((coding-system-for-write 'binary))
+                  (write-region (point-min) (point-max) destination))
+                (message "Downloaded: %s" destination)
+                t)))
+        (kill-buffer download-buffer)))))
 
 (defun java-setup-download-lombok ()
   "下载 Lombok JAR 文件。"
@@ -124,10 +141,12 @@
       (message "Downloading JDT Language Server...")
       (when (java-setup-download-file jdt-language-server-url tar-file)
         (message "Extracting JDT Language Server...")
-        (let ((default-directory jdt-language-server-dir))
-          (shell-command (format "tar -xzf %s" (shell-quote-argument tar-file))))
-        (delete-file tar-file)
-        (message "JDT Language Server installed successfully!")))))
+        (let* ((default-directory jdt-language-server-dir)
+               (exit-code (call-process "tar" nil nil nil "-xzf" (expand-file-name tar-file))))
+          (delete-file tar-file)
+          (if (eq exit-code 0)
+              (message "JDT Language Server installed successfully!")
+            (message "Failed to extract JDT Language Server (tar exit %s)" exit-code)))))))
 
 (defun java-setup-download-all ()
   "下载所有 Java 开发所需的文件。"
@@ -168,35 +187,43 @@
 
 
 
+(defvar eglot-lsp-context)
+
+(defun java--project-name ()
+  "Return the current project's directory name, for the jdtls -data dir."
+  (let ((project (let ((eglot-lsp-context t))
+                   (or (project-current)
+                       `(transient . ,(expand-file-name default-directory))))))
+    (file-name-base (directory-file-name (project-root project)))))
+
 ;; Helper function for jdtls contact
-(defun eglot-jdtls-contact (interactive)
+(defun eglot-jdtls-contact (_interactive)
   `(,(file-name-concat jdt-language-server-dir "bin" "jdtls")
      ;; 指定 Java 运行时路径
      "--java-executable" ,(file-name-concat java-runtime-path "bin" "java")
      ;; Use macOS ARM config for M1 Mac
      "-configuration" ,jdt-language-server-config-dir
-     "-data" ,(file-name-concat
-                jdt-language-server-workspaces
-                (file-name-base (directory-file-name (project-root (eglot--current-project)))))
+     "-data" ,(file-name-concat jdt-language-server-workspaces (java--project-name))
      ;; Lombok support for Java annotations
      ,(concat "--jvm-arg=-javaagent:" java-lombok-jar)
      ;; JVM memory and GC settings
      "--jvm-arg=-Xmx2G"
      "--jvm-arg=-XX:+UseG1GC"
-     "--jvm-arg=-XX:+UseStringDeduplication"))
+     "--jvm-arg=-XX:+UseStringDeduplication"
+     :initializationOptions ,(java-eglot-initialization-options)))
 
 (defun eglot-clear-project-jdtls-data()
   (interactive)
   (delete-directory
-    (file-name-concat
-      jdt-language-server-workspaces
-      (file-name-base (directory-file-name (project-root (eglot--current-project)))))
+    (file-name-concat jdt-language-server-workspaces (java--project-name))
     t)
   (eglot-shutdown (eglot-current-server))
   (eglot-ensure)
   )
 
 ;; Configure java-ts-mode (Tree-sitter Java mode)
+(defvar eglot-server-programs)
+(declare-function jsonrpc-request "jsonrpc")
 (use-package java-ts-mode
   :when (and (treesit-available-p) (treesit-language-available-p 'java))
   :mode "\\.java\\'"
@@ -246,22 +273,26 @@
      ;; support non standard LSP `java/classFileContents', `Location' items that have a `jdt://...' uri
      :extendedClientCapabilities (:classFileContentsSupport t)))
 
-;; 确保 Eglot 已经加载
-(with-eval-after-load 'eglot
-  ;; 方法特化 - 确保 Eglot 已经加载
-  (cl-defmethod eglot-initialization-options
-    ((server eglot-lsp-server)          ; 参数类型约束：server 必须是 eglot-lsp-server 类型
-      &context                           ; 开始上下文约束
-      (major-mode java-ts-mode))         ; 上下文约束：当前 major-mode 必须是 java-ts-mode
-    (java-eglot-initialization-options)))
+;; initializationOptions 通过 eglot-jdtls-contact 返回的 :initializationOptions 传给 jdtls
 
 ;; Eglot Java functions (simplified from eglot-java package)
-(defun eglot-java--class-fqcn (&optional main-p)
+(declare-function eglot-current-server "eglot")
+(declare-function eglot-path-to-uri "eglot")
+(declare-function eglot-execute-command "eglot")
+(declare-function eglot-shutdown "eglot")
+(defvar eglot--symbol-kind-names)               ; eglot 内部常量，无公开替代
+
+(defun my-eglot-java--server ()
+  "Return the current Eglot server or signal an error."
+  (or (eglot-current-server)
+      (user-error "No Eglot server for this buffer")))
+
+(defun my-eglot-java--class-fqcn (&optional main-p)
   "Return the fully qualified name of a given class."
-  (let* ((document-symbols (eglot-java--document-symbols))
-          (package-name (eglot-java--symbol-value document-symbols "Package"))
-          (class-name (eglot-java--symbol-value document-symbols "Class"))
-          (method-name (unless main-p (eglot-java--method-name document-symbols class-name)))
+  (let* ((document-symbols (my-eglot-java--document-symbols))
+          (package-name (my-eglot-java--symbol-value document-symbols "Package"))
+          (class-name (my-eglot-java--symbol-value document-symbols "Class"))
+          (method-name (unless main-p (my-eglot-java--method-name document-symbols class-name)))
           (package-suffix (if (string= "" package-name)
                             package-name
                             "."))
@@ -271,7 +302,7 @@
       (format "%s#%s" cls method-name)
       cls)))
 
-(defun eglot-java--symbol-value (symbols symbol-type)
+(defun my-eglot-java--symbol-value (symbols symbol-type)
   "Extract the symbol value for a given SYMBOL-TYPE from a symbol table SYMBOLS."
   (let ((symbol-details (cl-find-if
                           (lambda (elem)
@@ -283,7 +314,7 @@
       (plist-get symbol-details :name)
       "")))
 
-(defun eglot-java--method-name (symbols class-name)
+(defun my-eglot-java--method-name (symbols class-name)
   (let* ((class-symbol (cl-find-if
                          (lambda (elem)
                            (string= (plist-get elem :name) class-name))
@@ -308,34 +339,34 @@
               (end-pos (+funcs/pos-at-line-col (plist-get end :line) (plist-get end :character))))
         (buffer-substring-no-properties start-pos end-pos)))))
 
-(defun eglot-java--document-symbols ()
+(defun my-eglot-java--document-symbols ()
   "Fetch the document symbols/tokens."
   (jsonrpc-request
-    (eglot--current-server-or-lose)
+    (my-eglot-java--server)
     :textDocument/documentSymbol
-    (list :textDocument (list :uri (eglot--path-to-uri (buffer-file-name))))))
+    (list :textDocument (list :uri (eglot-path-to-uri (buffer-file-name))))))
 
-(defun eglot-java--project-classpath (filename scope)
+(defun my-eglot-java--project-classpath (filename scope)
   "Return the classpath for a given FILENAME and SCOPE."
-  (plist-get (eglot-execute-command (eglot--current-server-or-lose)
+  (plist-get (eglot-execute-command (my-eglot-java--server)
                "java.project.getClasspaths"
-               (vector (eglot--path-to-uri filename)
+               (vector (eglot-path-to-uri filename)
                  (json-encode `(( "scope" . ,scope)))))
     :classpaths))
 
-(defun eglot-java--file--test-p (file-path)
+(defun my-eglot-java--file--test-p (file-path)
   "Tell if a file locate at FILE-PATH is a test class."
   (eglot-execute-command
-    (eglot--current-server-or-lose)
+    (my-eglot-java--server)
     "java.project.isTestFile"
-    (vector (eglot--path-to-uri file-path ))))
+    (vector (eglot-path-to-uri file-path ))))
 
 (defun eglot-java-run-test ()
   "Run a test class."
   (interactive)
-  (let* ((fqcn                 (eglot-java--class-fqcn))
-          (cp                   (eglot-java--project-classpath (buffer-file-name) "test"))
-          (current-file-is-test (not (equal ':json-false (eglot-java--file--test-p (buffer-file-name))))))
+  (let* ((fqcn                 (my-eglot-java--class-fqcn))
+          (cp                   (my-eglot-java--project-classpath (buffer-file-name) "test"))
+          (current-file-is-test (not (equal ':json-false (my-eglot-java--file--test-p (buffer-file-name))))))
 
     (unless (file-exists-p java-junit-platform-console-standalone-jar)
       (user-error "%s doest not exit" java-junit-platform-console-standalone-jar))
@@ -355,8 +386,8 @@
 (defun eglot-java-run-main ()
   "Run a main class."
   (interactive)
-  (let* ((fqcn (eglot-java--class-fqcn t))
-          (cp   (eglot-java--project-classpath (buffer-file-name) "runtime")))
+  (let* ((fqcn (my-eglot-java--class-fqcn t))
+          (cp   (my-eglot-java--project-classpath (buffer-file-name) "runtime")))
     (if fqcn
       (compile
         (concat "java -cp "
@@ -368,7 +399,6 @@
 
 (use-package jarchive
   :ensure t
-  :mode "\\.java\\'"
   :after eglot
   :config
   (jarchive-mode 1))

@@ -3,12 +3,18 @@
 
 (require 'god-mode)
 
+(defvar darker-window-bg-color)
+(defvar hl-line-bg-color)
+(declare-function sp--maybe-init "smartparens")
+(declare-function mwim-end-of-code-or-line "mwim")
+(declare-function mwim-beginning-of-code-or-line "mwim")
+
 (setq god-exempt-major-modes nil
       god-exempt-predicates nil
       god-mode-alist '((nil . "C-") ("r" . "M-") ("R" . "C-M-")))
 
 ;; special-buffers are not affected by god-mode bindings, but affected by my-special-buffer-keys-minor-mode-map
-(setq special-buffer-modes
+(defvar special-buffer-modes
   (list
     "dired-mode"
     "ibuffer-mode"
@@ -18,7 +24,7 @@
     "image-mode"
     ))
 
-(setq special-buffers (list
+(defvar special-buffers (list
                        "*Pos-Frame-Read*"
                        "*Treemacs"
                        "*Messages*"
@@ -49,7 +55,7 @@
 
 
 ;; legendary-buffers are not affected by god-mode AND my-special-buffer-keys-minor-mode-map
-(setq legendary-buffers (list
+(defvar legendary-buffers (list
                          "*this-buffer-is-left-alone-without-god-mode-at-all"
                          "*Minibuf"
                          "*Compile"
@@ -76,7 +82,7 @@
                          "*slime-repl"
                          "*Customize"))
 
-(setq legendary-modes (list
+(defvar legendary-modes (list
                        "*this-buffer-is-left-alone-without-god-mode-at-all"
                        "cfrs-input-mode"
                        "help-mode"
@@ -108,53 +114,39 @@
   (dolist (element (if (listp buffer-names) buffer-names (list buffer-names)))
   (setq legendary-buffers (remove element legendary-buffers))))
 
+(defun my-god--buffer-mode-name (bufname)
+  "Return the major mode name of buffer BUFNAME as a string."
+  (symbol-name (buffer-local-value 'major-mode (get-buffer bufname))))
+
+(defun my-god--prefix-match-p (prefixes str)
+  "Return non-nil if STR starts with any of PREFIXES."
+  (seq-some (lambda (n) (string-prefix-p n str)) prefixes))
+
 (defun my-god-this-is-special-buffer (bufname)
   "Check if BUFNAME is a special buffer."
-  (interactive)
-  (let ((this-buffer-name (string-trim bufname))
-        (this-buffer-mode (symbol-name (buffer-mode bufname))))
-    (or
-     (seq-filter
-      (lambda (n) (string-prefix-p n this-buffer-name))
-      special-buffers)
-     (seq-filter
-      (lambda (n) (string-prefix-p n this-buffer-mode))
-      special-buffer-modes))))
+  (or (my-god--prefix-match-p special-buffers (string-trim bufname))
+      (my-god--prefix-match-p special-buffer-modes (my-god--buffer-mode-name bufname))))
 
 (defun my-god-this-is-legendary-buffer (bufname)
   "Check if BUFNAME is a legendary buffer."
-  (interactive)
-  ;; (message "buffer-mode type is %s" (type-of (buffer-mode bufname))) ==> symbol
-  ;;;; use symbol-name convert symbol to string; And for the reverse, (intern "some-string") to get symbol
-  (let ((this-buffer-name (string-trim bufname))
-        (this-buffer-mode (symbol-name (buffer-mode bufname))))
-    ;; (message "this-buffer-name %s" this-buffer-name)
-    ;; (message "this-buffer-mode %s" this-buffer-mode)
-    (or
-     (seq-filter
-      (lambda (n) (string-prefix-p n this-buffer-name))
-      legendary-buffers)
-     (seq-filter
-      (lambda (n) (string-prefix-p n this-buffer-mode))
-      legendary-modes))))
+  (or (my-god--prefix-match-p legendary-buffers (string-trim bufname))
+      (my-god--prefix-match-p legendary-modes (my-god--buffer-mode-name bufname))))
 
 (defun my-god-this-is-normal-editor-buffer (bufname)
   "Check if BUFNAME is a normal editor buffer."
-  (interactive)
   (not
    (or (my-god-this-is-special-buffer bufname)
        (my-god-this-is-legendary-buffer bufname))))
 
 (defun my-god-should-enable-hi-line-mode ()
   "Check if hi-line mode should be enabled."
-  (interactive)
   (not (bound-and-true-p smerge-mode)))
 
 (defun my-god-should-enable-line-number-mode()
   "Check if line number mode should be enabled."
   (not (derived-mode-p 'vterm-mode)))
 
-(setq should-not-display-dark-background-modes (list
+(defvar should-not-display-dark-background-modes (list
                                                  "dired-mode"
                                                  "eat-mode"
                                                  "eldoc-box-mode"
@@ -162,15 +154,23 @@
                                                  "minibuffer-mode"
                                                  "dashboard-mode"))
 
-(setq should-not-display-no-paddings-modes (list
+(defvar should-not-display-no-paddings-modes (list
                                              "xwidget-webkit-mode"))
+(defvar-local my-window-margins nil
+  "Buffer-local (LEFT . RIGHT) margins overriding `my/set-margins-all-windows'.")
+
 (defun my/set-margins-all-windows ()
-  "给所有窗口设置边距，排除指定的 major mode"
+  "给所有窗口设置边距，排除指定的 major mode 以及设置了 `my-window-margins' 的 buffer"
   (dolist (window (window-list))
     (with-current-buffer (window-buffer window)
-      (if (member (symbol-name major-mode) should-not-display-no-paddings-modes)
-        (set-window-margins window 0 0)      ; 排除的模式设置为0
-        (set-window-margins window 1 1)))))  ; 其他模式设置边距
+      (let ((margins (cond (my-window-margins)
+                           ((member (symbol-name major-mode) should-not-display-no-paddings-modes)
+                            '(0 . 0))   ; 排除的模式设置为0
+                           (t '(1 . 1)))) ; 其他模式设置边距
+            (current (window-margins window)))
+        (unless (and (eql (or (car current) 0) (car margins))
+                     (eql (or (cdr current) 0) (cdr margins)))
+          (set-window-margins window (car margins) (cdr margins)))))))
 
 ;; 在窗口配置改变时自动设置边距
 (add-hook 'window-configuration-change-hook #'my/set-margins-all-windows)
@@ -178,17 +178,13 @@
 
 (defun my-god-this-is-dark-background-buffer (bufname)
   "Check if BUFNAME should have dark background."
-  (interactive)
-  (let ((this-buffer-name (string-trim bufname))
-         (this-buffer-mode (symbol-name (buffer-mode bufname))))
-    (not
-      (or
-        ;; Check if buffer name matches (for eldoc-box and similar)
-        (string-prefix-p "*eldoc-box*" this-buffer-name)
-        ;; Check if major-mode matches
-        (seq-filter
-          (lambda (n) (string-prefix-p n this-buffer-mode))
-          should-not-display-dark-background-modes)))))
+  (not
+   (or
+    ;; Check if buffer name matches (for eldoc-box and similar)
+    (string-prefix-p "*eldoc-box*" (string-trim bufname))
+    ;; Check if major-mode matches
+    (my-god--prefix-match-p should-not-display-dark-background-modes
+                            (my-god--buffer-mode-name bufname)))))
 
   ;; (let ((this-buffer-name (string-trim bufname))
   ;;        (this-buffer-mode (symbol-name (buffer-mode bufname))))
@@ -201,16 +197,11 @@
 
 (defun my-god-this-buffer-window-no-padding (bufname)
   "Check if BUFNAME window shoudn't have padding."
-  (interactive)
-  (let ((this-buffer-name (string-trim bufname))
-         (this-buffer-mode (symbol-name (buffer-mode bufname))))
-    (seq-filter
-      (lambda (n) (string-prefix-p n this-buffer-mode))
-      should-not-display-no-paddings-modes)
-    ))
+  (my-god--prefix-match-p should-not-display-no-paddings-modes
+                          (my-god--buffer-mode-name bufname)))
 
 (defvar-local my-god-mode-is-active-flag nil
-  "Buffer-local flag tracking whether god-mode was explicitly enabled in this buffer.")
+  "Non-nil if god-mode was explicitly enabled in this buffer.")
 
 (defun refresh-current-mode-visuals ()
   "Apply visual settings for the current buffer (background, margins)."
@@ -223,23 +214,32 @@
       (set-remap 'default `(:background ,darker-window-bg-color))
       (set-remap 'line-number `(:background ,darker-window-bg-color :foreground "#627d9d"))
       (set-remap 'line-number-current-line `(:background ,darker-window-bg-color :foreground "#627d9d"))))
-  (when (my-god-this-buffer-window-no-padding (buffer-name))
-    (setq-local window-margins '(0 . 0))))
+  (when (and (my-god-this-buffer-window-no-padding (buffer-name))
+             (not my-window-margins))
+    (setq my-window-margins '(0 . 0))
+    (my/set-margins-all-windows)))
 
-(defun refresh-current-mode ()
-  "Refresh the current mode settings based on buffer type.
-When switching to an existing buffer, respects the buffer's prior god-mode state."
-  (interactive)
-  (refresh-current-mode-visuals)
+(defun my-god--setup-legendary-or-special-buffer ()
+  "Set modes for legendary/special buffers; return nil for normal buffers."
   (cond
    ((my-god-this-is-legendary-buffer (buffer-name))
     (god-local-mode 0)
     (my-keys-minor-mode 0)
-    (my-special-buffer-keys-minor-mode 0))
+    (my-special-buffer-keys-minor-mode 0)
+    t)
    ((my-god-this-is-special-buffer (buffer-name))
     (god-local-mode 0)
     (my-keys-minor-mode 0)
-    (my-special-buffer-keys-minor-mode 1))
+    (my-special-buffer-keys-minor-mode 1)
+    t)))
+
+(defun refresh-current-mode ()
+  "Refresh the current mode settings based on buffer type.
+When switching to an existing buffer, respect its prior god-mode state."
+  (interactive)
+  (refresh-current-mode-visuals)
+  (cond
+   ((my-god--setup-legendary-or-special-buffer))
    (t
     ;; Restore the buffer's own god-mode state; don't override if user disabled it.
     (if my-god-mode-is-active-flag
@@ -258,14 +258,7 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
   "Enable god-mode for a newly opened file buffer (find-file-hook)."
   (refresh-current-mode-visuals)
   (cond
-   ((my-god-this-is-legendary-buffer (buffer-name))
-    (god-local-mode 0)
-    (my-keys-minor-mode 0)
-    (my-special-buffer-keys-minor-mode 0))
-   ((my-god-this-is-special-buffer (buffer-name))
-    (god-local-mode 0)
-    (my-keys-minor-mode 0)
-    (my-special-buffer-keys-minor-mode 1))
+   ((my-god--setup-legendary-or-special-buffer))
    (t
     (god-local-mode 1)
     (my-keys-minor-mode 1)
@@ -290,7 +283,7 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
     (setq my-god-mode-is-active-flag t)
     (my-special-buffer-keys-minor-mode 0)))
 
-(defun my-god-mode-with-switch-any-buffer (prev curr)
+(defun my-god-mode-with-switch-any-buffer (_prev curr)
   "Handle god mode when switching buffers from PREV to CURR."
   (cl-assert (eq curr (current-buffer))) ;; Always t
   (refresh-current-mode))
@@ -307,7 +300,7 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
   (interactive)
   (beginning-of-line)
   (newline)
-  (previous-line)
+  (forward-line -1)
   (indent-for-tab-command)
   (my-quit-god-mode))
 
@@ -327,78 +320,76 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
   (my-quit-god-mode))
 
 ;; donot warnning, just wrap search
+(setq isearch-wrap-pause 'no-ding
+      isearch-repeat-on-direction-change t)
+
 (defun isearch-repeat-forward+ ()
   (interactive)
-  (unless isearch-forward
-    (goto-char isearch-other-end))
-  (isearch-repeat-forward)
-  (unless isearch-success
-    (isearch-repeat-forward))
-  ;; (recenter)
-  )
+  (isearch-repeat-forward))
 
 (defun isearch-repeat-backward+ ()
   (interactive)
-  (when (and isearch-forward isearch-other-end)
-    (goto-char isearch-other-end))
-  (isearch-repeat-backward)
-  (unless isearch-success
-    (isearch-repeat-backward))
-  ;; (recenter)
-  )
+  (isearch-repeat-backward))
 
 (require 'god-mode-isearch)
-(define-key isearch-mode-map (kbd "TAB") #'god-mode-isearch-activate)
-(define-key god-mode-isearch-map (kbd "TAB") #'god-mode-isearch-disable)
+(keymap-set isearch-mode-map "TAB" #'god-mode-isearch-activate)
+(keymap-set god-mode-isearch-map "TAB" #'god-mode-isearch-disable)
 ;; RET to god, then RET to exit
 ;; (define-key isearch-mode-map (kbd "RET") #'god-mode-isearch-activate)
 ;; this variable make sure RET exit isearch-mode immediately
 
-(define-key isearch-mode-map (kbd "RET") #'isearch-exit)
-(define-key isearch-mode-map (kbd "C-l") #'recenter-top-bottom)
+(keymap-set isearch-mode-map "RET" #'isearch-exit)
+(keymap-set isearch-mode-map "C-l" #'recenter-top-bottom)
 
-(define-key isearch-mode-map (kbd "C-s") 'isearch-repeat-forward+)
-(define-key isearch-mode-map (kbd "C-r") 'isearch-repeat-backward+)
+(keymap-set isearch-mode-map "C-s" #'isearch-repeat-forward+)
+(keymap-set isearch-mode-map "C-r" #'isearch-repeat-backward+)
+
+(defun my-god-isearch-exit-next-line ()
+  (interactive)
+  (isearch-exit)
+  (line-move 1))
+
+(defun my-god-isearch-exit-previous-line ()
+  (interactive)
+  (isearch-exit)
+  (line-move -1))
+
+(defun my-god-isearch-exit-forward-char ()
+  (interactive)
+  (isearch-exit)
+  (my-forward-char-no-cross-line))
 ;; like vim
 ;; reset all other keys. then add our specific keys.
+;; (char-table range t 覆盖所有字符；"<t>" 默认绑定还会吞掉非字符事件，不等价)
 (set-char-table-range (nth 1 god-mode-isearch-map) t #'ignore)
-(define-key god-mode-isearch-map (kbd "n") 'isearch-repeat-forward+)
-(define-key god-mode-isearch-map (kbd "N") 'isearch-repeat-backward+)
-(define-key god-mode-isearch-map (kbd "p") 'yank)
-(define-key god-mode-isearch-map (kbd "u") 'undo)
-(define-key god-mode-isearch-map (kbd "d") 'kill-whole-line)
-(define-key god-mode-isearch-map (kbd "j") #'(lambda ()
-                                               (interactive)
-                                               (isearch-exit)
-                                               (next-line)))
-(define-key god-mode-isearch-map (kbd "k") #'(lambda ()
-                                               (interactive)
-                                               (isearch-exit)
-                                               (previous-line)))
-(define-key god-mode-isearch-map (kbd "h") #'(lambda ()
-                                               (interactive)
-                                               (isearch-exit)
-                                               (my-forward-char-no-cross-line)))
-(define-key god-mode-isearch-map (kbd "l") 'recenter-top-bottom)
-(define-key god-mode-isearch-map (kbd "C-l") 'recenter-top-bottom)
-(define-key god-mode-isearch-map (kbd ";") 'scroll-up-command)
-(define-key god-mode-isearch-map (kbd "'") 'scroll-down-command)
-(define-key god-mode-isearch-map (kbd "s") 'isearch-repeat-forward+)
-(define-key god-mode-isearch-map (kbd "r") 'isearch-repeat-backward+)
-(define-key god-mode-isearch-map (kbd "RET") #'isearch-exit)
+(keymap-set god-mode-isearch-map "n" #'isearch-repeat-forward+)
+(keymap-set god-mode-isearch-map "N" #'isearch-repeat-backward+)
+(keymap-set god-mode-isearch-map "p" #'yank)
+(keymap-set god-mode-isearch-map "u" #'undo)
+(keymap-set god-mode-isearch-map "d" #'kill-whole-line)
+(keymap-set god-mode-isearch-map "j" #'my-god-isearch-exit-next-line)
+(keymap-set god-mode-isearch-map "k" #'my-god-isearch-exit-previous-line)
+(keymap-set god-mode-isearch-map "h" #'my-god-isearch-exit-forward-char)
+(keymap-set god-mode-isearch-map "l" #'recenter-top-bottom)
+(keymap-set god-mode-isearch-map "C-l" #'recenter-top-bottom)
+(keymap-set god-mode-isearch-map ";" #'scroll-up-command)
+(keymap-set god-mode-isearch-map "'" #'scroll-down-command)
+(keymap-set god-mode-isearch-map "s" #'isearch-repeat-forward+)
+(keymap-set god-mode-isearch-map "r" #'isearch-repeat-backward+)
+(keymap-set god-mode-isearch-map "RET" #'isearch-exit)
 
 (defun my-search-selection ()
   "search for selected text"
   (interactive)
   (if (region-active-p)
-    (let ((selection (buffer-substring-no-properties (mark) (point)))
-           (case-fold-search 'default))
+    (let ((isearch-forward-thing-at-point '(region))
+          (case-fold-search 'default))
       (message "search the marked region")
-      (deactivate-mark)
-      (isearch-mode t nil nil nil)
+      (isearch-forward-thing-at-point)
       ;; activate god-mode-isearch
       (god-mode-isearch-activate)
-      (isearch-yank-string selection))
+      ;; 跳到下一个匹配（跳过选区本身）
+      (isearch-repeat-forward))
     (progn
       (isearch-forward-symbol-at-point)
       (god-mode-isearch-activate))))
@@ -415,10 +406,23 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
   (god-mode-isearch-activate)
   (isearch-repeat-backward+))
 
+(blink-cursor-mode -1)
+
+(defvar my-god--tab-bar-tab-state nil
+  "Last state (`god' or `insert') applied to the `tab-bar-tab' face.")
+
+(defun my-god--set-tab-bar-tab-face (state color)
+  "Paint the `tab-bar-tab' face with COLOR for STATE, only when STATE changes."
+  (unless (eq state my-god--tab-bar-tab-state)
+    (setq my-god--tab-bar-tab-state state)
+    (set-face-attribute 'tab-bar-tab nil
+                        :foreground "black"
+                        :background color
+                        :box `(:line-width (1 . 2) :color ,color :style flat-button))))
+
 (defun my-god-mode-update-cursor-type ()
-  (setq cursor-type (if (display-graphic-p) 'box 'box))
-  (set-cursor-color (if (bound-and-true-p god-local-mode) "red" "red"))
-  (blink-cursor-mode (if (bound-and-true-p god-local-mode) -1 -1))
+  (setq cursor-type 'box)
+  (set-cursor-color "red")
   (sp--maybe-init)
   (if (bound-and-true-p god-local-mode)
     (progn
@@ -452,11 +456,7 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
       ;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "gray" ))
       ;; (set-face-attribute 'mode-line nil :background "#38424B")
       ;; (set-face-foreground 'vertical-border "#353535")
-      (set-face-attribute 'tab-bar-tab nil
-                    :foreground "black"
-                    :background "#199DFF"
-                    :box '(:line-width (1 . 2) :color "#199DFF" :style flat-button)
-                    )
+      (my-god--set-tab-bar-tab-face 'god "#199DFF")
 
       ;; (set-face-foreground 'vertical-border "#374250")
       )
@@ -466,11 +466,7 @@ When switching to an existing buffer, respects the buffer's prior god-mode state
       (when (my-god-this-is-normal-editor-buffer (buffer-name))
         ;; (set-face-foreground 'vertical-border "#7fdc59")
 
-        (set-face-attribute 'tab-bar-tab nil
-                    :foreground "black"
-                    :background "yellow"
-                    :box '(:line-width (1 . 2) :color "yellow" :style flat-button)
-                    )
+        (my-god--set-tab-bar-tab-face 'insert "yellow")
         (when (my-god-should-enable-line-number-mode)
           (display-line-numbers-mode 1)
           ;; (set-face-foreground 'line-number-current-line "#7fdc59")

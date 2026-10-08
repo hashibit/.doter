@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 ;; Make M-x repeat ignore movement commands
 
 (defvar my/last-repeatable-command nil
@@ -39,8 +40,7 @@
   (interactive "P")
   (when (null repeat-arg)
     (setq repeat-arg last-prefix-arg))
-  (let '(last-repeatable-command
-         my/last-repeatable-command)
+  (let ((last-repeatable-command my/last-repeatable-command))
     (call-interactively 'repeat t (vector repeat-arg))))
 
 (defun my/save-last-repeatable-command ()
@@ -51,6 +51,6 @@
 
 (add-hook 'pre-command-hook 'my/save-last-repeatable-command)
 
-(global-set-key [remap repeat] 'my/repeat)
+(keymap-global-set "<remap> <repeat>" #'my/repeat)
 
 (provide 'init-repeat)

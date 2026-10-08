@@ -1,8 +1,15 @@
-(require 'corfu-terminal)
-(corfu-terminal-mode 1)
+;;; -*- lexical-binding: t -*-
+(require 'cl-lib)
+;; Emacs 31 起 tty 支持 child frame，corfu 自身即可，不再需要 corfu-terminal
+(if (featurep 'tty-child-frames)
+  (require 'corfu)
+  (require 'corfu-terminal)
+  (corfu-terminal-mode 1))
 
 
 (require 'my-utils)
+(declare-function corfu--popup-show "corfu")
+(declare-function corfu--popup-hide "corfu")
 
 
 (require 'popon)
@@ -10,15 +17,31 @@
 
 
 ;; (setq my-term-popup-engine 'corfu-terminal)
-(setq my-term-popup-engine 'popon)
+(defvar my-term-popup-engine 'popon)
 
-(setq-default my-term-popup-show-p nil)
+(defvar my-term-popup-show-p nil)
 
-(defun my-term-popup-close (&rest args)
+(defvar my-term-popup-close-commands
+  '(next-line previous-line forward-char backward-char
+     scroll-up-command scroll-down-command
+     gcm-scroll-down gcm-scroll-up
+     scroll-half-page-up scroll-half-page-down
+     xref-go-back xref-go-forward keyboard-quit)
+  "Commands that close the popup.")
+
+(defun my-term-popup--post-command ()
+  (when (memq this-command my-term-popup-close-commands)
+    (my-term-popup-close)))
+
+(defun my-term-popup--opened ()
+  (setq my-term-popup-show-p t)
+  (add-hook 'post-command-hook #'my-term-popup--post-command))
+
+(defun my-term-popup-close (&rest _)
   (interactive)
+  (remove-hook 'post-command-hook #'my-term-popup--post-command)
   (when my-term-popup-show-p
-    (message "my-term-popup-close")
-    (corfu--popup-hide)
+    (ignore-errors (corfu--popup-hide))
     (if (window-parameter (get-buffer-window) 'popon-list)
       (popon-kill-all))
     (setq my-term-popup-show-p nil))
@@ -29,13 +52,13 @@
 
 (defun show-eldoc-popup-at-point ()
   (interactive)
-  (when (boundp 'eldoc--doc-buffer)
-    (let* ((str (with-current-buffer eldoc--doc-buffer
+  (when-let* ((doc-buffer (bound-and-true-p eldoc--doc-buffer))
+              ((buffer-live-p doc-buffer)))
+    (let* ((str (with-current-buffer doc-buffer
                   (buffer-string)))
             (lines (string-split str "\n"))
             )
-        (my-show-popup lines)
-        (setq my-term-popup-show-p t))))
+        (my-show-popup lines))))
 
 
 
@@ -69,9 +92,9 @@
       (show-popup-with-popon lines display-width)
       ;; implemented using corfu-terminal, I think it's more stable
       (show-popup-with-corfu-terminal lines display-width))
-    ))
+    (my-term-popup--opened)))
 
-(defun show-popup-with-popon(lines display-width)
+(defun show-popup-with-popon(lines _display-width)
   (popon-create
     (string-join lines "\n")
     (cons 0
@@ -82,42 +105,24 @@
 (defun show-popup-with-corfu-terminal(lines display-width)
   (progn
     (setq lines (cl-loop for line in lines
-                  do (message "line width: %s" (length line))
                   collect (cond
                             ((> (length line) display-width)
                               (substring-no-properties line 0 display-width))
                             ((< (length line) display-width)
                               (concat line (make-string (- display-width (length line)) ?\s)))
                             (t line))))
-    (message "after truncate, lines length: %s, display-width: %s" (length lines) display-width)
-    (cl-loop for line in lines do (message "line width: %s" (length line)))
     (corfu--popup-show
       (posn-at-point)
       (save-excursion (goto-char (point)) (current-column))
       display-width
       lines)))
 
-(global-set-key (kbd "C-c C-i") #'my-show-popup)
-(global-set-key (kbd "C-c C-j") #'(lambda() (interactive) (my-show-popup (list "hello this is a" "new line" "hhehe"))))
+(defun my-show-popup-test ()
+  (interactive)
+  (my-show-popup (list "hello this is a" "new line" "hhehe")))
 
-
-
-
-(advice-add 'next-line :after 'my-term-popup-close)
-(advice-add 'previous-line :after 'my-term-popup-close)
-(advice-add 'forward-char :after 'my-term-popup-close)
-(advice-add 'backward-char :after 'my-term-popup-close)
-(advice-add 'scroll-up-command :after 'my-term-popup-close)
-(advice-add 'scroll-down-command :after 'my-term-popup-close)
-
-(advice-add 'gcm-scroll-down :after 'my-term-popup-close)
-(advice-add 'gcm-scroll-up :after 'my-term-popup-close)
-
-(advice-add 'scroll-half-page-up :after 'my-term-popup-close)
-(advice-add 'scroll-half-page-down :after 'my-term-popup-close)
-
-(advice-add 'xref-go-back :after 'my-term-popup-close)
-(advice-add 'xref-go-forward :after 'my-term-popup-close)
+(keymap-global-set "C-c C-i" #'my-show-popup)
+(keymap-global-set "C-c C-j" #'my-show-popup-test)
 
 
 

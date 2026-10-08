@@ -12,8 +12,8 @@
   :ensure t
   :demand t
   :config
-  (global-set-key [remap move-end-of-line] #'mwim-end-of-code-or-line)
-  (global-set-key [remap move-beginning-of-line] #'mwim-beginning-of-code-or-line))
+  (keymap-global-set "<remap> <move-end-of-line>" #'mwim-end-of-code-or-line)
+  (keymap-global-set "<remap> <move-beginning-of-line>" #'mwim-beginning-of-code-or-line))
 
 (provide 'init-mwim)
 

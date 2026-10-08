@@ -1,7 +1,7 @@
-
+;;; -*- lexical-binding: t -*-
 
 ;; render like github
-(defun markdown-html-github (buffer)
+(defun my-markdown-html-github (buffer)
   (princ
     (with-current-buffer buffer
       (format
@@ -9,7 +9,7 @@
         (buffer-substring-no-properties (point-min) (point-max))))
     (current-buffer)))
 
-(defun markdown-html (buffer)
+(defun my-markdown-html (buffer)
   (princ
     (with-current-buffer buffer
       (format
@@ -17,14 +17,15 @@
         (buffer-substring-no-properties (point-min) (point-max))))
     (current-buffer)))
 
+(declare-function imp-set-user-filter "impatient-mode")
+
+(defun my-impatient-markdown-setup ()
+  (impatient-mode 1)
+  (imp-set-user-filter #'my-markdown-html-github))
+
 (use-package impatient-mode
   :config
-  (add-hook
-    'markdown-mode-hook
-    #'
-    (lambda ()
-      (impatient-mode 1)
-      (imp-set-user-filter 'markdown-html-github))))
+  (add-hook 'markdown-mode-hook #'my-impatient-markdown-setup))
 
 
 (provide 'init-impatient-markdown)

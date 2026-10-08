@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 (require 'term-cursor)
 (global-term-cursor-mode 1)
 

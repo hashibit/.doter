@@ -12,29 +12,31 @@
 
 ;;; Code:
 
+;; 函数统一用 jadx-jdt- 前缀，避免与 java-decompile.el 中的 jdtls-* 同名函数冲突
+
 (require 'cl-lib)
 (require 'subr-x)
 
-(defun jdtls-extract-jdt-url (path)
+(defun jadx-jdt-extract-url (path)
   "Extract jdt: URL from a mixed path like:
 /full/path/to/model/jdt:/contents/jar.jar?query..."
   (when path
     (string-match "jdt:/contents/[^?\"']+\\.jar?[^?\"']*" path)
     (match-string 0 path)))
 
-(defun jdtls-classpath-to-filename (class-path)
+(defun jadx-jdt-classpath-to-filename (class-path)
   "Convert class path like 'com.xme.ai.LLMCaller' to file name 'LLMCaller.java'."
   (when (string-match "\\([^./]+\\)\\'" class-path)
     (concat (match-string 1 class-path) ".java")))
 
-(defun jdtls-jadx-decompile-async ()
+(defun jadx-jdt-decompile-async ()
   "Decompile current JDT virtual buffer asynchronously using JADX."
   (interactive)
   (unless (derived-mode-p 'java-ts-mode 'java-mode)
     (user-error "Not a Java buffer"))
 
   (let* ((full-path buffer-file-name)
-          (jdt-url (and full-path (jdtls-extract-jdt-url full-path))))
+          (jdt-url (and full-path (jadx-jdt-extract-url full-path))))
     (unless jdt-url
       (user-error "Not a valid jdt: virtual file (no jdt:/contents found)"))
 
@@ -71,22 +73,26 @@
           (insert "\n// Loading... 0%%\n"))
 
         ;; ✅ 关键：临时设置 default-directory 为合法路径
-        (let ((default-directory "/tmp"))  ; 或 "~/.emacs.d/"
+        (let ((default-directory temporary-file-directory))
 
           (let ((proc (start-process
                         "jadx-decompile" "*JADX-Output*"
-                        "jadx" "-d" temp-dir "--quiet" jar-path)))
+                        "jadx" "-d" temp-dir "--quiet" jar-path))
+                (target-buffer (current-buffer)))
             (set-process-sentinel
               proc
-              `(lambda (process event)
-                 (when (string= event "finished\\n")
-                   (jdtls-process-jadx-result
-                     ,temp-dir ,cache-file ,class-path (current-buffer)))))))))))
+              (lambda (process event)
+                ;; jadx 有错误时也会返回非 0，但通常仍会生成部分源码
+                (when (memq (process-status process) '(exit signal))
+                  (unless (string-prefix-p "finished" event)
+                    (message "JADX: %s" (string-trim event)))
+                  (jadx-jdt-process-result
+                    temp-dir cache-file class-path target-buffer))))))))))
 
-(defun jdtls-process-jadx-result (temp-dir cache-file class-path target-buffer)
+(cl-defun jadx-jdt-process-result (temp-dir cache-file class-path target-buffer)
   "Process JADX output, find source, cache it, and insert into TARGET-BUFFER."
   (let* ((sources-dir (concat temp-dir "/sources"))
-          (expected-filename (jdtls-classpath-to-filename class-path))
+          (expected-filename (jadx-jdt-classpath-to-filename class-path))
           java-file)
 
     ;; Check if sources directory exists
@@ -100,7 +106,7 @@
             (insert (format "// JADX FAILED: No sources directory: %s\n" sources-dir))
             (insert (format "// Make sure 'jadx' is installed and runnable.\n"))
             (insert (format "// You can install it via: brew install jadx\n")))))
-      (cl-return-from jdtls-process-jadx-result))
+      (cl-return-from jadx-jdt-process-result))
 
     ;; Recursively search for the expected Java file
     (let ((files (directory-files-recursively sources-dir (concat "\\b" (regexp-quote expected-filename) "$"))))
@@ -120,7 +126,8 @@
               (insert (format "// Class: %s\n" class-path))
               (insert "\n"))))
 
-        ;; Load content asynchronously to avoid blocking
+        ;; Load content asynchronously to avoid blocking.
+        ;; 从 cache-file 读取：temp-dir 在本函数结束时就被删除了
         (run-with-timer 0.05 nil
           (lambda (java-file target-buffer)
             (with-temp-buffer
@@ -132,7 +139,7 @@
                       (with-current-buffer target-buffer
                         (let ((inhibit-read-only t))
                           (goto-char (point-max))
-                          (delete-region (point-at-bol) (point))
+                          (delete-region (line-beginning-position) (point))
                           (insert source-code)
                           ;; ✅ Now set buffer to read-only
                           (setq-local buffer-read-only t)
@@ -147,9 +154,9 @@
                     (with-current-buffer target-buffer
                       (let ((inhibit-read-only t))
                         (goto-char (point-max))
-                        (delete-region (point-at-bol) (point))
+                        (delete-region (line-beginning-position) (point))
                         (insert (format "\n// Error: Failed to read decompiled file: %s\n" err)))))))))
-          java-file target-buffer))
+          cache-file target-buffer))
 
       (t
         ;; File not found
