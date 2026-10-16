@@ -8,9 +8,14 @@
 
 ;;; Code:
 
+(declare-function ripgrep/kill-buffer "ripgrep")
+
 (defun my-ripgrep-kill-buffer()
   (interactive)
-  (ripgrep/kill-buffer)
+  ;; ripgrep 包已停用 (见下方注释)，没有该函数时直接 kill 当前 buffer
+  (if (fboundp 'ripgrep/kill-buffer)
+      (ripgrep/kill-buffer)
+    (kill-buffer))
   (delete-window))
 
 
@@ -26,20 +31,19 @@
   (setq rg-show-header nil)
 
 
-  (defun my-disable-my-special-buffer-keys (&rest r)
+  (defun my-disable-my-special-buffer-keys (&rest _r)
     (my-change-buffer-name-from-special-to-legendary (buffer-name))
     (my-special-buffer-keys-minor-mode 0))
 
-  (defun my-enable-my-special-buffer-keys (&rest r)
+  (defun my-enable-my-special-buffer-keys (&rest _r)
     (my-change-buffer-name-from-legendary-to-special (buffer-name))
     (my-special-buffer-keys-minor-mode 1))
 
 
-  (advice-add 'wgrep-change-to-wgrep-mode :after #'my-disable-my-special-buffer-keys)
-  (advice-add 'wgrep-finish-edit :after #'my-enable-my-special-buffer-keys)
-
-  (advice-remove 'wgrep-change-to-wgrep-mode #'my-disable-my-special-buffer-keys)
-  (advice-remove 'wgrep-finish-edit #'my-enable-my-special-buffer-keys)
+  ;; 已停用：原来 advice-add 之后紧接着 advice-remove，实际从未生效。
+  ;; 需要时取消注释，在 wgrep 编辑期间关闭 special buffer 按键。
+  ;; (advice-add 'wgrep-change-to-wgrep-mode :after #'my-disable-my-special-buffer-keys)
+  ;; (advice-add 'wgrep-finish-edit :after #'my-enable-my-special-buffer-keys)
 
   )
 

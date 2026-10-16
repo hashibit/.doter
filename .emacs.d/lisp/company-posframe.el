@@ -424,7 +424,7 @@ just grab the first candidate and press forward."
               (buffer-string))))))))
 
 (defun company-posframe-quickhelp-doc (selected)
-  (when-let ((body (company-posframe-quickhelp-fetch-docstring selected)))
+  (when-let* ((body (company-posframe-quickhelp-fetch-docstring selected)))
     (cl-letf* (((symbol-function 'completing-read)
                 #'company-posframe-quickhelp-completing-read)
                (header

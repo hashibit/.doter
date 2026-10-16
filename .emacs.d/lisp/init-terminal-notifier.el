@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terminal notifier 
 ;; requires 'sudo port install terminal-notifier'
@@ -27,3 +28,5 @@
                nil
                (lambda (msg) (terminal-notifier-notify "Emacs" msg))
                msg))
+
+(provide 'init-terminal-notifier)

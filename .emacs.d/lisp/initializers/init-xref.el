@@ -1,47 +1,27 @@
+;;; -*- lexical-binding: t -*-
 
+
+(eval-when-compile (require 'ivy))
+(declare-function ivy-call "ivy")
+(declare-function ivy--get-window "ivy")
+(declare-function ivy-done "ivy")
+(declare-function ivy-state-current "ivy")
+(declare-function ivy-state-collection "ivy")
+(declare-function ivy-xref-show-xrefs "ivy-xref")
+(declare-function posframe-show "posframe")
+(declare-function posframe-hide "posframe")
+(defvar ivy-last)
+(defvar ivy-update-fns-alist)
+(defvar ivy-minibuffer-map)
 
 (defun my-recenter-scroll-to-top ()
   (interactive)
-  (recenter-top-bottom 1)
-  (setq recenter-last-op nil))
+  (recenter 1 t))
 
 
 ;; quit xref buffer after enter
 (with-eval-after-load 'xref
-  (define-key xref--xref-buffer-mode-map (kbd "o") #'(lambda ()
-                                                       (interactive)
-                                                       (xref-goto-xref t)))
-
-
-
-  ;; jump back with window scroll position
-  (defvar my-xref-window-starts (make-hash-table :test 'equal))
-
-  (defun my-xref--save-window-start (&optional _m)
-    "Save window-start keyed by (buffer . position) before push."
-    (let ((ws (window-start)))
-      ;; (message "-------- save ws: %s" ws)
-      (puthash (cons (current-buffer) (point))
-        (window-start)
-        my-xref-window-starts)))
-
-  (defun my-xref--restore-window-start (&rest _)
-    "Restore window-start after xref-go-back."
-    (let ((ws (gethash (cons (current-buffer) (point))
-                my-xref-window-starts)))
-      ;; (message "------------debug ws %s" ws)
-      (when ws
-        (set-window-start nil ws)
-        (remhash (cons (current-buffer) (point))
-          my-xref-window-starts))))
-
-
-  (advice-add 'xref-find-definitions :before #'my-xref--save-window-start)
-  (advice-add 'xref-find-references :before #'my-xref--save-window-start)
-
-  (advice-add 'xref-go-back :after #'my-xref--restore-window-start)
-  (advice-add 'xref-go-forward :after #'my-xref--restore-window-start)
-
+  (keymap-set xref--xref-buffer-mode-map "o" #'xref-quit-and-goto-xref)
 
   ;; directly open it when there is only one candidate.
   ;; (setq xref-show-xrefs-function #'xref-show-definitions-buffer)
@@ -52,7 +32,33 @@
   ;; (add-to-list 'xref-after-jump-hook 'my-recenter-scroll-to-top)
   )
 
-(defun ivy-xref-call-or-done ()
+
+;; jump back with window scroll position
+(defvar my-xref-window-starts (make-hash-table :test 'eq :weakness 'key)
+  "Buffer -> alist of (POSITION . WINDOW-START), saved before xref jumps.")
+
+(defun my-xref--save-window-start (&optional _m)
+  "Save window-start keyed by buffer and position before push."
+  (setf (alist-get (point) (gethash (current-buffer) my-xref-window-starts))
+        (window-start)))
+
+(defun my-xref--restore-window-start (&rest _)
+  "Restore window-start after xref-go-back."
+  (let* ((starts (gethash (current-buffer) my-xref-window-starts))
+         (ws (alist-get (point) starts)))
+    (when ws
+      (set-window-start nil ws)
+      (puthash (current-buffer) (assq-delete-all (point) starts)
+               my-xref-window-starts))))
+
+
+(advice-add 'xref-find-definitions :before #'my-xref--save-window-start)
+(advice-add 'xref-find-references :before #'my-xref--save-window-start)
+
+(advice-add 'xref-go-back :after #'my-xref--restore-window-start)
+(advice-add 'xref-go-forward :after #'my-xref--restore-window-start)
+
+(defun my-ivy-xref-call-or-done ()
   (interactive)
   (let (orig-point orig-buffer new-point new-buffer)
     (with-ivy-window
@@ -91,6 +97,13 @@
         (puthash file buf my-xref-peek--file-cache)
         buf)))
 
+(defun my-xref-peek--poshandler (info)
+  "Place the peek posframe at the top right of the parent frame."
+  (cons (- (plist-get info :parent-frame-width)
+           (plist-get info :posframe-width)
+           10)
+        0))
+
 (defun my-xref-peek--show (file line)
   "Render peek posframe for FILE at LINE."
   (let* ((src-buf (my-xref-peek--get-file-buffer file))
@@ -124,11 +137,7 @@
         (goto-char (point-min))
         (forward-line (- win-start-line beg-line))))
     (posframe-show display-buf
-      :poshandler (lambda (info)
-                    (cons (- (plist-get info :parent-frame-width)
-                             (plist-get info :posframe-width)
-                             10)
-                          0))
+      :poshandler #'my-xref-peek--poshandler
       :width peek-width
       :height (+ my-xref-peek--context 2)
       :border-width 1
@@ -185,15 +194,9 @@
 
 (defun my-xref-show-xrefs-function (fetcher alist)
   "Jump to the first xref if there's only one result."
-  (let* ((xrefs (funcall fetcher)))
-    (if (= (length xrefs) 1)
-      (let* ((item (car xrefs))
-              (location (xref-item-location item))
-              (target-buffer (find-file-noselect (xref-location-group location))))
-        (switch-to-buffer target-buffer)
-        (goto-char (point-min))
-        (forward-line (1- (xref-file-location-line location)))
-        (forward-char (xref-file-location-column location)))
+  (let ((xrefs (funcall fetcher)))
+    (if (length= xrefs 1)
+        (xref-pop-to-location (car xrefs) (alist-get 'display-action alist))
       (ivy-xref-show-xrefs fetcher alist))))
 
 
@@ -208,7 +211,7 @@
     ivy-minibuffer-map
     ("M-l" . ivy-call-and-recenter))
   :config
-  (define-key ivy-minibuffer-map (kbd "C-l") #'my-xref-peek-toggle))
+  (keymap-set ivy-minibuffer-map "C-l" #'my-xref-peek-toggle))
 
 
 (provide 'init-xref)

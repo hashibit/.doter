@@ -38,6 +38,12 @@
 (declare-function posframe-show "posframe")
 (declare-function posframe-hide "posframe")
 (declare-function posframe-poshandler-frame-center "posframe")
+(declare-function posframe-poshandler-frame-top-center "posframe")
+(declare-function posframe-poshandler-frame-bottom-center "posframe")
+(declare-function posframe-poshandler-frame-left-center "posframe")
+(declare-function posframe-poshandler-frame-right-center "posframe")
+(defvar eat-terminal)
+(defvar eat-semi-char-mode-map)
 (declare-function eat-make "eat")
 (declare-function eat-term-send-string "eat")
 
@@ -111,7 +117,8 @@
 
 (defcustom claude-posframe-working-directory nil
   "Working directory for the claude eat process.
-If nil, automatically detect project directory using projectile, project.el, or vc.
+If nil, automatically detect project directory using projectile,
+project.el, or vc.
 Falls back to current directory if no project is detected."
   :type '(choice (const :tag "Auto-detect project directory" nil)
            (directory :tag "Custom directory"))
@@ -136,7 +143,9 @@ Falls back to current directory if no project is detected."
   "Get project-specific buffer name."
   (let ((project-dir (claude-posframe--get-project-directory)))
     (if project-dir
-      (format "*claude-posframe:%s*" (file-name-nondirectory (directory-file-name project-dir)))
+      (let ((dir (expand-file-name (directory-file-name project-dir))))
+        (format "*claude-posframe:%s-%s*"
+          (file-name-nondirectory dir) (substring (sha1 dir) 0 8)))
       claude-posframe-buffer-base-name)))
 
 ;;; Hooks
@@ -167,10 +176,8 @@ Falls back to current directory if no project is detected."
             (fboundp 'projectile-project-root))
       (ignore-errors (projectile-project-root)))
     (when (fboundp 'project-current)
-      (when-let ((project (project-current)))
-        (if (fboundp 'project-root)
-          (project-root project)
-          (car (project-roots project)))))
+      (when-let* ((project (project-current)))
+        (project-root project)))
     (when (fboundp 'vc-root-dir)
       (ignore-errors (vc-root-dir)))
     default-directory))
@@ -281,16 +288,14 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
   (claude-posframe-show))
 
 ;;; Minor Mode Definition
-(defvar claude-posframe-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c a t") #'claude-posframe-toggle)
-    (define-key map (kbd "C-,") #'claude-posframe-toggle)
-    (define-key map (kbd "C-c a k") #'claude-posframe-kill-buffer)
-    (define-key map (kbd "C-c a r") #'claude-posframe-restart)
-    (define-key map (kbd "C-c a b") #'claude-posframe-send-buffer-file)
-    (define-key map (kbd "C-c a s") #'claude-posframe-send-region)
-    map)
-  "Keymap for `claude-posframe-mode'.")
+(defvar-keymap claude-posframe-mode-map
+  :doc "Keymap for `claude-posframe-mode'."
+  "C-c a t" #'claude-posframe-toggle
+  "C-," #'claude-posframe-toggle
+  "C-c a k" #'claude-posframe-kill-buffer
+  "C-c a r" #'claude-posframe-restart
+  "C-c a b" #'claude-posframe-send-buffer-file
+  "C-c a s" #'claude-posframe-send-region)
 
 ;;;###autoload
 (define-minor-mode claude-posframe-mode
@@ -303,10 +308,13 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
     (message "Claude posframe mode enabled")
     (message "Claude posframe mode disabled")))
 
+(defun claude-posframe--turn-on ()
+  "Enable `claude-posframe-mode' in the current buffer."
+  (claude-posframe-mode 1))
+
 ;;;###autoload
 (define-globalized-minor-mode global-claude-posframe-mode
-  claude-posframe-mode
-  (lambda () (claude-posframe-mode 1))
+  claude-posframe-mode claude-posframe--turn-on
   :group 'claude-posframe)
 
 ;;;###autoload
@@ -375,10 +383,10 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
 (defun claude-posframe--setup-eat-keybindings ()
   "Set up Claude Code specific key bindings in eat buffer."
   (use-local-map (copy-keymap eat-semi-char-mode-map))
-  (local-set-key (kbd "<return>") #'claude-posframe--eat-send-return)
-  (local-set-key (kbd "<M-return>") #'claude-posframe--eat-send-alt-return))
+  (keymap-local-set "<return>" #'claude-posframe--eat-send-return)
+  (keymap-local-set "M-<return>" #'claude-posframe--eat-send-alt-return))
 
-(defun claude-posframe--process-sentinel (process event)
+(defun claude-posframe--process-sentinel (process _event)
   "Handle eat process termination."
   (when (memq (process-status process) '(exit signal))
     (let ((buffer (process-buffer process)))
@@ -427,7 +435,7 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
 (defun claude-posframe--cleanup ()
   "Clean up claude posframe resources."
   (dolist (buffer (buffer-list))
-    (when (string-match-p "\*claude-posframe:" (buffer-name buffer))
+    (when (string-prefix-p "*claude-posframe:" (buffer-name buffer))
       (when (buffer-live-p buffer)
         (posframe-hide buffer)
         (kill-buffer buffer))))

@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 
 ;; Have to use require, not use-package
 (require 'hydra)

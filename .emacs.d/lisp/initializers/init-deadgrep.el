@@ -1,18 +1,33 @@
+;;; -*- lexical-binding: t -*-
+(declare-function deadgrep-mode "deadgrep")
+(declare-function deadgrep-visit-result-other-window "deadgrep")
+
 (defun my-deadgrep-edit-enter ()
   (interactive)
   (my-disable-code-intelligence)
-  (refresh-current-mode)
-  (remove-hook 'before-save-hook #'delete-trailing-whitespace)
-  (remove-hook 'switch-buffer-functions #'my-god-mode-with-switch-any-buffer))
+  (refresh-current-mode))
 
 
 (defun my-deadgrep-edit-exit ()
   (interactive)
   (my-enable-code-intelligence)
   (refresh-current-mode)
-  (add-hook 'before-save-hook #'delete-trailing-whitespace)
-  (add-hook 'switch-buffer-functions #'my-god-mode-with-switch-any-buffer)
   (deadgrep-mode))
+
+(defun my-deadgrep-visit-result-other-window-and-select ()
+  (interactive)
+  (deadgrep-visit-result-other-window)
+  (other-window 1))
+
+;; deadgrep-edit 修改并保存文件时，不要删除行尾空白
+(defun my-deadgrep--keep-trailing-whitespace (orig-fun &rest args)
+  (cl-letf (((symbol-function 'delete-trailing-whitespace-if-possible) #'ignore))
+    (apply orig-fun args)))
+
+(defun my-deadgrep--include-args (rg-args)
+  (push "--hidden" rg-args) ;; consider hidden folders/files
+  (push "--follow" rg-args) ;; follow symlink
+  (push "--glob=!.git" rg-args))
 
 
 (use-package deadgrep
@@ -26,10 +41,7 @@
     deadgrep-mode-map
     ("RET" . deadgrep-visit-result)
     ("o" . deadgrep-visit-result-other-window)
-    ("v" . (lambda ()
-             (interactive)
-             (deadgrep-visit-result-other-window)
-             (other-window 1)))
+    ("v" . my-deadgrep-visit-result-other-window-and-select)
     ("S" . deadgrep-search-term)
     ("D" . deadgrep-directory)
     ("g" . deadgrep-restart)
@@ -48,18 +60,11 @@
   (advice-add 'deadgrep-visit-result :after 'my-quit-other-window)
   (advice-add 'deadgrep-visit-result-other-window :after 'xref-pulse-momentarily)
   (advice-add 'deadgrep-edit-mode :after 'xref-pulse-momentarily)
-  (advice-add 'deadgrep--arguments :filter-return #'deadgrep--include-args)
+  (advice-add 'deadgrep--arguments :filter-return #'my-deadgrep--include-args)
+  (advice-add 'deadgrep--propagate-change :around #'my-deadgrep--keep-trailing-whitespace)
   (add-hook 'deadgrep-finished-hook 'my-quit-other-window)
-  :config
   ;; Face configuration moved to custom-set-faces
 )
-
-
-(defun deadgrep--include-args (rg-args)
-  (push "--hidden" rg-args) ;; consider hidden folders/files
-  (push "--follow" rg-args) ;; follow symlink
-  (push "--glob=!.git" rg-args)
-  )
 
 
 (provide 'init-deadgrep)

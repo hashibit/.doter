@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 (use-package treesit
   :demand t
   :custom
@@ -32,34 +33,40 @@
   (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-ts-mode)) ;; tell h file to c++-ts-mode
   (add-to-list 'auto-mode-alist '("\\.mm\\'" . c++-ts-mode)) ;; tell h file to c++-ts-mode
   (add-to-list 'auto-mode-alist '("\\.ros\\'" . lisp-mode)) ;; tell ros file to emacs lisp mode
-  ;; (setq treesit-extra-load-path `( ,(expand-file-name "~/.emacs.d/.local/tree-sitter-grammars") ))
+  ;; (setq treesit-extra-load-path `( ,(locate-user-emacs-file ".local/tree-sitter-grammars") ))
   ;; (add-to-list 'treesit-language-source-alist
   ;;            '(mermaid "https://github.com/monaqa/tree-sitter-mermaid" "master"))
+  :config
   (add-to-list 'treesit-language-source-alist
     '(go "https://github.com/tree-sitter/tree-sitter-go" "v0.19.1"))
   )
 
 
+;; perf: treesit-auto--build-major-mode-remap-alist is called on every
+;; set-auto-mode-0 (every file open) and calls treesit-language-available-p
+;; for each language, hitting the filesystem ~20+ times.  Cache it.
+;; CAUTION: advises a private treesit-auto function.
+(defvar my-treesit-auto--remap-alist-cache nil
+  "Cached result of `treesit-auto--build-major-mode-remap-alist'.")
+
+(defun my-treesit-auto--cached-remap-alist (orig-fun &rest args)
+  (or my-treesit-auto--remap-alist-cache
+      (setq my-treesit-auto--remap-alist-cache (apply orig-fun args))))
+
+(defun my-treesit-auto--bust-remap-alist-cache (&rest _)
+  (setq my-treesit-auto--remap-alist-cache nil))
+
 ;; invoke M-x treesit-auto-install-all to install treesit libs to ~/.emacs.d/tree-sitter/
+;; (Emacs 31 has `treesit-enabled-modes', but no auto grammar install; keep treesit-auto)
 (use-package treesit-auto
   :config
   ;; markdown-ts-mode applies bold face to all paragraph text (upstream bug)
   (setq treesit-auto-langs (remove 'markdown treesit-auto-langs))
 
-  ;; perf: treesit-auto--build-major-mode-remap-alist is called on every
-  ;; set-auto-mode-0 (every file open) and calls treesit-language-available-p
-  ;; for each language, hitting the filesystem ~20+ times.  Cache it.
-  (defvar my-treesit-auto--remap-alist-cache nil
-    "Cached result of `treesit-auto--build-major-mode-remap-alist'.")
   (advice-add 'treesit-auto--build-major-mode-remap-alist :around
-              (lambda (orig-fun &rest args)
-                (or my-treesit-auto--remap-alist-cache
-                    (setq my-treesit-auto--remap-alist-cache
-                          (apply orig-fun args)))))
-
+              #'my-treesit-auto--cached-remap-alist)
   ;; bust cache after installing new grammars
-  (advice-add 'treesit-auto-install-all :after
-              (lambda (&rest _) (setq my-treesit-auto--remap-alist-cache nil)))
+  (advice-add 'treesit-auto-install-all :after #'my-treesit-auto--bust-remap-alist-cache)
 
   (global-treesit-auto-mode))
 

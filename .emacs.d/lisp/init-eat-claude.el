@@ -18,9 +18,12 @@
 
 ;;; Code:
 
-(require 'eat)
 (require 'eat-floating)
 (require 'cl-lib)
+
+;; eat 由 eat-floating 加载，这里只声明用到的符号
+(declare-function eat-term-send-string "eat")
+(defvar eat-terminal)
 
 (defgroup my-eat-claude nil
   "Send Emacs files/regions to a `claude' session in Eat."
@@ -65,8 +68,14 @@ recently used Eat buffer."
 (defun my-eat-claude--region-ref ()
   "Return a `claude' file reference for the active region."
   (let* ((file (buffer-file-name))
-         (start (line-number-at-pos (region-beginning)))
-         (end (line-number-at-pos (region-end))))
+         (beg (region-beginning))
+         (stop (region-end))
+         (start (line-number-at-pos beg))
+         ;; 选区结束在行首时（如整行选择），不包含那一行
+         (end (line-number-at-pos (if (and (> stop beg)
+                                           (save-excursion (goto-char stop) (bolp)))
+                                      (1- stop)
+                                    stop))))
     (unless file
       (user-error "Current buffer is not visiting a file"))
     (if (= start end)

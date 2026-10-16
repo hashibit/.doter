@@ -1,4 +1,4 @@
-;; java-decompile.el --- Java class decompilation utilities
+;; java-decompile.el --- Java class decompilation utilities  -*- lexical-binding: t -*-
 ;;
 ;; Author: Your Name
 ;; Description: JADX-based Java decompilation for JDT virtual files
@@ -6,7 +6,7 @@
 
 ;;; Code:
 
-(defvar jdtls-jadx-cache-dir (expand-file-name "~/.emacs.d/.local/jadx-cache")
+(defvar jdtls-jadx-cache-dir (locate-user-emacs-file ".local/jadx-cache")
   "Directory to cache JADX decompilation results.")
 
 (defun jdtls-parse-jdt-uri (uri)
@@ -402,18 +402,17 @@
   (let ((path (if filename (car filename) buffer-file-name))) ; 处理 &rest
     (and path (string-match-p "jdt:" path))))
 
-(advice-add 'file-writable-p :around
-  (lambda (orig-fun &rest args)
-    "Make JDT virtual files appear unwritable."
-    (if (jdt--virtual-file-p args)
-      nil  ; 模拟不可写
-      (apply orig-fun args))))
+(defun jdt--file-writable-p-advice (orig-fun &rest args)
+  "Make JDT virtual files appear unwritable."
+  (if (and (stringp (car args)) (jdt--virtual-file-p args))
+    nil  ; 模拟不可写
+    (apply orig-fun args)))
+(advice-add 'file-writable-p :around #'jdt--file-writable-p-advice)
 
 (defun jdt-files-p (&rest args)
   "Disable semantic mode and other problematic features for JDT virtual files."
-  (message "args: %s" args)
-  (let ((check (or args buffer-file-name)))
-    (string-match-p "jdt:" check)))
+  (let ((check (or (car args) buffer-file-name)))
+    (and (stringp check) (string-match-p "jdt:" check))))
 
 (defun disable-semantic-for-jdt-files ()
   "Disable semantic mode and other problematic features for JDT virtual files."
@@ -428,14 +427,18 @@
     ;; 确保反编译后的缓冲区能被 eglot 正确管理
     (when (and (> (buffer-size) 0)  ; 缓冲区不为空
             (not (eglot-current-server))) ; 没有 LSP 服务器
-      (run-with-timer 0.5 nil
-        (lambda ()
-          (jdtls-setup-eglot-for-decompiled-buffer))))))
+      (run-with-timer 0.5 nil #'jdt--setup-eglot-in-buffer (current-buffer)))))
+
+(defun jdt--setup-eglot-in-buffer (buffer)
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (jdtls-setup-eglot-for-decompiled-buffer))))
 
 ;; Auto-decompile empty JDT buffers
 (defun auto-decompile-jdt-buffer ()
   "Auto-decompile empty JDT buffers if they match pattern."
-  (when (and (string-match-p "jdt:" buffer-file-name)
+  (when (and buffer-file-name
+          (string-match-p "jdt:" buffer-file-name)
           (= (buffer-size) 0))
     (jdtls-jadx-decompile-async)))
 

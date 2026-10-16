@@ -13,7 +13,7 @@
   :commands eat
   :config
 
-  (defun my-eat-copy-region (&optional arg)
+  (defun my-eat-copy-region (&optional _arg)
     (interactive "p")
     ;; No-op without a region, matching native terminal Cmd-C semantics
     (when (use-region-p)
@@ -28,14 +28,14 @@
     "Clear Eat's screen and scrollback, like Terminal's Cmd-K, then
   redraw the shell prompt (\\C-l)."
     (interactive)
-    (unless eat-terminal
-      (user-error ""))
-    (let ((cmd (ignore-errors
-                 (format "%s" (process-command
-                                (get-buffer-process (current-buffer)))))))
-      (unless (string-match-p
-                "\\<\\(zsh\\|bash\\|sh\\|fish\\|nu\\|elvish\\|ksh\\)\\>"
-                cmd)
+    (unless (bound-and-true-p eat-terminal)
+      (user-error "Not an Eat terminal buffer"))
+    (let ((cmd (when-let* ((proc (get-buffer-process (current-buffer))))
+                 (format "%s" (process-command proc)))))
+      (unless (and cmd
+                   (string-match-p
+                    "\\<\\(zsh\\|bash\\|sh\\|fish\\|nu\\|elvish\\|ksh\\)\\>"
+                    cmd))
         (user-error "Refusing to clear scrollback: %s" (or cmd "no process"))
         ))
     (let ((inhibit-read-only t)
@@ -89,7 +89,7 @@
   (add-hook 'eat-mode-hook #'my-eat-setup-kill-window-hook)
 
   ;; Legendary buffer management: eat/claude buffers are always legendary
-  (defun my-toggle-legendary-buffer-for-eat (&optional arg)
+  (defun my-toggle-legendary-buffer-for-eat (&optional _arg)
     (when (derived-mode-p 'eat-mode)
       (my-add-to-legendary-buffers '("*eat" "*claude"))
       (refresh-current-mode)))
@@ -98,34 +98,35 @@
 
   ;; Semi-char mode keybindings
   (setq eat-enable-yank-to-terminal t)
-  (define-key eat-semi-char-mode-map (kbd "M->") #'end-of-buffer)
-  (define-key eat-semi-char-mode-map (kbd "M-<") #'beginning-of-buffer)
-  (define-key eat-semi-char-mode-map (kbd "M-i") #'er/expand-region)
+  (keymap-set eat-semi-char-mode-map "M->" #'end-of-buffer)
+  (keymap-set eat-semi-char-mode-map "M-<" #'beginning-of-buffer)
+  (keymap-set eat-semi-char-mode-map "M-i" #'er/expand-region)
 
   ;; f1~f9
   (cl-loop for num from 1 to 9
     for key-str = (format "<f%d>" num)
-    do (define-key eat-semi-char-mode-map (kbd key-str) 'eat-self-input))
+    do (keymap-set eat-semi-char-mode-map key-str #'eat-self-input))
 
   (dolist (key '("M-h" "M-l" "M-o"))
-    (let ((k key))
-      (define-key eat-semi-char-mode-map (kbd k) 'eat-self-input)))
+    (keymap-set eat-semi-char-mode-map key #'eat-self-input))
 
-  (define-key eat-semi-char-mode-map (kbd "C-s-c") #'my-eat-send-ctrl-c)
-  (define-key eat-semi-char-mode-map (kbd "s-k") #'my-eat-clear-scrollback)
+  (keymap-set eat-semi-char-mode-map "C-s-c" #'my-eat-send-ctrl-c)
+  (keymap-set eat-semi-char-mode-map "s-k" #'my-eat-clear-scrollback)
   (keymap-unset eat-semi-char-mode-map "M-`")
   (keymap-unset eat-semi-char-mode-map "M-:")
 
   ;; In emacs-mode (semi-char off): C-s-c switches back and sends ctrl-c
-  (define-key eat-mode-map (kbd "C-s-c")
-    (lambda () (interactive)
-      (eat-switch-to-semi-char-mode)
-      (my-eat-send-ctrl-c)))
+  (defun my-eat-semi-char-send-ctrl-c ()
+    "Switch to semi-char mode and send ctrl-c."
+    (interactive)
+    (eat-switch-to-semi-char-mode)
+    (my-eat-send-ctrl-c))
+  (keymap-set eat-mode-map "C-s-c" #'my-eat-semi-char-send-ctrl-c)
 
   ;; Return to bottom when switching back from emacs-mode to semi-char-mode
-  (advice-add 'eat-switch-to-semi-char-mode :after
-    (lambda (&rest _)
-      (goto-char (point-max))))
+  (defun my-eat-goto-bottom (&rest _)
+    (goto-char (point-max)))
+  (advice-add 'eat-switch-to-semi-char-mode :after #'my-eat-goto-bottom)
 
   ;; When switching to a tab, scroll eat buffer to bottom
   (defun my-eat-scroll-to-bottom-on-tab-switch (&rest _)
@@ -133,7 +134,7 @@
       (with-current-buffer buf
         (when (and (derived-mode-p 'eat-mode) eat--semi-char-mode)
           (goto-char (point-max))))))
-  (advice-add 'tab-bar-select-tab :after #'my-eat-scroll-to-bottom-on-tab-switch)
+  (add-hook 'tab-bar-tab-post-select-functions #'my-eat-scroll-to-bottom-on-tab-switch)
 
   ;; Font/display setup for Claude Code flickering fix
   (defun diego--eat-font-setup ()
@@ -151,8 +152,8 @@
   (advice-add 'eat-update-buffer-name :override #'ignore)
 
   ;; Override eat ANSI colors to match ansi-color-names-vector (dark theme readable)
-  (with-eval-after-load 'eat
-    (custom-set-faces
+  ;; 用 custom-set-faces 而非 :custom-face：后者设置的是 defface spec，会被主题 (kaolin) 覆盖
+  (custom-set-faces
       '(eat-term-color-0  ((t (:foreground "black"))))
       '(eat-term-color-1  ((t (:foreground "tomato"))))
       '(eat-term-color-2  ((t (:foreground "PaleGreen2"))))
@@ -169,7 +170,7 @@
       '(eat-term-color-12 ((t (:foreground "DeepSkyBlue1"))))
       '(eat-term-color-13 ((t (:foreground "MediumOrchid1"))))
       '(eat-term-color-14 ((t (:foreground "cyan"))))
-      '(eat-term-color-15 ((t (:foreground "white"))))))
+      '(eat-term-color-15 ((t (:foreground "white")))))
 
   )
 

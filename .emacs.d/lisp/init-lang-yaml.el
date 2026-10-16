@@ -10,14 +10,10 @@
 
 (use-package yaml-mode
   :ensure t
+  :mode ("\\.yml\\'" "\\.yml\\.j2\\'" "\\.yaml\\'" "\\.yaml\\.j2\\'")
   :hook
   (yaml-mode . display-line-numbers-mode)
-  (yaml-ts-mode . display-line-numbers-mode)
-  :config
-  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
-  (add-to-list 'auto-mode-alist '("\\.yml\\.j2\\'" . yaml-mode))
-  (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode))
-  (add-to-list 'auto-mode-alist '("\\.yaml\\.j2\\'" . yaml-mode)))
+  (yaml-ts-mode . display-line-numbers-mode))
 
 (provide 'init-lang-yaml)
 

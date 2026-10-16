@@ -1,9 +1,10 @@
+;;; -*- lexical-binding: t -*-
 
 (pixel-scroll-precision-mode 1)
 
 ;; scroll with cursor not move
-(defun gcm-scroll-down () (interactive) (scroll-up 1))
-(defun gcm-scroll-up () (interactive) (scroll-down 1))
+(defalias 'gcm-scroll-down #'scroll-up-line)
+(defalias 'gcm-scroll-up #'scroll-down-line)
 
 
 (setq
@@ -49,10 +50,10 @@
   (scroll-other-window (- 0 (/ (window-body-height) 2))))
 
 
-(global-set-key [remap scroll-down-command] #'scroll-half-page-down)
-(global-set-key [remap scroll-up-command] #'scroll-half-page-up)
-(define-key global-map [(meta up)] #' (lambda () (interactive) (scroll-other-window-half-page-down)))
-(define-key global-map [(meta down)] #' (lambda () (interactive) (scroll-other-window-half-page-up)))
+(keymap-global-set "<remap> <scroll-down-command>" #'scroll-half-page-down)
+(keymap-global-set "<remap> <scroll-up-command>" #'scroll-half-page-up)
+(keymap-global-set "M-<up>" #'scroll-other-window-half-page-down)
+(keymap-global-set "M-<down>" #'scroll-other-window-half-page-up)
 
 
 

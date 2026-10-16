@@ -1,28 +1,24 @@
+;;; -*- lexical-binding: t -*-
 (defvar-local hide-mode-line nil
   "Store the original mode-line-format when hidden-mode-line-mode is active.")
 
 (define-minor-mode hidden-mode-line-mode
-  "Minor mode to hide the mode-line in the current buffer."
+  "Minor mode to hide the mode-line in the current buffer.
+Built on top of the built-in `mode-line-invisible-mode'."
   :init-value nil
   :global nil  ; 改为buffer-local模式
   :group 'editing-basics
-  (if hidden-mode-line-mode
-      ;; 启用时：保存当前mode-line并隐藏
-      (unless hide-mode-line  ; 防止重复保存
-        (setq hide-mode-line mode-line-format
-              mode-line-format nil))
-    ;; 禁用时：恢复原来的mode-line
-    (when hide-mode-line
-      (setq mode-line-format hide-mode-line
-            hide-mode-line nil)))
+  (mode-line-invisible-mode (if hidden-mode-line-mode 1 -1))
   (force-mode-line-update)
-  (redraw-display)
   (when (and (called-interactively-p 'interactive)
              hidden-mode-line-mode)
     (run-with-idle-timer
-     0 nil 'message
+     0 nil #'message
      (concat "Hidden Mode Line Mode enabled.  "
              "Use M-x hidden-mode-line-mode to make the mode-line appear."))))
+
+;; 与 mode-line-invisible-mode 一致，切换 major mode 后保持状态
+(put 'hidden-mode-line-mode 'permanent-local t)
 
 (defvar my-hidden-mode-enabled-p nil
   "Non-nil if Hidden Mode Line is currently globally enabled.")
@@ -53,6 +49,7 @@ With optional ARG, enable if ARG is positive, disable otherwise."
           (add-hook 'conf-mode-hook #'hidden-mode-line-mode)
           (add-hook 'org-mode-hook  #'hidden-mode-line-mode)
           (my-hidden-mode--apply-to-all-buffers t)
+          (force-mode-line-update t)
           (setq my-hidden-mode-enabled-p t)
           (message "Hidden Mode Line Mode: Globally enabled for new and existing buffers."))
       ;; 禁用：移除hooks并恢复现有buffers
@@ -61,6 +58,7 @@ With optional ARG, enable if ARG is positive, disable otherwise."
       (remove-hook 'conf-mode-hook #'hidden-mode-line-mode)
       (remove-hook 'org-mode-hook  #'hidden-mode-line-mode)
       (my-hidden-mode--apply-to-all-buffers nil)
+      (force-mode-line-update t)
       (setq my-hidden-mode-enabled-p nil)
       (message "Hidden Mode Line Mode: Globally disabled."))))
 
@@ -76,7 +74,9 @@ With optional ARG, enable if ARG is positive, disable otherwise."
         (kill-local-variable 'hide-mode-line))
       (when (local-variable-p 'hidden-mode-line-mode)
         (setq hidden-mode-line-mode nil))
-      (force-mode-line-update)))
+      (when (bound-and-true-p mode-line-invisible-mode)
+        (mode-line-invisible-mode -1))))
+  (force-mode-line-update t)
   (setq my-hidden-mode-enabled-p nil)
   (message "All mode-lines restored."))
 

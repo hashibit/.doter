@@ -1,4 +1,4 @@
-;;; nice-jumper.el --- Jump like vimmers do!
+;;; nice-jumper.el --- Jump like vimmers do! -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2016 adapted by Martin Albrecht
 ;; Copyright (C) 2014-2016 by Bailey Ling

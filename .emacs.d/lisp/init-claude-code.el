@@ -63,15 +63,19 @@ With prefix ARG, switch to Claude buffer after sending."
   ;;       (when (eq claude-code-terminal-backend 'eat)
   ;;         (goto-char (point-max))))))
 
-  (advice-add 'claude-code-send-region :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
-  (advice-add 'my-send-command-with-buffer-or-region-context :after #'(lambda(&rest _) (deactivate-mark)(beginning-of-line)))
+  (defun my-claude-code-deactivate-after-send (&rest _)
+    (deactivate-mark)
+    (beginning-of-line))
+  (advice-add 'claude-code-send-region :after #'my-claude-code-deactivate-after-send)
+  (advice-add 'my-send-command-with-buffer-or-region-context :after #'my-claude-code-deactivate-after-send)
 
   (setq claude-code-toggle-auto-select t)
   ;; (advice-add 'claude-code-toggle :after #'my-select-claude-window)
   )
 
 
-(setq my-bailian-api-key nil)
+(defvar my-bailian-api-key nil
+  "Aliyun Bailian API key, entered at runtime (never stored in this file).")
 (defun claude-code-bailian (&optional api-key)
   (interactive)
   (when (called-interactively-p 'interactive)
@@ -91,7 +95,8 @@ With prefix ARG, switch to Claude buffer after sending."
       )
     (message "should set aliyun bailian api-key")))
 
-(setq my-ds-api-key nil)
+(defvar my-ds-api-key nil
+  "DeepSeek API key, entered at runtime (never stored in this file).")
 (defun claude-code-ds (&optional api-key)
   (interactive)
   (when (called-interactively-p 'interactive)
@@ -134,4 +139,4 @@ With prefix ARG, switch to Claude buffer after sending."
 
 (provide 'init-claude-code)
 
-;;; init-ansible.el ends here
+;;; init-claude-code.el ends here

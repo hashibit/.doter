@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 (use-package exec-path-from-shell
   :config (exec-path-from-shell-initialize))
 
@@ -23,9 +24,11 @@
     (start-process "*tic process*" "*Messages*" "tic"
       (expand-file-name terminfo-file))))
 
-(add-hook 'eshell-mode-hook #'(lambda ()
-                                (setenv "TERM" comint-terminfo-terminal)
-                                (setenv "PAGER" "cat")))
+(defun my-eshell-setup-env ()
+  (setenv "TERM" comint-terminfo-terminal)
+  (setenv "PAGER" "cat"))
+
+(add-hook 'eshell-mode-hook #'my-eshell-setup-env)
 
 
 

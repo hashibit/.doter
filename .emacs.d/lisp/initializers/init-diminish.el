@@ -1,5 +1,9 @@
+;;; -*- lexical-binding: t -*-
 (require 'diminish)
-(defun purge-minor-modes ()
+(defun my-purge-minor-modes (&rest _)
+  "Hide noisy minor modes from the mode line.
+`diminish' only works once a mode is in `minor-mode-alist', so this also
+runs after each file is loaded."
   (diminish 'global-whitespace-mode)
   (diminish 'yank-indent-mode)
   (diminish 'format-all-mode)
@@ -31,7 +35,8 @@
   (diminish 'show-paren-mode)
   (diminish 'abbrev-mode)
   (diminish 'electric-indent-mode))
-(add-hook 'after-change-major-mode-hook 'purge-minor-modes)
+(my-purge-minor-modes)
+(add-hook 'after-load-functions #'my-purge-minor-modes)
 
 
 (provide 'init-diminish)

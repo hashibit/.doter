@@ -1,8 +1,7 @@
-;; -*- lexical-binding: t -*-
-;;; init.el --- Emacs Configuration
+;;; init.el --- Emacs Configuration -*- lexical-binding: t -*-
 
-;; load emacs 24's package system. Add MELPA repository.
-(define-key special-event-map [config-changed-event] #'ignore)
+;; Ignore macOS system-appearance change events.
+(keymap-set special-event-map "<config-changed-event>" #'ignore)
 
 ;;; ===================================================================
 ;;; CORE SYSTEM SETUP
@@ -10,75 +9,67 @@
 
 ;;; Package Management
 (require 'package)
-(setq package-archives
+(setopt package-archives
   '(("gnu" . "https://elpa.gnu.org/packages/")
      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
      ("melpa" . "https://melpa.org/packages/")
      ))
 
-;; 完全禁止自动包管理
-(setq package-enable-at-startup nil
-  package-check-signature nil
+;; 完全禁止自动包管理 (package-enable-at-startup is set in early-init.el)
+(setopt package-check-signature nil
   ;; 禁止自动安装选中的包
   package-install-upgrade-built-in nil)
 
 ;; 禁用 package-selected-packages 的自动安装机制
-(defun package--save-selected-packages (&rest _args)
-  "Do nothing to prevent automatic package installation."
-  nil)
+(advice-add 'package--save-selected-packages :override #'ignore)
 
-;; 阻止启动时自动刷新包列表
-(defvar my-startup-finished nil)
+;; 阻止启动时自动刷新包列表，启动完成（after-init-time 已设置）后恢复正常行为
 (defun my-block-package-refresh (orig-fun &rest args)
   "Block package-refresh-contents during startup."
-  (when my-startup-finished
+  (when after-init-time
     (apply orig-fun args)))
 
 (advice-add 'package-refresh-contents :around #'my-block-package-refresh)
 
-;; 启动完成后恢复正常行为
-(add-hook 'emacs-startup-hook
-  (lambda ()
-    (setq my-startup-finished t)))
-
 (package-initialize)
 
 ;;; Performance Optimization
-;; Minimize garbage collection during startup
-(setq gc-cons-threshold most-positive-fixnum
-  gc-cons-percentage 0.6)
-
-;; Lower threshold back to 16 MiB after startup (default is 800kB)
-(add-hook 'emacs-startup-hook
-  (lambda ()
-    (setq gc-cons-threshold (* 16 1024 1024)
-      gc-cons-percentage 0.1)))
+;; GC is deferred in early-init.el; lower threshold back to 16 MiB after
+;; startup (default is 800kB).
+(defun my-restore-gc-threshold ()
+  (setq gc-cons-threshold (* 16 1024 1024)
+    gc-cons-percentage 0.1))
+(add-hook 'emacs-startup-hook #'my-restore-gc-threshold)
 
 ;;; Path Configuration
-(add-to-list 'exec-path "/usr/local/bin/")
-(add-to-list 'exec-path "/usr/bin/")
-(add-to-list 'exec-path "/opt/homebrew/bin")
+;; PATH and exec-path come from the login shell via exec-path-from-shell
+;; (see init-eshell.el).
 
-(setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
-(setenv "PATH" (concat "/usr/bin:" (getenv "PATH")))
-(setenv "PATH" (concat "/opt/homebrew/bin:" (getenv "PATH")))
-(setenv "PATH" (concat (expand-file-name "~/.local/bin:") (getenv "PATH")))
-
-(setq mac-command-modifier 'super)
+(setopt mac-command-modifier 'super)
 
 
 ;;; Directory Setup
-;; create the autosave dir if necessary, since emacs won't.
-(make-directory "~/.emacs.d/.local/auto-save-list/" t)
-(make-directory "~/.emacs.d/.local/autosaves/" t)
-(make-directory "~/.emacs.d/.local/backups" t)
+(defconst my-local-dir (locate-user-emacs-file ".local/")
+  "Directory for state, caches, backups and other generated files.")
+
+;; create the autosave/backup dirs if necessary, since emacs won't.
+(dolist (dir '("auto-save-list" "autosaves" "backups"))
+  (make-directory (expand-file-name dir my-local-dir) t))
+
+(setopt backup-directory-alist `((".*" . ,(expand-file-name "backups/" my-local-dir)))
+  auto-save-file-name-transforms `((".*" ,(expand-file-name "autosaves/" my-local-dir) t))
+  auto-save-list-file-prefix (expand-file-name "auto-save-list/" my-local-dir)
+  recentf-save-file (expand-file-name "recentf" my-local-dir)
+  create-lockfiles nil
+  inhibit-startup-screen t)
+
+;; Customize writes go here instead of init.el.
+(setopt custom-file (locate-user-emacs-file "custom-settings.el"))
 
 ;;; Load Path Configuration
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/emacswiki.org"))
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp"))
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/emacs-translate"))
-(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp/initializers"))
-(add-to-list 'custom-theme-load-path (expand-file-name "~/.emacs.d/lisp"))
+(dolist (dir '("emacswiki.org" "lisp" "lisp/emacs-translate" "lisp/initializers"))
+  (add-to-list 'load-path (locate-user-emacs-file dir)))
+(add-to-list 'custom-theme-load-path (locate-user-emacs-file "lisp"))
 
 ;;; Core Libraries
 (require 'cl-lib)  ; Updated from deprecated 'cl
@@ -95,7 +86,7 @@
 ;;; ===================================================================
 
 ;;; Basic Settings
-(setq warning-minimum-level :emergency
+(setopt warning-minimum-level :emergency
   visible-bell t
   ring-bell-function #'ignore
   custom-safe-themes t
@@ -103,14 +94,14 @@
   blink-cursor-blinks 0
   blink-cursor-interval 0.3)
 
-(set-default 'truncate-lines t)
+(setq-default truncate-lines t)
 
 ;; lsp-mode session file
-(setq lsp-session-file (expand-file-name "~/.emacs.d/.local/.lsp-session-v1"))
-(setq smex-save-file (expand-file-name "~/.emacs.d/.local/smex-items.cache"))
+(setq lsp-session-file (expand-file-name ".lsp-session-v1" my-local-dir))
+(setq smex-save-file (expand-file-name "smex-items.cache" my-local-dir))
 
 ;; compile log with colors
-(add-hook 'compilation-finish-functions 'bury-compile-buffer-if-successful)
+(add-hook 'compilation-finish-functions #'bury-compile-buffer-if-successful)
 
 ;;; Terminal-specific Configuration
 (unless (display-graphic-p)
@@ -125,14 +116,9 @@
 ;;; ===================================================================
 
 
-(setq default-font-family "IBM Plex Mono")
+(defvar default-font-family "IBM Plex Mono")
 
-(setq default-frame-alist
-  `((vertical-scroll-bars . nil) ;隐藏滚动条
-     (left-fringe . 0) ;关闭左fringe
-     (right-fringe . 0) ;关闭右fringe
-     (fullscreen . maximized)
-     ))
+;; Frame parameters (scroll bars, fringes, maximized) live in early-init.el.
 
 (defun center-frame ()
   "Center the frame on the screen."
@@ -157,9 +143,11 @@
 ;;; UI Mode Configuration
 (tool-bar-mode -1)
 (menu-bar-mode -1)
-(smerge-mode -1)
 (tab-bar-mode 1)
-(server-start)
+
+(require 'server)
+(unless (server-running-p)
+  (server-start))
 
 (defvar my-tab-bar-ignored-buffer-regexps
   '("^ \\*Treemacs" "^ \\*Minibuf" "^ \\*Pos-Frame"
@@ -195,62 +183,57 @@
       (format " %d:%s %s " index name (if modified "*" ""))
       'face (funcall tab-bar-tab-face-function tab))))
 
-(setq tab-bar-tab-name-format-function 'my-tab-name-formatter)
-(setq tab-bar-auto-width-max '((330) 40))   ;; default is ((220) 20), a little bit wider
-(setq tab-bar-separator "")
+(setopt tab-bar-tab-name-format-function #'my-tab-name-formatter)
+(setopt tab-bar-auto-width-max '((330) 40))   ;; default is ((220) 20), a little bit wider
+(setopt tab-bar-separator "")
 
 ;; New Tab
-(setq tab-bar-new-tab-choice
-  (lambda () (generate-new-buffer "untitled")))
+(defun my-tab-bar-new-untitled-buffer ()
+  (generate-new-buffer "untitled"))
+(setopt tab-bar-new-tab-choice #'my-tab-bar-new-untitled-buffer)
 
 ;;; Frame and Border Configuration
 (setq-default left-margin-width 0
   right-margin-width 0)
-(setq frame-resize-pixelwise t)
+(setopt frame-resize-pixelwise t)
 
-(setq my-posframe-border-width (if (display-graphic-p) 1 0)
-  my-posframe-fringe-width (if (display-graphic-p) 8 0))
+(defvar my-posframe-border-width (if (display-graphic-p) 1 0))
+(defvar my-posframe-fringe-width (if (display-graphic-p) 8 0))
 
 ;; Set symbol for the border
 (set-display-table-slot standard-display-table 'vertical-border (make-glyph-code ?│))
 ;; truncate-lines right margin sign
-(set-display-table-slot standard-display-table 0 ?→)
+(set-display-table-slot standard-display-table 'truncation ?→)
 
 (setq-default cursor-in-non-selected-windows nil)
 
+;; 不再挂到 window-configuration-change-hook：上面 standard-display-table 的
+;; vertical-border 已经全局生效。
 (defun my-change-window-divider ()
   (let ((display-table (or buffer-display-table standard-display-table)))
-    (set-display-table-slot display-table 5 ?│)
+    (set-display-table-slot display-table 'vertical-border ?│)
     (set-window-display-table (selected-window) display-table)))
-(add-hook 'window-configuration-change-hook 'my-change-window-divider)
 
 ;;; Theme Configuration
-(setq window-divider-color "#06C668")
+(defvar window-divider-color "#06C668")
 
 ;; 水平 window 分隔线
-(setq window-divider-default-places 'bottom-only)
-(setq window-divider-default-bottom-width 1)
-(setq window-divider-default-right-width 1)
+(setopt window-divider-default-places 'bottom-only)
+(setopt window-divider-default-bottom-width 1)
+(setopt window-divider-default-right-width 1)
 ;; 跟 mode-line 一样的颜色
 (window-divider-mode 1)
 
-(setq use-dark-theme-mode t)
-(if use-dark-theme-mode
-  (setq darker-window-bg-color "#181818"
-    darker-window-fg-color "white"
-    highlight-font-chars-face-fg "green"
-    highlight-font-chars-face-underline t
-    whitespace-tab-fg-color "#627D9D"
-    whitespace-trailing-fg-color "#161c23"
-    ;; hl-line-bg-color "#1b2129")
-    hl-line-bg-color nil)
-  (setq darker-window-bg-color "#FFFFFF"
-    darker-window-fg-color "black"
-    highlight-font-chars-face-fg 'unspecified
-    highlight-font-chars-face-underline t
-    whitespace-tab-fg-color "#627D9D"
-    whitespace-trailing-fg-color "#161c23"
-    hl-line-bg-color (face-background 'highlight)))
+(defvar use-dark-theme-mode t)
+(defvar darker-window-bg-color (if use-dark-theme-mode "#181818" "#FFFFFF"))
+(defvar darker-window-fg-color (if use-dark-theme-mode "white" "black"))
+(defvar highlight-font-chars-face-fg (if use-dark-theme-mode "green" 'unspecified))
+(defvar highlight-font-chars-face-underline t)
+(defvar whitespace-tab-fg-color "#627D9D")
+(defvar whitespace-trailing-fg-color "#161c23")
+(defvar hl-line-bg-color
+  ;; dark: "#1b2129"
+  (if use-dark-theme-mode nil (face-background 'highlight)))
 
 
 
@@ -335,9 +318,9 @@
 ;;    )
 
 ;; (load-theme 'doom-material-dark t)
-(advice-add 'load-theme :after
-  (lambda (&rest _)
-    (set-face-attribute 'region nil :foreground nil)))
+(defun my-unset-region-foreground (&rest _)
+  (set-face-attribute 'region nil :foreground 'unspecified))
+(add-hook 'enable-theme-functions #'my-unset-region-foreground)
 (load-theme 'kaolin-galaxy t)
 
 ;;; Terminal Colors
@@ -351,9 +334,6 @@
   '(dired-mode deadgrep-mode deadgrep-edit-mode treemacs-mode))
 
 (global-hl-line-mode 0)
-
-(toggle-truncate-lines nil)
-(toggle-continuation-fringe-indicator)
 
 ;;; ===================================================================
 ;;; CORE MODULES & LIBRARIES
@@ -378,7 +358,7 @@
 (when (my-system-type-is-gnu)
   (require 'init-wayland))
 
-(global-unset-key [(control z)])
+(keymap-global-unset "C-z")
 
 ;;; ===================================================================
 ;;; EDITING & TEXT MANIPULATION
@@ -392,8 +372,8 @@
 ;; 添加两个字号增大缩小的快捷键
 ;; (define-key cnfonts-mode-map (kbd "C--") #'cnfonts-decrease-fontsize)
 ;; (define-key cnfonts-mode-map (kbd "C-=") #'cnfonts-increase-fontsize)
-(setq cnfonts-use-system-type t)
-(setq cnfonts-personal-fontnames '(("IBM Plex Mono") ("IBM Plex Sans SC" "PingFang SC" "等距更纱黑体 SC") ("Symbola") ("Apple Color Emoji")))
+(setopt cnfonts-use-system-type t)
+(setopt cnfonts-personal-fontnames '(("IBM Plex Mono") ("IBM Plex Sans SC" "PingFang SC" "等距更纱黑体 SC") ("Symbola") ("Apple Color Emoji")))
 
 ;; Emoji 字体调小一点
 (when (member "Apple Color Emoji" (font-family-list))
@@ -410,23 +390,22 @@
 (global-auto-revert-mode 1)
 (superword-mode 1)  ; treats underscores as part of words
 
-(setq switch-to-prev-buffer-skip
-  (lambda (window buffer bury-or-kill)
-    (or
-      ;; 跳过 * 开头的 internal buffer
-      (string-match-p "\\`\\*" (buffer-name buffer))
-      ;; 跳过非当前 project 的 buffer
-      (let ((current-root
-              (buffer-local-value 'projectile-project-root (window-buffer window))))
-        (and current-root
-          (with-current-buffer buffer
-            (not (equal projectile-project-root current-root))))))))
+(defun my-switch-to-prev-buffer-skip-p (window buffer _bury-or-kill)
+  (or
+    ;; 跳过 * 开头的 internal buffer
+    (string-match-p "\\`\\*" (buffer-name buffer))
+    ;; 跳过非当前 project 的 buffer
+    (let ((current-root
+            (buffer-local-value 'projectile-project-root (window-buffer window))))
+      (and current-root
+        (with-current-buffer buffer
+          (not (equal projectile-project-root current-root)))))))
+(setopt switch-to-prev-buffer-skip #'my-switch-to-prev-buffer-skip-p)
 
 ;;; Text and Programming Modes
 (require 'init-whitespace-mode)
 (require 'init-iedit)
 (require 'init-expand-region)
-(toggle-truncate-lines t)
 
 ;;; Smart Parentheses and Electric Mode
 (require 'init-smartparens)
@@ -594,8 +573,6 @@
 
 (use-package xwwp
   :ensure t
-  :config
-  (require 'xwwp)
   :bind (("C-c w o" . xwwp))
   :custom
   (xwwp-follow-link-completion-system 'ivy)
@@ -611,10 +588,10 @@
 
 
 ;; (require 'init-claude-code)
-(require 'init-eat-claude)
 
 ;; (require 'claude-posframe)
 (require 'gitignore-generator)
+(autoload 'emacs-translate-dwim "emacs-translate" nil t)
 
 
 
@@ -720,11 +697,13 @@
 (save-place-mode 1)
 
 ;;; View Mode and Minibuffer Setup
-(add-hook 'view-mode-hook 'View-exit)
+(add-hook 'view-mode-hook #'View-exit)
 
 ;; Diactive my all special keys for minibuffer
-(add-hook 'minibuffer-setup-hook #'(lambda () (my-keys-minor-mode 0)))
-(add-hook 'minibuffer-setup-hook #'(lambda () (my-special-buffer-keys-minor-mode 0)))
+(defun my-disable-special-keys-in-minibuffer ()
+  (my-keys-minor-mode 0)
+  (my-special-buffer-keys-minor-mode 0))
+(add-hook 'minibuffer-setup-hook #'my-disable-special-keys-in-minibuffer)
 
 (require 'init-selected)
 (put 'scroll-left 'disabled nil)
@@ -733,169 +712,7 @@
 ;;; CUSTOM VARIABLES & FACES
 ;;; ===================================================================
 
-;;; Custom Faces Configuration
-(custom-set-faces
-  ;; custom-set-faces was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
-  '(avy-lead-face ((t (:background "#161c23" :weight normal :foreground "deeppink"))))
-  '(avy-lead-face-0 ((t (:background "#161c23" :foreground "#FFB400"))))
-  '(aw-mode-line-face ((t (:inherit nil))))
-  '(bold ((t (:slant normal :weight normal :height 130 :width normal :foundry "nil" :family "IBM Plex Mono"))))
-  '(cfrs-border-color ((t (:background "yellow"))))
-  '(company-tooltip ((t (:background "black"))))
-  '(company-tooltip-annotation ((t (:foreground "#7F848E" :slant normal :weight normal))))
-  '(company-tooltip-annotation-selection ((t (:foreground "#7F848E" :slant normal :weight normal))))
-  '(company-tooltip-common ((t (:foreground "#61AFEF" :weight normal))))
-  '(company-tooltip-common-selection ((t (:foreground "#61AFEF" :weight normal))))
-  '(company-tooltip-scrollbar-thumb ((t (:background "#3E4451"))))
-  '(company-tooltip-scrollbar-track ((t (:background "#2a2931"))))
-  '(company-tooltip-selection ((t (:background "#3E4451" :foreground "#d4d4d6" :weight normal))))
-  '(deadgrep-match-face ((t (:inherit lazy-highlight))))
-  '(eat-term-bold ((t (:inherit nil))))
-  '(eat-term-color-0 ((t (:foreground "black"))))
-  '(eat-term-color-1 ((t (:foreground "tomato"))))
-  '(eat-term-color-10 ((t (:foreground "PaleGreen2"))))
-  '(eat-term-color-11 ((t (:foreground "gold1"))))
-  '(eat-term-color-12 ((t (:foreground "DeepSkyBlue1"))))
-  '(eat-term-color-13 ((t (:foreground "MediumOrchid1"))))
-  '(eat-term-color-14 ((t (:foreground "cyan"))))
-  '(eat-term-color-15 ((t (:foreground "white"))))
-  '(eat-term-color-2 ((t (:foreground "PaleGreen2"))))
-  '(eat-term-color-3 ((t (:foreground "gold1"))))
-  '(eat-term-color-4 ((t (:foreground "DeepSkyBlue1"))))
-  '(eat-term-color-5 ((t (:foreground "MediumOrchid1"))))
-  '(eat-term-color-6 ((t (:foreground "cyan"))))
-  '(eat-term-color-7 ((t (:foreground "white"))))
-  '(eat-term-color-8 ((t (:foreground "gray50"))))
-  '(eat-term-color-9 ((t (:foreground "tomato"))))
-  '(eat-term-faint ((t (:inherit font-lock-comment-face :weight light))))
-  '(eglot-diagnostic-tag-deprecated-face ((t (:underline nil :strike-through nil :foreground "yellow"))))
-  '(eglot-diagnostic-tag-unnecessary-face ((t (:foreground "gray" :underline nil))))
-  '(eglot-mode-line ((t (:inherit nil :weight bold))))
-  '(eldoc-box-border ((t (:background "#569CD6"))))
-  '(flymake-error ((t (:foreground nil :background "#3c2020" :underline nil :weight normal))))
-  '(flymake-note ((t (:underline nil))))
-  '(flymake-warning ((t (:underline nil))))
-  '(font-lock-doc-face ((t (:inherit font-lock-comment-face :foreground "#6A9955"))))
-  '(font-lock-keyword-face ((t (:foreground "orchid" :weight normal))))
-  '(font-lock-preprocessor-face ((t (:weight normal))))
-  '(fringe ((t (:foreground unspecified :background unspecified :inherit default))))
-  '(highlight-indent-guides-character-face ((t (:inherit font-lock-doc-markup-face))))
-  '(iedit-occurrence ((t (:foreground "black" :background "yellow"))))
-  '(isearch ((t (:foreground "white" :background "deeppink" :weight normal))))
-  '(ivy-minibuffer-match-face-1 ((t (:weight regular))))
-  '(ivy-minibuffer-match-face-2 ((t (:weight regular))))
-  '(ivy-minibuffer-match-face-3 ((t (:weight regular))))
-  '(ivy-minibuffer-match-face-4 ((t (:weight regular))))
-  '(lazy-highlight ((t (:background "#7FDC59" :foreground "#161c23" :weight normal))))
-  '(line-number ((t (:inherit default :foreground "gray33" :slant normal :weight normal))))
-  '(line-number-current-line ((t (:background "#1b2129" :foreground "white" :slant normal :weight normal))))
-  '(markdown-bold-face ((t (:inherit nil))))
-  '(markdown-code-face ((t (:background unspecified))))
-  '(markdown-header-face ((t (:foreground "#49bdb0" :weight regular))))
-  '(mode-line ((t (:background "#415367" :foreground "#e5ded6" :underline (:color foreground-color :style line :position t)))))
-  '(mode-line-active ((t (:background "#1a202c" :foreground "green" :box nil :underline nil))))
-  '(mode-line-highlight ((t (:box nil :foreground "green"))))
-  '(mode-line-inactive ((t (:background "#1a202c" :foreground "#a0aec0" :box nil :underline nil))))
-  '(region ((t (:background "#1a3a5c"))))
-  '(rg-context-face ((t (:inherit nil :foreground "#C6B8AD"))))
-  '(rg-match-face ((t (:inherit lazy-highlight))))
-  '(ripgrep-match-face ((t (:inherit my-highlight-font-words-face))))
-  '(shadow ((t (:foreground "#569CD6"))))
-  '(show-paren-match ((t (:foreground "green" :background "#11501B" :weight normal :underline (:position t)))))
-  '(sideline-flymake-error ((t (:inherit nil :background "red" :foreground "white"))))
-  '(sideline-flymake-note ((t (:inherit nil :background "lightblue" :foreground "black"))))
-  '(sideline-flymake-warning ((t (:inherit nil :background "lightyellow" :foreground "black"))))
-  '(success ((t (:foreground "Green1" :weight regular))))
-  '(symbol-overlay-default-face ((t (:inherit my-highlight-font-words-face))))
-  '(tab-bar ((t (:background "#1e1e1e"))))
-  '(tab-bar-tab ((t (:background "#199DFF" :distant-foreground "black" :foreground "#199DFF" :box (:line-width (2 . 2) :color "#199DFF" :style flat-button) :height 1.0))))
-  '(tooltip ((t (:font "IBM Plex Mono-14.0" :box nil))))
-  '(treemacs-directory-collapsed-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))
-  '(treemacs-directory-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))
-  '(treemacs-file-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-git-added-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-git-conflict-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-git-ignored-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-git-modified-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#D0BF68"))))
-  '(treemacs-git-renamed-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-git-unmodified-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-git-untracked-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(treemacs-root-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#57D8D4"))))
-  '(treemacs-tags-face ((t (:family "IBM Plex Mono" :weight normal :underline nil :inherit unspecified :foreground "#C6B8AD"))))
-  '(vertical-border ((t (:inherit shadow :foreground "#2d3748"))))
-  '(whitespace-tab ((t (:foreground unspecified :background unspecified :inherit shadow))))
-  '(whitespace-trailing ((t (:foreground unspecified :background unspecified :inherit shadow))))
-  '(widget-field ((t (:background "#C6B8AD" :foreground "black"))))
-  '(window-divider ((t (:foreground "#2d3748" :inherit shadow))))
-  '(window-divider-first-pixel ((t (:inherit shadow))))
-  '(window-divider-last-pixel ((t (:inherit shadow))))
-  '(yas-field-highlight-face ((t (:inherit my-highlight-font-words-face)))))
-
-;;; Custom Variables
-(custom-set-variables
-  ;; custom-set-variables was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
-  '(auto-save-file-name-transforms '((".*" "~/.emacs.d/.local/autosaves/\\1" t)))
-  '(auto-save-list-file-prefix (expand-file-name "~/.emacs.d/.local/auto-save-list/"))
-  '(backup-directory-alist '((".*" . "~/.emacs.d/.local/backups/")))
-  '(create-lockfiles nil)
-  '(helm-minibuffer-history-key "M-p")
-  '(inhibit-startup-screen t)
-  '(leetcode-prefer-language "cpp")
-  '(leetcode-save-solutions t)
-  '(package-selected-packages
-     '(jtsx sideline-eglot sideline-flymake sideline
-        highlight-indent-guides treemacs-nerd-icons treemacs python-ts
-        poetry dockerfile-mode popper spacious-padding afternoon-theme
-        ansible apheleia atom-one-dark-theme auto-dim-other-buffers
-        bazel beacon benchmark-init blamer centaur-tabs
-        challenger-deep-theme color-theme-sanityinc-tomorrow
-        company-posframe company-prescient company-qml corfu-terminal
-        counsel csv-mode cyberpunk-theme dashboard dashboard-hackernews
-        diminish disable-mouse easy-kill eglot elisp-autofmt elisp-def
-        elisp-refs elisp-slime-nav eterm-256color format-all general
-        google-c-style helm-rg highlight-numbers highlight-parentheses
-        imenu-list impatient-mode inkpot-theme ivy ivy-posframe
-        ivy-xref jdecomp jsonrpc key-chord known leetcode lispy
-        lsp-python-ms markdown-mode markdown-toc markdownfmt
-        modus-themes moe-theme mwim nano-theme neotree nimbus-theme
-        package-lint paredit phi-search popon popup-switcher popwin
-        prescient project projectsile-mode protobuf-mode py-autopep8
-        qml-mode rainbow-delimiters reformatter ripgrep rjsx-mode
-        selected slime slime-company smart-jump smart-mode-line
-        smooth-scrolling solaire-mode srcery-theme srefactor swift-mode
-        switch-buffer-functions symbol-overlay treemacs-all-the-icons
-        treesit-auto typescript-mode undo-tree valign vs-dark-theme
-        vscode-dark-plus-theme vterm vue-mode with-proxy
-        with-simulated-input xclip yasnippet))
-  '(package-vc-selected-packages
-     '((claude-code :url "https://github.com/stevemolitor/claude-code.el")))
-  '(pos-tip-background-color "#1d1d2b")
-  '(pos-tip-foreground-color "#d4d4d6")
-  '(recentf-save-file (expand-file-name "~/.emacs.d/.local/recentf"))
-  '(safe-local-variable-values
-     '((eval setq-local cider-preferred-build-tool 'clojure-cli
-         cider-default-cljs-repl 'shadow)
-        (projectile-project-root
-          . "/Users/jiechen/work/code/clj/ringbell")
-        (python-shell-interpreter-args . "run python")
-        (projectile-project-root . ".")
-        (python-shell-interpreter-args . "python -i")
-        (python-shell-interpreter . "uv")
-        (eglot-server-programs
-          (python-mode "basedpyright-langserver" "--stdio"))))
-  '(typescript-ts-indent-offset 2 nil nil "Customized with use-package jtsx")
-  '(warning-suppress-log-types '((emacs) (use-package) (lsp-mode)))
-  '(warning-suppress-types '((use-package) (lsp-mode))))
-
-
-
-
-
+;; Faces and Customize-managed variables live in `custom-file'.
+(load custom-file 'noerror 'nomessage)
 
 ;;; init.el ends here

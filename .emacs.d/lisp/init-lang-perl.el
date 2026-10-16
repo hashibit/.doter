@@ -1,5 +1,5 @@
 ;; -*- lexical-binding: t -*-
-;;; init-lang-python.el --- Python language configuration
+;;; init-lang-perl.el --- Perl language configuration
 
 (require 'perl-ts-mode)
 
@@ -24,4 +24,4 @@
 
 (provide 'init-lang-perl)
 
-;;; init-lang-python.el ends here
+;;; init-lang-perl.el ends here

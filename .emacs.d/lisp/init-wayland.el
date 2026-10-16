@@ -1,9 +1,10 @@
+;; -*- lexical-binding: t -*-
 ;; 启用剪贴板共享
 (setq select-enable-clipboard t)
 (setq select-enable-primary t)
 
 ;; Wayland 支持
-(setq wl-copy-process nil)
+(defvar wl-copy-process nil)
 
 (defun wl-copy (text)
   "Copy TEXT to Wayland clipboard using wl-copy."

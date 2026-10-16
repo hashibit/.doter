@@ -3,6 +3,8 @@
 
 (require 'my-toggle-code-intelligence)
 
+(defvar company-dabbrev-downcase)
+
 (use-package company
   :ensure t
   :demand t
@@ -26,21 +28,33 @@
         )
 
   ;; Fill the gaps the theme leaves: only company-tooltip is themed.
-  (with-eval-after-load 'company
-    (let* ((bg (face-background 'company-tooltip nil t))
-           (fg (face-foreground 'company-tooltip nil t))
-           (sel-bg "#3E4451")
-           (common "#61AFEF")
-           (anno   "#7F848E"))
-      (custom-set-faces
-       `(company-tooltip-selection            ((t (:background ,sel-bg :foreground ,fg :weight normal))))
-       `(company-tooltip-common               ((t (:foreground ,common :weight normal))))
-       `(company-tooltip-common-selection     ((t (:foreground ,common :weight normal))))
-       `(company-tooltip-annotation           ((t (:foreground ,anno :slant normal :weight normal))))
-       `(company-tooltip-annotation-selection ((t (:foreground ,anno :slant normal :weight normal))))
-       `(company-tooltip-scrollbar-track      ((t (:background ,bg))))
-       `(company-tooltip-scrollbar-thumb      ((t (:background ,sel-bg)))))))
+  (let* ((bg (face-background 'company-tooltip nil t))
+         (fg (face-foreground 'company-tooltip nil t))
+         (sel-bg "#3E4451")
+         (common "#61AFEF")
+         (anno   "#7F848E"))
+    (pcase-dolist (`(,face . ,attrs)
+                   `((company-tooltip-selection            :background ,sel-bg :foreground ,fg :weight normal)
+                     (company-tooltip-common               :foreground ,common :weight normal)
+                     (company-tooltip-common-selection     :foreground ,common :weight normal)
+                     (company-tooltip-annotation           :foreground ,anno :slant normal :weight normal)
+                     (company-tooltip-annotation-selection :foreground ,anno :slant normal :weight normal)
+                     (company-tooltip-scrollbar-track      :background ,bg)
+                     (company-tooltip-scrollbar-thumb      :background ,sel-bg)))
+      (face-spec-set face `((t ,@attrs)) 'face-override-spec)))
   )
+
+(defvar company-candidates-length)
+
+;; Patch function for posframe bug fix
+;; (company's own `company-select-next-if-tooltip-visible-or-complete-selection'
+;; checks tooltip visibility, which is always false with company-posframe)
+(defun my-company-select-next-or-complete-selection ()
+  "Select next candidate if there are several, otherwise complete selection."
+  (interactive)
+  (if (> company-candidates-length 1)
+      (call-interactively #'company-select-next)
+    (call-interactively #'company-complete-selection)))
 
 (use-package company-posframe
   :ensure t
@@ -64,22 +78,14 @@
 
 
   ;; Key bindings for company-active-map
-  (define-key company-active-map (kbd "<TAB>") #'company-select-next-if-tooltip-visible-or-complete-selection)
-  (define-key company-active-map (kbd "<backtab>") #'company-select-previous-or-abort)
-  (define-key company-active-map (kbd "RET") #'company-complete-selection)
-
-  ;; Patch function for posframe bug fix
-  (defun company-select-next-if-tooltip-visible-or-complete-selection ()
-    "Select next candidate if tooltip visible, otherwise complete selection."
-    (interactive)
-    (if (and t (> company-candidates-length 1))
-        (call-interactively 'company-select-next)
-      (call-interactively 'company-complete-selection)))
+  (keymap-set company-active-map "<TAB>" #'my-company-select-next-or-complete-selection)
+  (keymap-set company-active-map "<backtab>" #'company-select-previous-or-abort)
+  (keymap-set company-active-map "RET" #'company-complete-selection)
 
   ;; Key bindings for posframe-active-map
-  (define-key company-posframe-active-map (kbd "<TAB>") #'company-select-next-if-tooltip-visible-or-complete-selection)
-  (define-key company-posframe-active-map (kbd "<backtab>") #'company-select-previous-or-abort)
-  (define-key company-posframe-active-map (kbd "RET") #'company-complete-selection)
+  (keymap-set company-posframe-active-map "<TAB>" #'my-company-select-next-or-complete-selection)
+  (keymap-set company-posframe-active-map "<backtab>" #'company-select-previous-or-abort)
+  (keymap-set company-posframe-active-map "RET" #'company-complete-selection)
 
   ;; Hooks for eglot highlight management
   (add-hook 'company-completion-started-hook   #'my-disable-eglot-highlight)
@@ -87,7 +93,7 @@
   (add-hook 'company-completion-cancelled-hook #'my-enable-eglot-highlight)
 
   ;; Global yasnippet binding
-  (global-set-key (kbd "s-r") #'company-yasnippet))
+  (keymap-global-set "s-r" #'company-yasnippet))
 
 (use-package company-prescient
   :ensure t

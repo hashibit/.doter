@@ -1,17 +1,23 @@
+;;; -*- lexical-binding: t -*-
 
 
 ;; enable mouse click in terminal
 (unless (display-graphic-p)
   (xterm-mouse-mode 1))
 
-(global-set-key (kbd "<mouse-4>") #' (lambda () (interactive) (scroll-down 2)))
-(global-set-key (kbd "<mouse-5>") #' (lambda () (interactive) (scroll-up 2)))
-
-
-(defun my-mouse-find-definition-at-mouse ()
+(defun my-mouse-scroll-down-2 ()
   (interactive)
-  (mouse-set-point last-input-event)
-  (xref-find-definitions-at-mouse last-input-event))
+  (scroll-down 2))
+
+(defun my-mouse-scroll-up-2 ()
+  (interactive)
+  (scroll-up 2))
+
+(keymap-global-set "<mouse-4>" #'my-mouse-scroll-down-2)
+(keymap-global-set "<mouse-5>" #'my-mouse-scroll-up-2)
+
+
+(defalias 'my-mouse-find-definition-at-mouse #'xref-find-definitions-at-mouse)
 
 
 
@@ -53,22 +59,22 @@ Ignores calls if they happen too frequently."
 
 
 
-(define-key global-map (kbd "<s-mouse-1>") #'my-mouse-find-definition-at-mouse)
+(keymap-global-set "s-<mouse-1>" #'my-mouse-find-definition-at-mouse)
 
 ;; 绑定按键
-(define-key global-map (kbd "<s-mouse-3>")           #'my/xref-go-back-throttled)
-(define-key global-map (kbd "<s-triple-wheel-down>") #'my/xref-go-back-throttled)
-(define-key global-map (kbd "<s-triple-wheel-up>")   #'my/xref-go-forward-throttled)
+(keymap-global-set "s-<mouse-3>"           #'my/xref-go-back-throttled)
+(keymap-global-set "s-<triple-wheel-down>" #'my/xref-go-back-throttled)
+(keymap-global-set "s-<triple-wheel-up>"   #'my/xref-go-forward-throttled)
 
 
 
-(define-key global-map (kbd "<M-mouse-1>") #'my-mouse-find-definition-at-mouse)
-(global-unset-key [M-down-mouse-1])
+(keymap-global-set "M-<mouse-1>" #'my-mouse-find-definition-at-mouse)
+(keymap-global-unset "M-<down-mouse-1>")
 
-(define-key global-map (kbd "<M-mouse-3>") #'xref-go-back)
-(define-key global-map (kbd "<C-mouse-3>") #'xref-find-references-at-mouse)
-(global-unset-key [C-down-mouse-3])
-(global-unset-key [M-down-mouse-3])
+(keymap-global-set "M-<mouse-3>" #'xref-go-back)
+(keymap-global-set "C-<mouse-3>" #'xref-find-references-at-mouse)
+(keymap-global-unset "C-<down-mouse-3>")
+(keymap-global-unset "M-<down-mouse-3>")
 
 
 
@@ -108,7 +114,7 @@ Ignores calls if they happen too frequently."
 
 ;;; right click to open context-menu. disable mouse-3 to disable region behavior, which is annoying!
 ;;;
-(global-unset-key [mouse-3])
-(add-hook 'prog-mode-hook 'context-menu-mode)
+(keymap-global-unset "<mouse-3>")
+(context-menu-mode 1)
 
 (provide 'init-mouse)

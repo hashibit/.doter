@@ -1,7 +1,25 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-utils.el --- Personal utility functions
 
+(require 'cl-lib)
+(require 'seq)
 (require 'f)
+(declare-function hs-toggle-all "hideshow")
+(declare-function hs-toggle-hiding "hideshow")
+(declare-function hs-hide-all "hideshow")
+(declare-function hs-show-all "hideshow")
+(declare-function hs-hide-level "hideshow")
+
+(defvar my-visual-line-selection nil)
+(defvar my-visual-line-start-num nil)
+(defvar my-visual-line-selected nil)
+
+(defvar eldoc-box-position-function)
+(defvar eldoc-box-offset)
+(defvar my-term-popup-show-p)
+(defvar explicit-shell-file-name)
+(defvar popper-open-popup-alist)
+(defvar ivy-ignore-buffers)
 
 
 (defun my-util-split-long-line-to-sub-lines (long-line wrap-width)
@@ -55,7 +73,7 @@
 
 ;; ;; copy from elisp-eldoc-var-docstring-with-value
 ;; (defun my-elisp-eldoc-var-docstring-with-value (callback &rest _)
-;;   (when-let ((cs (elisp--current-symbol)))
+;;   (when-let* ((cs (elisp--current-symbol)))
 ;;     (when (and (boundp cs)
 ;; 	           ;; nil and t are boundp!
 ;; 	           (not (null cs))
@@ -85,15 +103,8 @@
 (defun which-active-modes ()
   "Give a message of which minor modes are enabled in the current buffer."
   (interactive)
-  (let ((active-modes))
-    (mapc
-      (lambda (mode)
-        (condition-case nil
-          (if (and (symbolp mode) (symbol-value mode))
-            (add-to-list 'active-modes mode))
-          (error nil)))
-      minor-mode-list)
-    (message "Active modes are %s" active-modes)))
+  (message "Active modes are %s"
+    (append local-minor-modes global-minor-modes)))
 
 
 
@@ -101,17 +112,17 @@
 ;; Check if system is Darwin/Mac OS X
 (defun my-system-type-is-darwin ()
   "Return true if system is darwin-based (Mac OS X)"
-  (string-equal system-type "darwin"))
+  (eq system-type 'darwin))
 
 ;; Check if system is Microsoft Windows
 (defun my-system-type-is-windows ()
   "Return true if system is Windows-based (at least up to Win7)"
-  (string-equal system-type "windows-nt"))
+  (eq system-type 'windows-nt))
 
 ;; Check if system is GNU/Linux
 (defun my-system-type-is-gnu ()
   "Return true if system is GNU/Linux-based"
-  (string-equal system-type "gnu/linux"))
+  (eq system-type 'gnu/linux))
 
 
 
@@ -175,13 +186,8 @@
   "Collapse prettified json in region between BEG and END to a single line"
   (interactive "r")
   (if (use-region-p)
-    (save-excursion
-      (save-restriction
-        (narrow-to-region beg end)
-        (goto-char (point-min))
-        (while (re-search-forward "[[:space:]\n]+" nil t)
-          (replace-match " "))))
-    (print "This function operates on a region")))
+    (json-pretty-print beg end t)
+    (user-error "This function operates on a region")))
 
 
 (defun un-indent-by-removing-4-spaces ()
@@ -203,7 +209,9 @@
 (defun my-show-file-name ()
   "Show the current buffer's file name."
   (interactive)
-  (message (buffer-file-name)))
+  (if-let* ((file (buffer-file-name)))
+    (message "%s" file)
+    (message "Buffer %s is not visiting a file" (buffer-name))))
 
 
 
@@ -219,11 +227,10 @@
 (defun buffer-mode (&optional buffer-or-name)
   "Returns the major mode associated with a buffer.
 If buffer-or-name is nil return current buffer's mode."
-  (with-current-buffer
+  (buffer-local-value 'major-mode
     (if buffer-or-name
       (get-buffer buffer-or-name)
-      (current-buffer))
-    major-mode))
+      (current-buffer))))
 
 
 
@@ -247,50 +254,39 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun my-move-to-end-of-word ()
-  "Move to the next 'last character' of a word."
+  "Move to the next \"last character\" of a word."
   (interactive)
   (forward-char)
   (re-search-forward "\\w\\b" nil t)
   (goto-char (match-beginning 0)))
 
-(defun my-delete-to-bol (args)
-  (interactive "p")
-  (set-mark-command nil)
-  (beginning-of-line)
-  (delete-region (region-beginning) (region-end)))
+(defun my-delete-to-bol ()
+  (interactive)
+  (delete-region (line-beginning-position) (point)))
 
-(defun my-delete-to-beginning (args)
-  (interactive "p")
-  (set-mark-command nil)
-  (mwim-beginning-of-code-or-line)
-  (delete-region (region-beginning) (region-end)))
+(defun my-delete-to-beginning ()
+  (interactive)
+  (delete-region (point) (save-excursion (mwim-beginning-of-code-or-line) (point))))
 
-(defun my-delete-to-end (args)
-  (interactive "p")
-  (set-mark-command nil)
-  (mwim-end-of-line)
-  (delete-region (region-beginning) (region-end)))
+(defun my-delete-to-end ()
+  (interactive)
+  (delete-region (point) (save-excursion (mwim-end-of-line) (point))))
 
-(defun my-delete-to-eof (args)
-  (interactive "p")
-  (set-mark-command nil)
-  (forward-line 0)
-  (set-mark-command nil)
-  (end-of-buffer)
-  (delete-region (region-beginning) (region-end)))
+(defun my-delete-to-eof ()
+  (interactive)
+  (delete-region (line-beginning-position) (point-max)))
 
 
 
 (defun my-yank-but-check-newline-bellow (arg)
   (interactive "p")
   (if (use-region-p)
-    (let ((beg (region-beginning))
-           (end (copy-marker (region-end))))
-      (delete-region beg end)
+    (progn
+      (delete-region (region-beginning) (region-end))
       (yank))
     (if my-visual-line-selected
       (progn
-        (next-line)
+        (line-move 1)
         (beginning-of-line)
         (yank arg)
         ;; 末尾有一个换行，光标要往回走一下
@@ -300,9 +296,8 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-yank-but-check-newline-above (arg)
   (interactive "p")
   (if (use-region-p)
-    (let ((beg (region-beginning))
-           (end (copy-marker (region-end))))
-      (delete-region beg end)
+    (progn
+      (delete-region (region-beginning) (region-end))
       (yank))
     (if my-visual-line-selected
       (progn
@@ -338,27 +333,24 @@ If buffer-or-name is nil return current buffer's mode."
   "If anything isn't hidden, run `hs-hide-all', else run `hs-show-all'."
   (interactive)
   (hs-minor-mode 1)
-  (let ((starting-ov-count
-          (length (overlays-in (point-min) (point-max)))))
-    (if (derived-mode-p 'c++-mode)
+  (if (derived-mode-p 'c++-mode 'c++-ts-mode)
+    ;; Fold one level inside the top-level namespace instead of the
+    ;; namespace itself.
+    (let ((starting-ov-count (length (overlays-in (point-min) (point-max)))))
       (save-excursion
         (goto-char (point-min))
-        (re-search-forward "namespace.*?{" nil t)
-        (next-line)
+        (when (re-search-forward "namespace.*?{" nil t)
+          (forward-line 1))
         (hs-hide-level 1))
-      (hs-hide-all))
-    (when (equal
-            (length (overlays-in (point-min) (point-max)))
-            starting-ov-count)
-      (hs-show-all)
-      (recenter))))
+      (when (= (length (overlays-in (point-min) (point-max))) starting-ov-count)
+        (hs-show-all)
+        (recenter)))
+    (hs-toggle-all)))
 
 (defun my-hs-toggle-hiding ()
   (interactive)
   (hs-minor-mode 1)
-  (if (hs-already-hidden-p)
-    (hs-show-block)
-    (hs-hide-block)))
+  (hs-toggle-hiding))
 
 (defun my-hide-all ()
   (interactive)
@@ -371,6 +363,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-M-x ()
   (interactive)
+  (refresh-current-mode)
   (counsel-M-x))
 
 (defun my-occur ()
@@ -399,17 +392,8 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-mark-ring ()
   (interactive)
-  (counsel-mark-ring))
-
-
-
-(advice-add 'my-M-x :before (lambda (&rest r) (refresh-current-mode))
-                                        ; convenient name for identifying or removing this advice later
-  '((name . "my-god-mode-before-m-x")))
-
-(advice-add 'my-mark-ring :after (lambda (&rest r) (recenter))
-                                        ; convenient name for identifying or removing this advice later
-  '((name . "recenter-after-mark-ring")))
+  (counsel-mark-ring)
+  (recenter))
 
 
 
@@ -422,7 +406,7 @@ If buffer-or-name is nil return current buffer's mode."
     (ignore-errors (eglot-shutdown-all))
     (mapc 'kill-buffer (delq
                          (current-buffer)
-                         (remove-if-not 'buffer-file-name (buffer-list)))) ;; this keep * buffers alive
+                         (seq-filter #'buffer-file-name (buffer-list)))) ;; this keep * buffers alive
     (if (bound-and-true-p centaur-tabs-mode)
       (centaur-tabs-kill-other-buffers-in-current-group))
     (if orig-eglot-active (eglot-ensure))))
@@ -431,9 +415,11 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-only-current-buffer-include-specials ()
   "Kill all other buffers."
   (interactive)
-  (mapc 'kill-buffer (delq
-                       (current-buffer)
-                       (buffer-list))) ;; this destroy * buffers too
+  ;; this destroy * buffers too, but keep internal " *..." buffers
+  (dolist (buf (buffer-list))
+    (unless (or (eq buf (current-buffer))
+              (string-prefix-p " " (buffer-name buf)))
+      (kill-buffer buf)))
   (if (bound-and-true-p centaur-tabs-mode)
     (centaur-tabs-kill-other-buffers-in-current-group))
   (if (bound-and-true-p global-eldoc-mode)
@@ -447,9 +433,7 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-joindirs (root &rest dirs)
   "Joins a series of directories together, like Python's os.path.join,
   (dotemacs-joindirs \"/tmp\" \"a\" \"b\" \"c\") => /tmp/a/b/c"
-  (if (not dirs)
-    root
-    (apply 'joindirs (expand-file-name (car dirs) root) (cdr dirs))))
+  (expand-file-name (apply #'file-name-concat root dirs)))
 
 
 
@@ -458,8 +442,8 @@ If buffer-or-name is nil return current buffer's mode."
   "Bury a compilation buffer if succeeded without warnings "
   (when (and
           (buffer-live-p buffer)
-          (string-match "compilation" (buffer-name buffer))
-          (string-match "finished" string)
+          (string-match-p "compilation" (buffer-name buffer))
+          (string-match-p "finished" string)
           ;; (not
           ;;   (with-current-buffer buffer
           ;;     (goto-char (point-min))
@@ -514,7 +498,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 
-(defun my-goto-match-paren (arg)
+(defun my-goto-match-paren (_arg)
   "Go to the matching parenthesis using show-paren-data-function when
   available (works with tree-sitter modes), else fall back to syntax table."
   (interactive "p")
@@ -563,21 +547,17 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-delete-char-or-kill-region (arg)
   (interactive "p")
   (if (use-region-p)
-    (let ((beg (region-beginning))
-           (end (copy-marker (region-end))))
-      (kill-region beg end))
-    (delete-forward-char (or arg 1))))
+    (kill-region (region-beginning) (region-end))
+    (delete-char (or arg 1))))
 
 (defun my-kill-whole-line-or-kill-region (arg)
   (interactive "p")
   (if (use-region-p)
-    (let ((beg (region-beginning))
-           (end (copy-marker (region-end))))
-      (kill-region beg end))
+    (kill-region (region-beginning) (region-end))
     (kill-whole-line (or arg 1))))
 
 
-(defun my-set-mark-command-or-deactivate-mark (arg)
+(defun my-set-mark-command-or-deactivate-mark (_arg)
   (interactive "p")
   (if (use-region-p)
     (deactivate-mark)
@@ -588,20 +568,20 @@ If buffer-or-name is nil return current buffer's mode."
   (interactive "p")
   (if (use-region-p)
     (my-mc/mark-next-like-this arg)
-    (next-line)))
+    (line-move 1)))
 
 (defun my-prev-line-or-mc/mark-next-like-this (arg)
   (interactive "p")
   (if (use-region-p)
     (my-mc/mark-previous-like-this
       arg)
-    (previous-line)))
+    (line-move -1)))
 
 
 (defun my-replace-char ()
   "delete current char, goto insert mode"
   (interactive)
-  (delete-forward-char 1)
+  (delete-char 1)
   ;; (call-interactively (key-binding (kbd "q")))
   (my-quit-god-mode))
 
@@ -623,12 +603,9 @@ If buffer-or-name is nil return current buffer's mode."
   )
 
 
-(setq my-visual-line-selection nil)
-(setq my-visual-line-start-num nil)
-(setq my-visual-line-selected nil)
 
 
-(defun my-set-visual-selected(&rest r)
+(defun my-set-visual-selected(&rest _)
   (setq my-visual-line-selected t))
 ;; kill-whole-line 不会触发 deactivate mark，所以我们手动设置 visual-line 模式
 (advice-add 'kill-whole-line :after #'my-set-visual-selected)
@@ -637,23 +614,19 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-kill-ring-save-advice (orig-fun &rest args)
   (let ((result (apply orig-fun args))) ; 先执行原始的 kill-ring-save
     ;; 如果是 visual line selection 模式，则在复制的内容最后，加上一个换行符
+    ;; 用 kill-new 的 REPLACE 参数替换，保证剪贴板也同步
     (when (and my-visual-line-selection
             (stringp (car kill-ring)))
-      (let ((current-text (car kill-ring)))
-        (setcar kill-ring (concat current-text "\n"))
-        ))
+      (kill-new (concat (car kill-ring) "\n") t))
     result))
 (advice-add 'kill-ring-save :around #'my-kill-ring-save-advice)
 
 ;; 这个会在最后执行，所以做清理动作
-(add-hook 'deactivate-mark-hook
-  (lambda ()
-    (if my-visual-line-selection
-      (setq my-visual-line-selected t)
-      (setq my-visual-line-selected nil))
-    (setq
-      my-visual-line-selection nil
-      my-visual-line-start-num nil)))
+(defun my-visual-line-reset-on-deactivate ()
+  (setq my-visual-line-selected (and my-visual-line-selection t)
+    my-visual-line-selection nil
+    my-visual-line-start-num nil))
+(add-hook 'deactivate-mark-hook #'my-visual-line-reset-on-deactivate)
 
 
 (defun my-copy-whole-line-or-region ()
@@ -665,12 +638,10 @@ If buffer-or-name is nil return current buffer's mode."
     ;; 无选区：手动复制当前行
     ;; 标记这是一个行选择
     (setq my-visual-line-selected t)
-    (save-excursion
-      (copy-region-as-kill (line-beginning-position) (line-end-position)))
-    ;; copy-region-as-kill 不会触发 kill-ring-save advice
-    ;; 所以我们手动加换行
-    (when (stringp (car kill-ring))
-      (kill-new (concat (car kill-ring) "\n")))
+    ;; 行复制，末尾加换行，只产生一个 kill-ring 条目
+    (kill-new (concat (filter-buffer-substring
+                        (line-beginning-position) (line-end-position))
+                "\n"))
     (message "Copied line")))
 
 
@@ -684,7 +655,7 @@ If buffer-or-name is nil return current buffer's mode."
     (message "Copied to tmux buffer")))
 
 
-(defun my-select-current-line-and-forward-line (arg)
+(defun my-select-current-line-and-forward-line (_arg)
   "Select the current line and move the cursor by ARG lines IF
   no region is selected.
   If a region is already selected when calling this command, only move
@@ -722,32 +693,22 @@ If buffer-or-name is nil return current buffer's mode."
     (end-of-line)))
 
 
-(defun my-join-lines (arg)
-  "Apply join-line over region."
+(defun my-join-lines (&optional _arg)
+  "Join lines in region, or join the following line to this one."
   (interactive "p")
-  (forward-line 0)
-  ;; goto line begin
   (if (use-region-p)
-    (let ((beg (region-beginning))
-           (end (copy-marker (region-end))))
-      (goto-char beg)
-      (while (< (point) end)
-        (join-line 1)))
-    (progn
-      (set-mark-command nil)
-      (end-of-line)
-      (join-line -1))))
+    (delete-indentation nil (region-beginning) (region-end))
+    (delete-indentation t)))
 
 
 (defun my-is-beginning-of-line ()
   (interactive)
-  (= (point)
-    (line-beginning-position)))
+  (bolp))
 
 
 (defun my-is-end-of-line ()
   (interactive)
-  (= (point) (line-end-position)))
+  (eolp))
 
 
 (defun my-enlarge-half-height ()
@@ -781,7 +742,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-forward-char-no-cross-line ()
   (interactive)
-  (unless (my-is-end-of-line)
+  (unless (eolp)
     (forward-char)))
 
 (defun my-forward-to-word ()
@@ -794,7 +755,7 @@ If buffer-or-name is nil return current buffer's mode."
                         pos-before
                         pos-after)))
     ;; NOTE: the ] must be first char in the regex candicates. see https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexps.html
-    (if-let ((distance (string-match-p "[])}([{&=\/\*\:\"\,\.\~\?\<\>]" sub-string)))
+    (if-let* ((distance (string-match-p "[])}([{&=\/\*\:\"\,\.\~\?\<\>]" sub-string)))
       (progn
         ;; if next char is special then find next regular char, because forward 0 distance is meaningless
         (when (= distance 0)
@@ -805,7 +766,7 @@ If buffer-or-name is nil return current buffer's mode."
           (forward-to-word 1)))
       (forward-to-word 1))))
 
-(defun my-next-line(args)
+(defun my-next-line(_args)
   (interactive "p")
   (setq this-command 'next-line)
   (if my-visual-line-selection
@@ -815,48 +776,48 @@ If buffer-or-name is nil return current buffer's mode."
           (end-of-line 2)
           (beginning-of-line))
         ((= curr-line my-visual-line-start-num)
-          (goto-line my-visual-line-start-num)
-          (beginning-of-line)
+          (goto-char (point-min))
+          (forward-line (1- my-visual-line-start-num))
           (set-mark-command nil)
           (end-of-line 2))
         (t
           (end-of-line 2))))
-    (next-line)))
+    (line-move 1)))
 
-(defun my-previous-line(args)
+(defun my-previous-line(_args)
   (interactive "p")
   (setq this-command 'previous-line)
   (if my-visual-line-selection
     (let ((curr-line (line-number-at-pos)))
       (cond
         ((> curr-line my-visual-line-start-num)
-          (previous-line)
+          (line-move -1)
           (end-of-line)
           )
         ((= curr-line my-visual-line-start-num)
-          (goto-line my-visual-line-start-num)
+          (goto-char (point-min))
+          (forward-line (1- my-visual-line-start-num))
           (end-of-line)
           (set-mark-command nil)
-          (previous-line)
+          (line-move -1)
           (beginning-of-line)
           )
         (t
-          (previous-line)
+          (line-move -1)
           (beginning-of-line)
           )
         ))
-    (previous-line)))
+    (line-move -1)))
 
 (defun my-kill-word()
   (interactive)
-  (push-mark nil nil t)
-  (my-forward-to-word)
-  (backward-delete-char-untabify 1)
-  )
+  (let ((start (point)))
+    (my-forward-to-word)
+    (delete-region start (point))))
 
 (defun my-backward-char-no-cross-line ()
   (interactive)
-  (unless (my-is-beginning-of-line)
+  (unless (bolp)
     (backward-char)))
 
 
@@ -876,11 +837,7 @@ If buffer-or-name is nil return current buffer's mode."
   "Function to quit help in other-window."
   (interactive)
   (unless (one-window-p)
-    (save-excursion
-      (let ((next 1))
-        (other-window next)
-        (quit-window)
-        ))))
+    (quit-window nil (next-window))))
 
 
 
@@ -926,8 +883,12 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun advise-once (symbol where function &optional props)
-  (advice-add symbol :after `(lambda (&rest _) (advice-remove ',symbol ',function)))
-  (advice-add symbol where function props))
+  "Add FUNCTION as WHERE advice to SYMBOL, removed after the first call."
+  (letrec ((remover (lambda (&rest _)
+                      (advice-remove symbol function)
+                      (advice-remove symbol remover))))
+    (advice-add symbol :after remover)
+    (advice-add symbol where function props)))
 
 
 
@@ -936,27 +897,10 @@ If buffer-or-name is nil return current buffer's mode."
   manage to find it, return the containing directory. Else if we
   get to the toplevel directory and still can't find it, return
   nil. Start at startdir or . if startdir not given"
-
-  (let ((dirname (expand-file-name
-		           (if startdir startdir ".")))
-	     (found nil) ; found is set as a flag to leave loop if we find it
-	     (top nil))  ; top is set when we get
-                                        ; to / so that we only check it once
-
-                                        ; While we've neither been at the top last time nor have we found
-                                        ; the file.
-    (while (not (or found top))
-                                        ; If we're at / set top flag.
-      (if (string= (expand-file-name dirname) "/")
-	    (setq top t))
-
-                                        ; Check for the file
-      (if (file-exists-p (expand-file-name filename dirname))
-	    (setq found t)
-                                        ; If not, move up a directory
-	    (setq dirname (expand-file-name ".." dirname))))
-                                        ; return statement
-    (if found dirname nil)))
+  (when-let* ((dir (locate-dominating-file
+                     (expand-file-name (or startdir "."))
+                     filename)))
+    (directory-file-name (expand-file-name dir))))
 
 
 
@@ -1039,19 +983,13 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defun my-set-buffer-use-tabs ()
   (interactive)
-  (make-local-variable 'indent-tabs-mode)
-  (setq indent-tabs-mode t)
-  (make-local-variable 'tab-width)
-  (setq tab-width 4)
-  )
+  (setq-local indent-tabs-mode t
+    tab-width 4))
 
 (defun my-set-buffer-use-space ()
   (interactive)
-  (make-local-variable 'indent-tabs-mode)
-  (setq indent-tabs-mode nil)
-  (make-local-variable 'tab-width)
-  (setq tab-width 4)
-  )
+  (setq-local indent-tabs-mode nil
+    tab-width 4))
 
 (defun my-untabify-buffer ()
   "将当前缓冲区中的所有 Tab 替换为 4 个空格。"
@@ -1082,15 +1020,14 @@ If buffer-or-name is nil return current buffer's mode."
   "Set HTTP/HTTPS proxy environment variables.
 If called interactively, prompt for IP and port.
 Default port is 9910 if not provided."
-  (interactive)
   ;; 如果是交互式调用（M-x），提示用户输入
-  (when (called-interactively-p 'interactive)
-    (setq ip (read-string "Proxy IP (e.g. 127.0.0.1): " "127.0.0.1"))
-    (setq port (read-number "Proxy Port (e.g. 9910): " 9910)))
+  (interactive
+    (list (read-string "Proxy IP (e.g. 127.0.0.1): " "127.0.0.1")
+      (read-number "Proxy Port (e.g. 9910): " 9910)))
 
   ;; 确保 port 是整数
   (unless (integerp port)
-    (setq port (string-to-number (format "%s" port))))
+    (setq port (string-to-number (format "%s" (or port "")))))
 
   ;; 确保默认值
   (unless (> port 0)
@@ -1113,11 +1050,9 @@ Default port is 9910 if not provided."
 
 (defun my-unset-proxy()
   (interactive)
-  (setenv "http_proxy" nil)
-  (setenv "https_proxy" nil)
-  (setenv "HTTP_PROXY" nil)
-  (setenv "HTTPS_PROXY" nil)
-  )
+  (dolist (var '("http_proxy" "https_proxy" "HTTP_PROXY" "HTTPS_PROXY"
+                  "no_proxy" "NO_PROXY"))
+    (setenv var nil)))
 
 
 (defun my-find-char-forward (char)
@@ -1139,27 +1074,23 @@ Default port is 9910 if not provided."
 
 (defun my-scroll-cursor-down ()
   (interactive)
-  (next-line (/ (window-height (selected-window)) 2)))
+  (line-move (/ (window-height (selected-window)) 2)))
 
 (defun my-scroll-cursor-up ()
   (interactive)
-  (previous-line (/ (window-height (selected-window)) 2)))
+  (line-move (- (/ (window-height (selected-window)) 2))))
 
 (defun run-command-in-directory (dir cmd &rest args)
   "Run a command in the specified directory.
 If DIR is nil, use `default-directory'.
 Return trimmed stdout if success, nil otherwise."
-  (let* ((default-directory (or dir default-directory))
-          (stdout-buffer (generate-new-buffer " *tmp-stdout*"))
-          (exit-status (condition-case nil
-                         (apply #'call-process cmd nil (list stdout-buffer nil) nil args)
-                         (file-missing nil))))
-    (unwind-protect
-      (if (eq exit-status 0)
-        (with-current-buffer stdout-buffer
-          (string-trim (buffer-string)))
-        nil)
-      (kill-buffer stdout-buffer))))
+  (let ((default-directory (or dir default-directory)))
+    ;; 不用 process-lines：它会把 stderr 混进输出
+    (with-temp-buffer
+      (when (eql 0 (condition-case nil
+                     (apply #'call-process cmd nil '(t nil) nil args)
+                     (file-missing nil)))
+        (string-trim (buffer-string))))))
 
 
 (defun my-pp-region (beg end)
@@ -1228,7 +1159,7 @@ Return trimmed stdout if success, nil otherwise."
               lines
               "\n")))
     (delete-region start end)
-    (let ((content-start (point)))
+    (let ((_content-start (point)))
       (when (and label (not (string-empty-p label)))
         (let* ((label-pad (max 0 (- max-width (string-width label))))
                 (label-line (concat label (make-string label-pad ?\s) "\n"))
@@ -1295,7 +1226,7 @@ Return trimmed stdout if success, nil otherwise."
 
 
 
-(defun my/eldoc-box-position-at-mouse (width height)
+(defun my/eldoc-box-position-at-mouse (width _height)
   "Position eldoc-box childframe near the mouse cursor."
   (let* ((edges (window-pixel-edges))
           (right (nth 2 edges))
@@ -1331,28 +1262,33 @@ to the interface/class/type declaration, then extracts the full block."
                              (t              locs))))
       (if (not loc)
           (message "No definition found for symbol at point")
-        (let* ((uri   (plist-get loc :uri))
-               (start (plist-get (plist-get loc :range) :start))
-               (line  (plist-get start :line))
-               (file  (eglot-uri-to-path uri)))
-          (with-current-buffer (find-file-noselect file t)
-            (save-excursion
-              (goto-char (point-min))
-              (forward-line line)
-              (let* ((beg  (line-beginning-position))
-                     (end  (save-excursion
-                             (when (re-search-forward "{" (+ beg 600) t)
-                               (backward-char)
-                               (when (and (boundp 'show-paren-data-function)
-                                          show-paren-data-function)
-                                 (let ((data (funcall show-paren-data-function)))
-                                   (when (and data (nth 3 data) (not (nth 4 data)))
-                                     (nth 3 data)))))))
-                     (end  (or end (line-end-position 10))))
-                (font-lock-ensure beg end)
-                (let* ((text (buffer-substring beg end))
-                       (eldoc-box-position-function #'my/eldoc-box-position-at-mouse))
-                  (eldoc-box--display text))))))))))
+        (let* ((uri      (plist-get loc :uri))
+               (start    (plist-get (plist-get loc :range) :start))
+               (line     (plist-get start :line))
+               (file     (eglot-uri-to-path uri))
+               (existing (find-buffer-visiting file))
+               (buf      (or existing (find-file-noselect file t))))
+          (unwind-protect
+              (with-current-buffer buf
+                (save-excursion
+                  (goto-char (point-min))
+                  (forward-line line)
+                  (let* ((beg  (line-beginning-position))
+                         (end  (save-excursion
+                                 (when (re-search-forward "{" (+ beg 600) t)
+                                   (backward-char)
+                                   (when (and (boundp 'show-paren-data-function)
+                                              show-paren-data-function)
+                                     (let ((data (funcall show-paren-data-function)))
+                                       (when (and data (nth 3 data) (not (nth 4 data)))
+                                         (nth 3 data)))))))
+                         (end  (or end (line-end-position 10))))
+                    (font-lock-ensure beg end)
+                    (let* ((text (buffer-substring beg end))
+                           (eldoc-box-position-function #'my/eldoc-box-position-at-mouse))
+                      (eldoc-box--display text)))))
+            ;; 不是用户已打开的 buffer，用完即关
+            (unless existing (kill-buffer buf))))))))
 
 
 

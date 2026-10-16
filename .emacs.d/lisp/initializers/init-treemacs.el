@@ -1,19 +1,181 @@
+;;; -*- lexical-binding: t -*-
 (require 'fringe)
+(eval-when-compile (require 'dash))
+
+(defvar darker-window-bg-color)
+(defvar my-window-margins)
+(defvar aw-ignored-buffers)
+(defvar hl-line-overlay)
+(defvar treemacs--marked-paths)
+(defvar treemacs-width)
+(declare-function treemacs-hide-gitignored-files-mode "treemacs-async")
+(declare-function treemacs-follow-mode "treemacs-follow-mode")
+(declare-function treemacs-get-local-window "treemacs-scope")
+(declare-function treemacs-set-width "treemacs-interface")
+(declare-function treemacs-mark-or-unmark-path-at-point "treemacs-file-management")
+(declare-function treemacs--prop-at-point "treemacs-core-utils")
+(declare-function treemacs--parent-dir "treemacs-core-utils")
+(declare-function treemacs--filename "treemacs-core-utils")
+(declare-function treemacs-join-path "treemacs-core-utils")
+(declare-function treemacs-refresh "treemacs-interface")
+(declare-function treemacs-delete-marked-paths "treemacs-file-management")
+(declare-function treemacs-delete-file "treemacs-file-management")
+(declare-function treemacs-copy-marked-files "treemacs-file-management")
+(declare-function treemacs-load-theme "treemacs-themes")
+(declare-function treemacs-add-and-display-current-project "treemacs")
+(declare-function treemacs-find-file "treemacs")
+(declare-function treemacs-select-window "treemacs")
+(declare-function projectile-acquire-root "projectile")
+(declare-function projectile-find-file-in-directory "projectile")
+
+(defun my-add-padding-for-treemacs ()
+  ;; treemacs 窗口不要边距（见 init-god 的 my/set-margins-all-windows）
+  (setq-local my-window-margins '(0 . 0))
+  (when-let* ((window (treemacs-get-local-window)))
+    (set-window-margins window 0 0)))
+
+;; treemacs 自己把 default/fringe remap 到 treemacs-window-background-face
+(defun dim-treemacs-window-background ()
+  (set-face-attribute 'treemacs-window-background-face nil
+                      :background darker-window-bg-color))
+
+(defun my-reset-treemacs-width ()
+  (interactive)
+  (setq-default treemacs-width 35)
+  (treemacs-set-width t))
+
+(defun my-decrease-treemacs-width ()
+  (interactive)
+  (let ((treemacs-width 25))
+    (treemacs-set-width t)))
+
+(defun my-increase-treemacs-width ()
+  (interactive)
+  (let ((treemacs-width (/ (frame-width) 3)))
+    (treemacs-set-width t)))
+
+(defun my-treemacs-mark-or-unmark-path-at-point()
+  (interactive)
+  (treemacs-mark-or-unmark-path-at-point)
+  (line-move 1))
+
+;; 在 treemacs 之外最近使用的窗口打开文件
+(defun my-projectile-find-file-in-treemacs()
+  (interactive)
+  (let ((root (projectile-acquire-root))
+        (display-buffer-overriding-action
+         '(display-buffer-use-some-window
+           (inhibit-same-window . t)
+           (some-window . mru))))
+    (projectile-find-file-in-directory root)))
+
+(defun my-treemacs-duplicate-current-file ()
+  (interactive)
+  (let* ((source (treemacs--prop-at-point :path))
+          (destination (treemacs--parent-dir source))
+          (target-name (treemacs--filename source))
+          (target (->>
+                    target-name
+                    (treemacs-join-path
+                      destination)
+                    (my-treemacs--find-repeated-file-name)))
+          (copy-fn (if (file-directory-p source)
+                     #'copy-directory
+                     #'copy-file)))
+    (funcall copy-fn source target)
+    (treemacs-refresh)))
+
+(defun my-treemacs-delete-marked-or-current-file-without-confirm()
+  (interactive)
+  (cl-letf (((symbol-function 'yes-or-no-p) #'always))
+    (if (bound-and-true-p treemacs--marked-paths)
+      (treemacs-delete-marked-paths)
+      (treemacs-delete-file)))
+  (treemacs-refresh))
+
+;; 直接复制到当前目录（相当于在目录提示里直接回车）
+(defun my-treemacs-copy-marked-files-without-confirm()
+  (interactive)
+  (if (null treemacs--marked-paths)
+    (message "no marked files.")
+    (cl-letf (((symbol-function 'read-directory-name)
+               (lambda (&rest _) default-directory)))
+      (treemacs-copy-marked-files))
+    (treemacs-refresh)))
+
+
+(defun display-treemacs-widow-in-ace-window-selection ()
+  (with-eval-after-load 'ace-window
+    (setq aw-ignored-buffers
+      (delete 'treemacs-mode aw-ignored-buffers))))
+
+;;;; custom highlight for treemacs current line
+(defface my-treemacs-custom-line-highlight
+  '((t (:background "#292929" :weight normal)))
+  "Custom hl-line face for treemacs."
+  :group 'treemacs-faces)
+(defun change-treemacs-hl-line-mode ()
+  (setq-local hl-line-face 'my-treemacs-custom-line-highlight)
+  (when (overlayp hl-line-overlay)
+    (overlay-put hl-line-overlay 'face hl-line-face))
+  ;; (overlay-put hl-line-overlay 'pointer 'arrow)
+  )
+
+
+;; CAUTION: overrides private api `treemacs--find-repeated-file-name'
+;; (copied from treemacs-core-utils.el) because i want _Copy1 instead of (Copy 1)
+(defun my-treemacs--find-repeated-file-name (path)
+  "Find a fitting copy name for given file PATH.
+Returns a name in the /file/name_Copy1.ext.  If that also already
+exists it returns /file/name_Copy2.ext etc."
+  (let* ((n 0)
+          (dir (treemacs--parent-dir path))
+          (filename (treemacs--filename path))
+          (filename-no-ext (file-name-sans-extension path))
+          (ext (--when-let (file-name-extension filename) (concat "." it)))
+          (template "_Copy%d")
+          (new-path path))
+    (while (file-exists-p new-path)
+      (cl-incf n)
+      (setf new-path (treemacs-join-path dir (concat filename-no-ext (format template n) ext))))
+    new-path))
+
+;;
+;; 隐藏 python 的一些忽略文件
+;;
+(defun my/treemacs-ignore-pycache-and-egg-info (file-name _abs-path)
+  "Ignore __pycache__ directories and *.egg-info directories."
+  (or
+    ;; 忽略名为 __pycache__ 的目录
+    (string= file-name "__pycache__")
+    ;; 忽略以 .egg-info 结尾的目录
+    (string-suffix-p ".egg-info" file-name)
+    ;; 可选：忽略 .pyc 文件（如果你也想隐藏单个 .pyc）
+    ;; (string-suffix-p ".pyc" file-name)
+    ))
+
+
+;; 鼠标放上去的效果，加了下划线和 hl line 的背景色
+(defface my-treemacs-button-underline-only
+  '((t :underline t :box nil :inherit my-treemacs-custom-line-highlight))
+  "Face for hovered treemacs buttons: underline plus the custom line highlight."
+  :group 'treemacs-faces)
 
 (use-package treemacs
-  :init
   :config
+  ;; Only sets the variable; actually enabling the mode
+  ;; ((treemacs-hide-gitignored-files-mode 1)) breaks rendering with
+  ;; "Wrong type argument: treemacs-dom-node, nil".
   (setq treemacs-hide-gitignored-files-mode 1)
   (setq treemacs-space-between-root-nodes nil)
   (setq treemacs-show-hidden-files t)
   (setq treemacs-show-cursor t)
   (setq treemacs-indentation 2)
-  (setq treemacs-persist-file (expand-file-name "~/.emacs.d/.local/treemacs-persist"))
+  (setq treemacs-persist-file (locate-user-emacs-file ".local/treemacs-persist"))
   (setq treemacs-last-error-persist-file
-    (expand-file-name "~/.emacs.d/.local/treemacs-persist-at-last-error"))
+    (locate-user-emacs-file ".local/treemacs-persist-at-last-error"))
   (setq treemacs-expand-after-init nil)
   (setq treemacs-width-is-initially-locked nil)
-  (setq cursor-type nil)
   (treemacs-follow-mode 0)
 
 
@@ -23,136 +185,13 @@
   ;; (setq treemacs-directory-name-transformer #'add-pointer-to-str)
 
 
-  (global-set-key (kbd "C-c C-p") treemacs-project-map)
-  (global-set-key (kbd "C-c C-w") treemacs-workspace-map)
+  (keymap-global-set "C-c C-p" treemacs-project-map)
+  (keymap-global-set "C-c C-w" treemacs-workspace-map)
   ;; (treemacs-resize-icons 26)
 
-  (defun my-add-padding-for-treemacs ()
-    (set-window-margins (treemacs-get-local-window) 0 0)
-    )
-
-  (defun dim-treemacs-window-background ()
-    (set (make-local-variable 'face-remapping-alist) `((default :background ,darker-window-bg-color)
-                                                        (fringe :background ,darker-window-bg-color)))
-    )
-
-  (defun my-reset-treemacs-width ()
-    (interactive)
-    (setq-default treemacs-width 35)
-    ;; call inner api
-    (treemacs--set-width 35))
-
-  (defun my-decrease-treemacs-width ()
-    (interactive)
-    ;; call inner api
-    (treemacs--set-width 25))
-
-  (defun my-increase-treemacs-width ()
-    (interactive)
-    ;; call inner api
-    (treemacs--set-width (/ (frame-width) 3)))
-
-  (defun my-treemacs-mark-or-unmark-path-at-point()
-    (interactive)
-    (treemacs-mark-or-unmark-path-at-point)
-    (next-line)
-    )
-
-  (defun my-projectile-find-file-in-treemacs()
-    (interactive)
-    (let ((root (projectile-acquire-root)))
-      (advise-once 'pop-to-buffer-same-window :before (lambda (&rest _) (other-window 1)))
-      (projectile-find-file-in-directory root)))
-
-  (defun my-treemacs-duplicate-current-file ()
-    (interactive)
-    (let* ((source (treemacs--prop-at-point :path))
-            (destination (treemacs--parent-dir source))
-            (target-name (treemacs--filename source))
-            (target (->>
-                      target-name
-                      (treemacs-join-path
-                        destination)
-                      (treemacs--find-repeated-file-name)))
-            (copy-fn (if (file-directory-p source)
-                       #'copy-directory
-                       #'copy-file)))
-      (funcall copy-fn source target)
-      (treemacs-refresh)))
-
-  (defun my-treemacs-delete-marked-or-current-file-without-confirm()
-    (interactive)
-    (with-simulated-input ("yes" "RET")
-      (if (bound-and-true-p treemacs--marked-paths)
-        (treemacs-delete-marked-paths)
-        (treemacs-delete-file)
-        ))
-    (treemacs-refresh))
-
-  (defun my-treemacs-copy-marked-files-without-confirm()
-    (interactive)
-    (with-simulated-input ("RET")
-      (if (eq treemacs--marked-paths nil)
-        (message "no marked files.")
-        (treemacs-copy-marked-files)
-        (treemacs-refresh))))
-
-
-  (defun display-treemacs-widow-in-ace-window-selection ()
-    (setq aw-ignored-buffers
-      (delete 'treemacs-mode aw-ignored-buffers)))
-
-  ;;;; custom highlight for treemacs current line
-  (defface my-treemacs-custom-line-highlight
-    '((t (:background "#292929" :weight normal)))
-    "")
-  (defun change-treemacs-hl-line-mode ()
-    (setq-local hl-line-face 'my-treemacs-custom-line-highlight)
-    (overlay-put hl-line-overlay 'face hl-line-face)
-    ;; (overlay-put hl-line-overlay 'pointer 'arrow)
-    )
-
-
-  ;; CAUTION: private api. copied from treemacs-core-utils.el
-  ;; because i want _Copy1 instead of (Copy 1)
-  (defun treemacs--find-repeated-file-name (path)
-    "Find a fitting copy name for given file PATH.
-Returns a name in the /file/name_Copy1.ext.  If that also already
-exists it returns /file/name_Copy2.ext etc."
-    (let* ((n 0)
-            (dir (treemacs--parent-dir path))
-            (filename (treemacs--filename path))
-            (filename-no-ext (file-name-sans-extension path))
-            (ext (--when-let (file-name-extension filename) (concat "." it)))
-            (template "_Copy%d")
-            (new-path path))
-      (while (file-exists-p new-path)
-        (cl-incf n)
-        (setf new-path (treemacs-join-path dir (concat filename-no-ext (format template n) ext))))
-      new-path))
-
-  ;;
-  ;; 隐藏 python 的一些忽略文件
-  ;;
-  (defun my/treemacs-ignore-pycache-and-egg-info (file-name abs-path)
-    "Ignore __pycache__ directories and *.egg-info directories."
-    (or
-      ;; 忽略名为 __pycache__ 的目录
-      (string= file-name "__pycache__")
-      ;; 忽略以 .egg-info 结尾的目录
-      (string-suffix-p ".egg-info" file-name)
-      ;; 可选：忽略 .pyc 文件（如果你也想隐藏单个 .pyc）
-      ;; (string-suffix-p ".pyc" file-name)
-      ))
+  (advice-add 'treemacs--find-repeated-file-name :override #'my-treemacs--find-repeated-file-name)
   (add-to-list 'treemacs-ignored-file-predicates #'my/treemacs-ignore-pycache-and-egg-info)
-
-
-  ;; 鼠标放上去的效果，加了下划线和 hl line 的背景色
-  (defface treemacs-button-underline-only
-    '((t :underline t :foreground "unspecified" :background "unspecified" :box nil :inherit 'my-treemacs-custom-line-highlight))
-    "Face that only adds an underline on hover, no background color."
-    :group 'treemacs-faces)
-  (put 'treemacs-button 'mouse-face 'treemacs-button-underline-only)
+  (put 'treemacs-button 'mouse-face 'my-treemacs-button-underline-only)
 
   (add-hook 'treemacs-mode-hook #'my-add-padding-for-treemacs)
   (add-hook 'treemacs-mode-hook #'display-treemacs-widow-in-ace-window-selection)
@@ -216,9 +255,7 @@ exists it returns /file/name_Copy2.ext etc."
 
 
 ;; 例如 12pt = 120
-(if (my-system-type-is-darwin)
-  (defvar my-font-height 130)
-  (defvar my-font-height 110))
+(defvar my-font-height (if (my-system-type-is-darwin) 130 110))
 
 ;; 只设置 :height，其他属性由 custom-set-faces 提供
 (with-eval-after-load 'treemacs
@@ -240,9 +277,7 @@ exists it returns /file/name_Copy2.ext etc."
   )
 
 
-(with-eval-after-load 'cfrs
-  ;; CFRS face configuration moved to custom-set-faces
-  )
+;; CFRS face configuration moved to custom-set-faces
 
 
 (defun my-treemacs-add-and-display-current-project ()

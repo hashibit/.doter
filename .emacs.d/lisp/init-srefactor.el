@@ -13,8 +13,9 @@
   :demand t
   :config
   (semantic-mode 1) ;; -> this is optional for Lisp
-  (define-key c-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
-  (define-key c++-mode-map (kbd "M-RET") 'srefactor-refactor-at-point))
+  ;; semantic 只解析 cc-mode (c-mode/c++-mode)，c-ts-mode 下无效，所以不绑定 ts mode map
+  (keymap-set c-mode-map "M-RET" #'srefactor-refactor-at-point)
+  (keymap-set c++-mode-map "M-RET" #'srefactor-refactor-at-point))
 
 (provide 'init-srefactor)
 

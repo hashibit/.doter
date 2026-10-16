@@ -1,9 +1,12 @@
+;;; -*- lexical-binding: t -*-
 ;; load from ./lisp
 (require 'nice-jumper)
 (global-nice-jumper-mode t)
 ;; (add-hook 'nice-jumper-post-jump-hook 'my-recenter)
 (add-hook 'nice-jumper-post-jump-hook 'xref-pulse-momentarily)
 
+
+(defvar my/nice-jumper--in-progress nil)
 
 ;; 只监听 xref 层面的跳转，防止重复
 (with-eval-after-load 'xref
@@ -35,16 +38,13 @@
 
 
 
-(defvar my/nice-jumper--in-progress nil)
 
 (defun my/nice-jumper-record-jump (&rest _)
   "记录当前跳转位置到 nice-jumper，防止重复触发。"
   (unless (or my/nice-jumper--in-progress
               nice-jumper--jumping)
     (let ((my/nice-jumper--in-progress t))
-      (unwind-protect
-          (nice-jumper--set-jump)
-        (setq my/nice-jumper--in-progress nil)))))
+      (nice-jumper--set-jump))))
 
 (defun my/nice-jumper-remove-all-advice ()
   "移除所有绑定到 my/nice-jumper-record-jump 的 advice。"

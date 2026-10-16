@@ -8,18 +8,25 @@
 
 ;;; Code:
 
+(defvar js-indent-level)
+
+(defun my-qml-mode-setup ()
+  "Buffer-local setup for `qml-mode'."
+  (setq js-indent-level 4)
+  ;; line comment, double forward slash
+  (setq-local comment-start "// "
+              comment-end "")
+  (format-all-mode -1))
+
 (use-package qml-mode
   :ensure t
+  :mode "\\.qml\\'"
   :hook
-  (qml-mode . (lambda ()
-                (setq js-indent-level 4)
-                (c-ts-mode-toggle-comment-style -1)
-                (bind-keys :map qml-mode-map ("C-c C-b" . compile))
-                (bind-keys :map qml-mode-map ("s-b" . compile))))
+  (qml-mode . my-qml-mode-setup)
   (qml-mode . maybe-cmake-project-mode)
-  (qml-mode . (lambda() (format-all-mode -1)))
-  :config
-  (add-to-list 'auto-mode-alist '("\\.qml\\'" . qml-mode)))
+  :bind (:map qml-mode-map
+         ("C-c C-b" . compile)
+         ("s-b" . compile)))
 
 (provide 'init-lang-qml)
 
