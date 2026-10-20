@@ -22,6 +22,7 @@
     "native-comp-limple-mode"
     "ivy-occur-mode"
     "image-mode"
+    "eww-mode"
     ))
 
 (defvar special-buffers (list

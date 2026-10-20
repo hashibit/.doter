@@ -16,9 +16,8 @@
 
 (declare-function eglot-current-server "eglot")
 (declare-function eglot-execute "eglot")
-(declare-function eglot--lsp-xrefs-for-method "eglot")
+(declare-function eglot--lsp-xrefs-for-id "eglot")
 (declare-function pyvenv-activate "pyvenv")
-(defvar eglot--lsp-xref-refs)
 (defvar markdown-mode-map)
 
 (defun my-python-locate-venv ()
@@ -209,13 +208,11 @@ Eglot calls this with `default-directory' bound to the project root."
   (add-to-list 'eglot-server-programs '(python-ts-mode . ("basedpyright-langserver" "--stdio")))
 
   ;; 自定义查找引用行为：不包含定义
-  ;; 注意：依赖 eglot 内部实现 (eglot--lsp-xref-refs / eglot--lsp-xrefs-for-method)，升级 eglot 后可能失效
-  (cl-defmethod xref-backend-references ((_backend (eql eglot)) _identifier)
-    (or
-      eglot--lsp-xref-refs
-      (eglot--lsp-xrefs-for-method
-        :textDocument/references
-        :extra-params `(:context (:includeDeclaration :json-false))))))
+  ;; 注意：依赖 eglot 内部实现 (eglot--lsp-xrefs-for-id)，升级 eglot 后可能失效
+  (cl-defmethod xref-backend-references ((_backend (eql eglot)) id)
+    (eglot--lsp-xrefs-for-id
+      id :textDocument/references
+      :extra-args `(:context (:includeDeclaration :json-false)))))
 
 
 ;; (use-package sideline

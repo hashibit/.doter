@@ -7,6 +7,20 @@
 (defun my-slime-pulse-line (&rest _)
   (pulse-momentary-highlight-one-line (point)))
 
+;; slime-autodoc 只给 eldoc 提供参数列表，没有 docstring，
+;; 所以 eldoc-box (my-toggle-eldoc-box-help-at-point) 看不到 CL 函数文档。
+;; 这里再加一个异步的 docstring 来源，:echo skip 让 echo area 仍只显示参数列表。
+(defun my-slime-eldoc-docstring (callback &rest _)
+  (when-let* (((slime-connected-p))
+              (sym (slime-symbol-at-point)))
+    (slime-eval-async `(swank:documentation-symbol ,sym)
+      (lambda (doc) (funcall callback doc :echo 'skip)))
+    t))
+
+(defun my-slime-eldoc-setup ()
+  (add-hook 'eldoc-documentation-functions #'my-slime-eldoc-docstring 90 t)
+  (setq-local eldoc-documentation-strategy #'eldoc-documentation-compose))
+
 (use-package slime
   :ensure t
   :defer t
@@ -33,7 +47,16 @@
   (keymap-set slime-mode-map "<remap> <xref-find-references>" #'slime-who-calls)
   ;; 高亮 who calls 列表项
   (advice-add 'slime-goto-location-position :after #'my-slime-pulse-line)
+  (add-hook 'slime-mode-hook #'my-slime-eldoc-setup)
   )
+
+;; 使用 quicklisp 安装的本地 HyperSpec
+(load "~/.quicklisp/clhs-use-local.el" 'noerror)
+
+;; C-c C-d h 打开的本地 HyperSpec 用 eww 显示，其他链接仍走默认浏览器
+(with-eval-after-load 'browse-url
+  (add-to-list 'browse-url-handlers
+    '("\\`file://.*/HyperSpec/" . eww-browse-url)))
 
 (use-package slime-company
   :after slime

@@ -16,6 +16,7 @@
   ;; (keymap-set dired-mode-map "SPC k" #'kill-this-buffer)
   (keymap-set dired-mode-map "SPC k" #'kill-current-buffer)
   (keymap-set dired-mode-map "SPC K" #'my-only-current-buffer)
+  (keymap-set dired-mode-map "SPC C-k" #'my-only-current-project-buffer)
   (keymap-set dired-mode-map "SPC M-k" #'my-only-current-buffer-include-specials)
   (keymap-set dired-mode-map "SPC f" #'my-projectile-find-file)
   (keymap-set dired-mode-map "SPC p" #'my-find-files)
@@ -328,6 +329,7 @@
   ;; (keymap-set god-local-mode-map "SPC k" #'kill-this-buffer)
   (keymap-set god-local-mode-map "SPC k" #'kill-current-buffer)
   (keymap-set god-local-mode-map "SPC K" #'my-only-current-buffer)
+  (keymap-set god-local-mode-map "SPC C-k" #'my-only-current-project-buffer)
   (keymap-set god-local-mode-map "SPC P P" #'xah-copy-file-path)
   (keymap-set god-local-mode-map "SPC M-k" #'my-only-current-buffer-include-specials)
 
