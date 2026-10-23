@@ -16,6 +16,7 @@
   ;; (keymap-set dired-mode-map "SPC k" #'kill-this-buffer)
   (keymap-set dired-mode-map "SPC k" #'kill-current-buffer)
   (keymap-set dired-mode-map "SPC K" #'my-only-current-buffer)
+  (keymap-set dired-mode-map "SPC C-k" #'my-only-current-project-buffer)
   (keymap-set dired-mode-map "SPC M-k" #'my-only-current-buffer-include-specials)
   (keymap-set dired-mode-map "SPC f" #'my-projectile-find-file)
   (keymap-set dired-mode-map "SPC p" #'my-find-files)
@@ -328,6 +329,7 @@
   ;; (keymap-set god-local-mode-map "SPC k" #'kill-this-buffer)
   (keymap-set god-local-mode-map "SPC k" #'kill-current-buffer)
   (keymap-set god-local-mode-map "SPC K" #'my-only-current-buffer)
+  (keymap-set god-local-mode-map "SPC C-k" #'my-only-current-project-buffer)
   (keymap-set god-local-mode-map "SPC P P" #'xah-copy-file-path)
   (keymap-set god-local-mode-map "SPC M-k" #'my-only-current-buffer-include-specials)
 
@@ -458,10 +460,10 @@
   "j" #'next-line
   "l" #'my-forward-char-no-cross-line
   "h" #'my-backward-char-no-cross-line
-  "L" #'mwim-end-of-code-or-line
-  "H" #'mwim-beginning-of-code-or-line
+  ; "L" #'mwim-end-of-code-or-line
+  ; "H" #'mwim-beginning-of-code-or-line
   "v" #'my-set-mark-command-or-deactivate-mark
-  "V" #'my-select-current-line-and-forward-line
+  ; "V" #'my-select-current-line-and-forward-line
 
   "f" #'avy-goto-word-0
   "M-x" #'my-M-x)

@@ -411,6 +411,21 @@ If buffer-or-name is nil return current buffer's mode."
       (centaur-tabs-kill-other-buffers-in-current-group))
     (if orig-eglot-active (eglot-ensure))))
 
+;; delete other file/dired buffers in current project, only keep current one.
+(defun my-only-current-project-buffer ()
+  "Kill other file-visiting and dired buffers in the current project."
+  (interactive)
+  (if-let* ((proj (project-current)))
+    (let ((killed 0))
+      (dolist (buf (project-buffers proj))
+        (when (and (not (eq buf (current-buffer)))
+                (or (buffer-file-name buf)
+                  (eq (buffer-local-value 'major-mode buf) 'dired-mode)))
+          (when (kill-buffer buf)
+            (setq killed (1+ killed)))))
+      (message "Killed %d buffer(s) in project %s" killed (project-name proj)))
+    (user-error "Not in a project")))
+
 ;; delete all other buffers, only keep current one.
 (defun my-only-current-buffer-include-specials ()
   "Kill all other buffers."

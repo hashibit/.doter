@@ -25,6 +25,8 @@
 (declare-function treemacs-add-and-display-current-project "treemacs")
 (declare-function treemacs-find-file "treemacs")
 (declare-function treemacs-select-window "treemacs")
+(declare-function treemacs--on-scope-kill "treemacs-scope")
+(declare-function tab-bar--current-tab-find "tab-bar")
 (declare-function projectile-acquire-root "projectile")
 (declare-function projectile-find-file-in-directory "projectile")
 
@@ -221,6 +223,32 @@ exists it returns /file/name_Copy2.ext etc."
     ;; ("<mouse-1>" . treemacs-single-click-expand-action)
     ("<double-mouse-1>" . treemacs-RET-action)
     ))
+
+
+;; treemacs-tab-bar 用 tab 的 name 做 scope key，但 tab-bar-tab-name-current
+;; 会让 tab 名随当前 buffer 变化（选中 treemacs 窗口时甚至变成 " *Treemacs-Buffer-..."），
+;; 导致找不到 scope 对应的 treemacs buffer，报 "Wrong type argument: hash-table-p, nil"。
+;; 这里给每个 tab 分配一个稳定的 id（tab-bar 会保留 tab 里的自定义参数），用它做 scope。
+(defvar my-treemacs-tab-id-counter 0)
+
+(defun my-treemacs-tab-id (&optional tab)
+  "Return the stable treemacs id of TAB (default: current tab), assigning one if needed."
+  (let ((tab (or tab (tab-bar--current-tab-find))))
+    (or (alist-get 'my-treemacs-id (cdr tab))
+      (let ((id (number-to-string (cl-incf my-treemacs-tab-id-counter))))
+        (setcdr tab (cons (cons 'my-treemacs-id id) (cdr tab)))
+        id))))
+
+(use-package treemacs-tab-bar ;;treemacs-tab-bar if you use tab-bar-mode
+  :after (treemacs)
+  :ensure t
+  :config
+  (cl-defmethod treemacs-scope->current-scope ((_ (subclass treemacs-tab-bar-scope)))
+    (if tab-bar-mode (my-treemacs-tab-id) 'none))
+  (defun treemacs-tab-bar--on-tab-close (tab &rest _)
+    (treemacs--on-scope-kill (alist-get 'my-treemacs-id (cdr tab))))
+  (treemacs-set-scope-type 'Tabs))
+
 
 
 (with-eval-after-load 'treemacs

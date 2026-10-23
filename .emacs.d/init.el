@@ -353,6 +353,7 @@
 (require 'init-projectile)
 (require 'init-treesit)
 (require 'init-slime)
+(require 'init-eww)
 (require 'my-key-bindings)
 
 (when (my-system-type-is-gnu)
@@ -545,9 +546,18 @@
 (require 'init-imenu)
 (require 'init-modeline)
 
+(defun my/web-search ()
+  "在默认浏览器 (Chrome) 中 Google 搜索"
+  (interactive)
+  (let ((query (read-string "Search: ")))
+    (browse-url (concat "https://www.google.com/search?q="
+                  (url-hexify-string query)))))
+(bind-key "C-c w s" #'my/web-search)
+
 (use-package xwidget
   :ensure nil
-  :bind (("C-c w s" . my/xwidget-webkit-search))
+  ;; xwidget-webkit 会吞掉 ESC 键，改用 my/web-search
+  ;; :bind (("C-c w s" . my/xwidget-webkit-search))
   :bind (:map xwidget-webkit-mode-map
           ("r" . xwidget-webkit-reload)
           ("L" . xwidget-webkit-back)

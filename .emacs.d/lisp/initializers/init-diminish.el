@@ -34,7 +34,8 @@ runs after each file is loaded."
   (diminish 'smartparens-global-mode)
   (diminish 'show-paren-mode)
   (diminish 'abbrev-mode)
-  (diminish 'electric-indent-mode))
+  (diminish 'electric-indent-mode)
+  (diminish 'jarchive-mode))
 (my-purge-minor-modes)
 (add-hook 'after-load-functions #'my-purge-minor-modes)
 

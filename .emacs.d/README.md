@@ -16,6 +16,38 @@ ripgrep
 
 ```
 
+###
+```
+quicklisp
+
+
+curl -O /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp
+sbcl --load /tmp/quicklisp.lisp
+* (quicklisp-quickstart:install)
+* (ql:add-to-init-file)
+
+
+```
+
+### clhs docs
+
+
+```
+But we can also browse it offline from Emacs. We have to install a CL package and to configure the Emacs side with one command:
+
+# start sbcl
+
+sbcl
+
+(ql:quickload "clhs")
+(clhs:install-clhs-use-local)
+
+# Then add this to your Emacs configuration:
+
+(load "~/.quicklisp/clhs-use-local.el" 'noerror)
+
+```
+
 ### rtags
 
 if use rtags to index C/C++ projects:
