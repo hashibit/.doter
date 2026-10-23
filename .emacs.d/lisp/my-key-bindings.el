@@ -460,10 +460,10 @@
   "j" #'next-line
   "l" #'my-forward-char-no-cross-line
   "h" #'my-backward-char-no-cross-line
-  "L" #'mwim-end-of-code-or-line
-  "H" #'mwim-beginning-of-code-or-line
+  ; "L" #'mwim-end-of-code-or-line
+  ; "H" #'mwim-beginning-of-code-or-line
   "v" #'my-set-mark-command-or-deactivate-mark
-  "V" #'my-select-current-line-and-forward-line
+  ; "V" #'my-select-current-line-and-forward-line
 
   "f" #'avy-goto-word-0
   "M-x" #'my-M-x)

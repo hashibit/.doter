@@ -16,5 +16,9 @@
 ;; eww-mode 在 special-buffer-modes 里，所以会关掉 god mode、开启 special buffer keys
 (add-hook 'eww-mode-hook #'my-init-god-mode-for-new-buffer)
 
+(with-eval-after-load 'eww
+  (keymap-set eww-mode-map "H" #'eww-back-url)
+  (keymap-set eww-mode-map "L" #'eww-forward-url))
+
 
 (provide 'init-eww)
