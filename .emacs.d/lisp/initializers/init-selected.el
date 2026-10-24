@@ -11,6 +11,15 @@
   (unless (bound-and-true-p god-local-mode)
     (insert-char ?d)))
 
+(defun my-kill-region-and-insert-s-in-selected()
+  (interactive)
+  (kill-region (region-beginning) (region-end))
+  (when my-visual-line-selection (delete-char 1))
+  (unless (bound-and-true-p god-local-mode)
+    (insert-char ?s))
+  ;; force insert mode
+  (god-local-mode -1))
+
 (defun my-select-to-eol()
   (interactive)
   (mwim-end-of-code-or-line)
@@ -38,6 +47,7 @@
            ("_" . my-wrap-region-with-underscores)
            ("`" . my-wrap-region-with-back-quotes)
            ("d" . my-kill-region-and-insert-d-in-selected)
+           ("s" . my-kill-region-and-insert-s-in-selected)
            ("C-d" . kill-region)
            ("e" . my-select-to-eol)
            ("a" . my-select-to-bol)
