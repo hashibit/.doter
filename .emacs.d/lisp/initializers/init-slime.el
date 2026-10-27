@@ -25,7 +25,7 @@
   :ensure t
   :defer t
   :init
-  (setq inferior-lisp-program "sbcl")
+  (setq inferior-lisp-program "sbcl --dynamic-space-size 4096")
   ;; 在 Lisp 启动时就加载 Quicklisp 的 Swank
   ;;;;; (setq slime-lisp-implementations
   ;;;;;       '((sbcl ("ros" "-L" "sbcl-bin"
