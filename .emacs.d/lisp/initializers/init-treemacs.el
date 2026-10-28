@@ -22,6 +22,7 @@
 (defvar hl-line-overlay)
 (defvar treemacs--marked-paths)
 (defvar treemacs-width)
+(defvar treemacs--scope-storage)
 (declare-function treemacs-hide-gitignored-files-mode "treemacs-async")
 (declare-function treemacs-follow-mode "treemacs-follow-mode")
 (declare-function treemacs-get-local-window "treemacs-scope")
@@ -36,10 +37,14 @@
 (declare-function treemacs-delete-file "treemacs-file-management")
 (declare-function treemacs-copy-marked-files "treemacs-file-management")
 (declare-function treemacs-load-theme "treemacs-themes")
-(declare-function treemacs-add-and-display-current-project "treemacs")
 (declare-function treemacs-find-file "treemacs")
+(declare-function treemacs "treemacs")
+(declare-function treemacs-add-and-display-current-project-exclusively "treemacs")
+(declare-function treemacs-current-visibility "treemacs-scope")
+(declare-function treemacs--find-current-user-project "treemacs-core-utils")
 (declare-function treemacs-select-window "treemacs")
 (declare-function treemacs--on-scope-kill "treemacs-scope")
+(declare-function treemacs-current-scope "treemacs-scope")
 (declare-function tab-bar--current-tab-find "tab-bar")
 (declare-function projectile-acquire-root "projectile")
 (declare-function projectile-find-file-in-directory "projectile")
@@ -71,15 +76,28 @@
 
 ;;; File commands
 
+;; 用 exclusively 版本，原因见 `my-treemacs-toggle'。
 (defun my-treemacs-add-and-display-current-project ()
-  "Show the current project in treemacs and select the current file."
+  "Show only the current project in treemacs and select the current file."
   (interactive)
   (with-selected-window (get-buffer-window (current-buffer))
-    (treemacs-add-and-display-current-project))
+    (treemacs-add-and-display-current-project-exclusively))
   (treemacs-find-file)
   (treemacs-select-window)
   (when (display-graphic-p)
     (setq-local cursor-type 'box)))
+
+;; 每个 tab 的 workspace 只在第一次创建时取一次项目，而且 "Tab N" workspace
+;; 会写进 persist 文件，下次启动又被同名的新 tab 复用，所以项目经常不对。
+;; 打开时总是用当前 buffer 的项目替换这个 tab 的 workspace。
+(defun my-treemacs-toggle ()
+  "Hide treemacs, or show it with only the current buffer's project.
+When the current buffer is not in a project, do the same as `treemacs'."
+  (interactive)
+  (if (or (eq (treemacs-current-visibility) 'visible)
+          (null (treemacs--find-current-user-project)))
+      (treemacs)
+    (treemacs-add-and-display-current-project-exclusively)))
 
 (defun my-treemacs-mark-or-unmark-path-at-point ()
   "Mark or unmark the path at point, then move down one line."
@@ -335,6 +353,16 @@ Assign a new id when the tab has none."
           (setcdr tab (cons (cons 'my-treemacs-id id) (cdr tab)))
           id))))
 
+;; treemacs-do-remove-project-from-workspace 在所有 treemacs buffer 里删除项目，
+;; 它假设所有 buffer 用同一个 workspace。每个 tab 有自己的 workspace 时，
+;; 别的 tab 的 buffer 里没有这个项目，报 "Wrong type argument: arrayp, nil"。
+;; 这里只让它看到当前 tab 的 buffer。
+(defun my-treemacs-remove-project-in-current-tab (orig &rest args)
+  "Call ORIG with ARGS, but only for the treemacs buffer of the current tab."
+  (let ((treemacs--scope-storage
+         (delq nil (list (assoc (treemacs-current-scope) treemacs--scope-storage)))))
+    (apply orig args)))
+
 (use-package treemacs-tab-bar ;;treemacs-tab-bar if you use tab-bar-mode
   :after (treemacs)
   :ensure t
@@ -344,6 +372,8 @@ Assign a new id when the tab has none."
     (if tab-bar-mode (my-treemacs-tab-id) 'none))
   (defun treemacs-tab-bar--on-tab-close (tab &rest _)
     (treemacs--on-scope-kill (alist-get 'my-treemacs-id (cdr tab))))
+  (advice-add 'treemacs-do-remove-project-from-workspace
+              :around #'my-treemacs-remove-project-in-current-tab)
   (treemacs-set-scope-type 'Tabs))
 
 

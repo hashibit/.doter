@@ -285,11 +285,11 @@
   (keymap-set god-local-mode-map "SPC l" #'centaur-tabs-forward)
   (keymap-set god-local-mode-map "SPC h" #'centaur-tabs-backward)
 
-  (keymap-set god-local-mode-map "SPC 2" #'treemacs)
+  (keymap-set god-local-mode-map "SPC 2" #'my-treemacs-toggle)
   (keymap-set god-local-mode-map "SPC 3" #'my-side-ibuffer)
   ;; (keymap-set god-local-mode-map "SPC n" #'my-neotree-toggle)
   ;; (keymap-set god-local-mode-map "SPC N" #'my-neotree-find)
-  (keymap-set god-local-mode-map "SPC n" #'treemacs)
+  (keymap-set god-local-mode-map "SPC n" #'my-treemacs-toggle)
   (keymap-set god-local-mode-map "SPC N" #'treemacs-find-file)
   (keymap-set god-local-mode-map "SPC s" #'counsel-imenu)
   (keymap-set god-local-mode-map "SPC S" #'my-occur)
