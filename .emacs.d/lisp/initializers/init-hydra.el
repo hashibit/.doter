@@ -1,6 +1,10 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-hydra.el --- Hydra configuration
 
 ;; Have to use require, not use-package
+
+;;; Code:
+
 (require 'hydra)
 (defhydra undo-tree-menu (global-map "C-c u") "
 _u_: undo      _r_: redo
@@ -15,3 +19,5 @@ _o_: other-window
 
 
 (provide 'init-hydra)
+
+;;; init-hydra.el ends here

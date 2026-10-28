@@ -1,4 +1,7 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-imenu.el --- Imenu configuration
+
+;;; Code:
 
 (require 'imenu)
 
@@ -16,6 +19,7 @@
 (declare-function treesit-node-at "treesit")
 
 (defun my-imenu-list-smart-toggle-refresh ()
+  "Show the imenu list again with fresh content."
   (interactive)
   (when (and (bound-and-true-p imenu-list-buffer-name)
              (get-buffer-window imenu-list-buffer-name t))
@@ -24,10 +28,12 @@
   (select-window (get-buffer-window (imenu-list-get-buffer-create))))
 
 (defun my-imenu-list-enlarge-window ()
+  "Make the imenu list window wider."
   (interactive)
   (enlarge-window-horizontally (/ (frame-width) 3)))
 
 (defun my-imenu-list-shrink-window ()
+  "Make the imenu list window narrower."
   (interactive)
   (shrink-window-horizontally (/ (frame-width) 3)))
 
@@ -479,3 +485,5 @@ Idempotent: safe to call multiple times."
 (add-hook 'eglot-managed-mode-hook #'my-imenu-js-reapply-after-eglot)
 
 (provide 'init-imenu)
+
+;;; init-imenu.el ends here

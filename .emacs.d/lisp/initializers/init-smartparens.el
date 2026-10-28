@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-smartparens.el --- Smartparens configuration
+
+;;; Code:
+
 (require 'smartparens-config)
 (require 'sp-sublimetext-like)
 
@@ -48,6 +52,7 @@ respectively."
 
 ;; "_" 不是 smartparens 的 pair，sp-wrap-with-pair 用不了，手动包裹
 (defun my-wrap-region-with-underscores (start stop)
+  "Put an underscore before and after the text from START to STOP."
   (interactive "r")
   (save-excursion
     (goto-char stop)
@@ -77,3 +82,5 @@ respectively."
 
 
 (provide 'init-smartparens)
+
+;;; init-smartparens.el ends here

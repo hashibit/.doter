@@ -1,5 +1,10 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-emacs-lispy.el --- Emacs Lisp and lispy configuration
+
 ;;; Emacs Lisp Mode Hook
+
+;;; Code:
+
 (defun my-elisp-mode-hook ()
   ;; Emacs 32 起此变量是 EditorConfig indent_size 的载体：
   ;; 非 nil 会完全绕过 common-lisp-indent-function 的对齐逻辑，
@@ -49,3 +54,5 @@
 
 
 (provide 'init-emacs-lispy)
+
+;;; init-emacs-lispy.el ends here

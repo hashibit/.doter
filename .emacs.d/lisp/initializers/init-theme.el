@@ -1,4 +1,5 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-theme.el --- Theme configuration
 
 ;;
 ;; remove wave and add PROPER underline
@@ -6,6 +7,9 @@
 ;; https://www.reddit.com/r/emacs/comments/gn7br8/configure_wavy_underline/
 ;;
 ;; no waves, use underlines which look better
+
+;;; Code:
+
 (defun theme-tweaks-flatten-underline+ (face)
   "Change underline style of FACE from wave to straight line."
   (let ((underline (face-attribute face :underline)))
@@ -170,3 +174,5 @@
 
 
 (provide 'init-theme)
+
+;;; init-theme.el ends here

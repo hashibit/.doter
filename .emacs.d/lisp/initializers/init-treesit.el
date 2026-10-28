@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-treesit.el --- Tree-sitter configuration
+
+;;; Code:
+
 (use-package treesit
   :demand t
   :custom
@@ -70,3 +74,5 @@
   (global-treesit-auto-mode))
 
 (provide 'init-treesit)
+
+;;; init-treesit.el ends here

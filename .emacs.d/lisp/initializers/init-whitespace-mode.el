@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-whitespace-mode.el --- Whitespace mode configuration
+
+;;; Code:
+
 (require 'whitespace)
 (global-whitespace-mode 1)
 (setq whitespace-style '(face trailing tabs tab-mark))
@@ -22,3 +26,5 @@
 (add-hook 'prog-mode-hook #'delete-trailing-whitespace-mode)
 
 (provide 'init-whitespace-mode)
+
+;;; init-whitespace-mode.el ends here

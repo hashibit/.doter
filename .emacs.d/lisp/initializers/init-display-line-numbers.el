@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-display-line-numbers.el --- Line number configuration
+
+;;; Code:
+
 (use-package display-line-numbers
   :defer t
   :config
@@ -15,3 +19,5 @@
 
 
 (provide 'init-display-line-numbers)
+
+;;; init-display-line-numbers.el ends here

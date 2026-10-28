@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; my-term-popup.el --- Popups in terminal Emacs
+
+;;; Code:
+
 (require 'cl-lib)
 ;; Emacs 31 起 tty 支持 child frame，corfu 自身即可，不再需要 corfu-terminal
 (if (featurep 'tty-child-frames)
@@ -38,6 +42,7 @@
   (add-hook 'post-command-hook #'my-term-popup--post-command))
 
 (defun my-term-popup-close (&rest _)
+  "Close the terminal popup."
   (interactive)
   (remove-hook 'post-command-hook #'my-term-popup--post-command)
   (when my-term-popup-show-p
@@ -50,6 +55,7 @@
 
 
 (defun show-eldoc-popup-at-point ()
+  "Show the eldoc documentation in a popup at point."
   (interactive)
   (when-let* ((doc-buffer (bound-and-true-p eldoc--doc-buffer))
               ((buffer-live-p doc-buffer)))
@@ -61,6 +67,7 @@
 
 
 (defun my-show-popup(&optional lines)
+  "Show LINES in a popup at point."
   (interactive)
   (let* (
          (lines (or lines
@@ -114,6 +121,7 @@
      lines)))
 
 (defun my-show-popup-test ()
+  "Show a test popup."
   (interactive)
   (my-show-popup (list "hello this is a" "new line" "hhehe")))
 
@@ -123,3 +131,5 @@
 
 
 (provide 'my-term-popup)
+
+;;; my-term-popup.el ends here

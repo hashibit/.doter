@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-isearch-highlight-all.el --- Safe isearch全局高亮
 
+;;; Code:
+
 (defvar my-isearch-all-overlays nil
   "存储所有 isearch 高亮的 overlays.")
 

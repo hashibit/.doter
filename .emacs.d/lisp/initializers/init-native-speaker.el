@@ -17,28 +17,28 @@
 
 (require 'cl-lib)
 
-(defvar ns/socket-path "/tmp/nativespeaker.sock"
+(defvar my-ns-socket-path "/tmp/nativespeaker.sock"
   "Path to the NativeSpeaker Unix domain socket.")
 
-(defvar ns/pid-file "/tmp/nativespeaker.pid"
+(defvar my-ns-pid-file "/tmp/nativespeaker.pid"
   "Path written by NativeSpeaker on startup, containing its PID.")
 
-(defvar ns/process nil  "Active socket process, or nil.")
-(defvar ns/enabled  nil "Non-nil when eat tracking is active.")
-(defvar ns/last-sent ""  "Last string sent; used for diff-check.")
-(defvar-local ns/debounce-timer   nil "Pending debounce timer (buffer-local).")
-(defvar-local ns/input-start      nil "Buffer position right after the eat prompt.")
+(defvar my-ns-process nil  "Active socket process, or nil.")
+(defvar my-ns-enabled  nil "Non-nil when eat tracking is active.")
+(defvar my-ns-last-sent ""  "Last string sent; used for diff-check.")
+(defvar-local my-ns-debounce-timer   nil "Pending debounce timer (buffer-local).")
+(defvar-local my-ns-input-start      nil "Buffer position right after the eat prompt.")
 
 ;;; ── Liveness ──────────────────────────────────────────────────────────────────
 
-(defun ns/server-alive-p ()
+(defun my-ns-server-alive-p ()
   "Return non-nil if the NativeSpeaker process is running.
 Reads the PID file and probes it with `kill -0'."
-  (and (file-exists-p ns/pid-file)
+  (and (file-exists-p my-ns-pid-file)
        (condition-case nil
            (let ((pid (string-to-number
                        (with-temp-buffer
-                         (insert-file-contents ns/pid-file)
+                         (insert-file-contents my-ns-pid-file)
                          (string-trim (buffer-string))))))
              (and (> pid 0)
                   (= 0 (call-process "kill" nil nil nil
@@ -47,84 +47,84 @@ Reads the PID file and probes it with `kill -0'."
 
 ;;; ── Connection ────────────────────────────────────────────────────────────────
 
-(cl-defun ns/connect ()
+(cl-defun my-ns-connect ()
   "Open a Unix-domain socket connection to NativeSpeaker.
 Returns t on success, nil on failure.  Never blocks — if the server is not
 alive the call fails immediately via the PID check."
-  (unless (ns/server-alive-p)
+  (unless (my-ns-server-alive-p)
     (message "NativeSpeaker: server not running (no PID file or process dead)")
-    (cl-return-from ns/connect nil))
+    (cl-return-from my-ns-connect nil))
   (condition-case err
       (progn
-        (setq ns/process
+        (setq my-ns-process
               (make-network-process
                :name     "native-speaker"
                :family   'local
-               :service  ns/socket-path
+               :service  my-ns-socket-path
                :coding   'utf-8-unix
                :noquery  t           ; don't prompt on Emacs exit
                :sentinel
                (lambda (proc event)
                  (cond
                   ((string-match-p "open" event)
-                   (setq ns/process proc))
+                   (setq my-ns-process proc))
                   ((string-match-p "failed\\|closed\\|deleted" event)
-                   (setq ns/process nil)
+                   (setq my-ns-process nil)
                    (message "NativeSpeaker: %s" (string-trim event)))))))
         t)
     (error
      (message "NativeSpeaker: connect error — %s" (error-message-string err))
      nil)))
 
-(defun ns/disconnect ()
-  (when (and ns/process (process-live-p ns/process))
-    (delete-process ns/process))
-  (setq ns/process nil))
+(defun my-ns-disconnect ()
+  (when (and my-ns-process (process-live-p my-ns-process))
+    (delete-process my-ns-process))
+  (setq my-ns-process nil))
 
 (defun reconnect-native-speaker ()
   "Drop and re-establish the socket connection to NativeSpeaker."
   (interactive)
-  (ns/disconnect)
-  (if (ns/connect)
-      (message "NativeSpeaker: reconnecting to %s…" ns/socket-path)
+  (my-ns-disconnect)
+  (if (my-ns-connect)
+      (message "NativeSpeaker: reconnecting to %s…" my-ns-socket-path)
     (message "NativeSpeaker: reconnect failed")))
 
 ;;; ── Send ──────────────────────────────────────────────────────────────────────
 
-(defun ns/send (text)
+(defun my-ns-send (text)
   "Send TEXT to NativeSpeaker.  No-op if not connected."
-  (when (and ns/process (process-live-p ns/process))
+  (when (and my-ns-process (process-live-p my-ns-process))
     (condition-case nil
-        (process-send-string ns/process (concat text "\n"))
-      (error (setq ns/process nil)))))
+        (process-send-string my-ns-process (concat text "\n"))
+      (error (setq my-ns-process nil)))))
 
-(defun ns/send-if-changed (text)
+(defun my-ns-send-if-changed (text)
   "Send TEXT only when it differs from the last sent value."
-  (unless (string= text ns/last-sent)
-    (setq ns/last-sent text)
-    (ns/send text)))
+  (unless (string= text my-ns-last-sent)
+    (setq my-ns-last-sent text)
+    (my-ns-send text)))
 
 (defun native-speaker-clear ()
   "Blank the NativeSpeaker HUD."
   (interactive)
-  (setq ns/last-sent "")
-  (ns/send "")
+  (setq my-ns-last-sent "")
+  (my-ns-send "")
   (message "NativeSpeaker: cleared"))
 
 (defun native-speaker-send-region (beg end)
   "Send the active region (or current line) to NativeSpeaker."
   (interactive "r")
-  (ns/send (string-trim
+  (my-ns-send (string-trim
             (if (use-region-p)
                 (buffer-substring-no-properties beg end)
               (thing-at-point 'line t)))))
 
 ;;; ── eat integration ───────────────────────────────────────────────────────────
 
-(defvar ns/prompt-regexp "^\\s-*[❯❮$%#>➜λ»·►▶]+\\s-*"
+(defvar my-ns-prompt-regexp "^\\s-*[❯❮$%#>➜λ»·►▶]+\\s-*"
   "Regexp matching a shell prompt prefix at the start of the input line.")
 
-(defun ns/eat-get-input ()
+(defun my-ns-eat-get-input ()
   "Return what the user typed on the current prompt line."
   (when (and (bound-and-true-p eat-terminal)
              (eat-term-live-p eat-terminal))
@@ -136,39 +136,39 @@ alive the call fails immediately via the PID check."
         (let* ((raw  (replace-regexp-in-string
                       "[[:cntrl:]]" ""
                       (buffer-substring-no-properties line-start cursor)))
-               (raw  (replace-regexp-in-string ns/prompt-regexp "" raw))
+               (raw  (replace-regexp-in-string my-ns-prompt-regexp "" raw))
                (raw  (replace-regexp-in-string "\\([^\x00-\x7f]\\) " "\\1" raw))
                (text (string-trim raw)))
           (unless (equal text "") text))))))
 
-(defun ns/eat-flush ()
-  (ns/send-if-changed (or (ns/eat-get-input) "")))
+(defun my-ns-eat-flush ()
+  (my-ns-send-if-changed (or (my-ns-eat-get-input) "")))
 
-(defun ns/eat-on-update (&rest _)
+(defun my-ns-eat-on-update (&rest _)
   "Called by eat-update-hook after every terminal redraw."
-  (when (and ns/enabled
+  (when (and my-ns-enabled
              (bound-and-true-p eat-terminal)
              (eat-term-live-p eat-terminal))
-    (when (timerp ns/debounce-timer) (cancel-timer ns/debounce-timer))
+    (when (timerp my-ns-debounce-timer) (cancel-timer my-ns-debounce-timer))
     (let ((buf (current-buffer)))
-      (setq ns/debounce-timer
+      (setq my-ns-debounce-timer
             (run-with-timer 0.08 nil
                             (lambda ()
                               (when (buffer-live-p buf)
                                 (with-current-buffer buf
-                                  (ns/eat-flush)))))))))
+                                  (my-ns-eat-flush)))))))))
 
-(defun ns/on-post-prompt (&rest _)
+(defun my-ns-on-post-prompt (&rest _)
   "Record input-start and clear HUD when a new shell prompt appears."
-  (when (and ns/enabled
+  (when (and my-ns-enabled
              (bound-and-true-p eat-terminal)
              (eat-term-live-p eat-terminal))
-    (setq ns/input-start (eat-term-display-cursor eat-terminal))
-    (ns/send-if-changed "")))
+    (setq my-ns-input-start (eat-term-display-cursor eat-terminal))
+    (my-ns-send-if-changed "")))
 
 ;;; ── text buffer minor mode ────────────────────────────────────────────────────
 
-(defun ns/text-current ()
+(defun my-ns-text-current ()
   "Return text from the start of the current paragraph up to point.
 Capped at 1000 chars.  NativeSpeaker extracts the last sentence internally."
   (let* ((end   (point))
@@ -181,60 +181,60 @@ Capped at 1000 chars.  NativeSpeaker extracts the last sentence internally."
         (substring text (- (length text) 1000))
       text)))
 
-(defvar-local ns/text-debounce-timer nil)
+(defvar-local my-ns-text-debounce-timer nil)
 
-(defun ns/text-flush ()
-  (ns/send-if-changed (string-trim (ns/text-current))))
+(defun my-ns-text-flush ()
+  (my-ns-send-if-changed (string-trim (my-ns-text-current))))
 
-(defun ns/text-flush-in-buffer (buf)
+(defun my-ns-text-flush-in-buffer (buf)
   (when (buffer-live-p buf)
     (with-current-buffer buf
-      (ns/text-flush))))
+      (my-ns-text-flush))))
 
-(defun ns/text-on-change (&rest _)
-  (when (timerp ns/text-debounce-timer) (cancel-timer ns/text-debounce-timer))
-  (setq ns/text-debounce-timer
-        (run-with-timer 0.5 nil #'ns/text-flush-in-buffer (current-buffer))))
+(defun my-ns-text-on-change (&rest _)
+  (when (timerp my-ns-text-debounce-timer) (cancel-timer my-ns-text-debounce-timer))
+  (setq my-ns-text-debounce-timer
+        (run-with-timer 0.5 nil #'my-ns-text-flush-in-buffer (current-buffer))))
 
 ;;;###autoload
 (define-minor-mode native-speaker-mode
   "Stream current paragraph content to NativeSpeaker on every change."
   :lighter " NS"
   (if native-speaker-mode
-      (add-hook 'after-change-functions #'ns/text-on-change nil t)
-    (remove-hook 'after-change-functions #'ns/text-on-change t)
-    (when (timerp ns/text-debounce-timer) (cancel-timer ns/text-debounce-timer))))
+      (add-hook 'after-change-functions #'my-ns-text-on-change nil t)
+    (remove-hook 'after-change-functions #'my-ns-text-on-change t)
+    (when (timerp my-ns-text-debounce-timer) (cancel-timer my-ns-text-debounce-timer))))
 
 ;;; ── eat enable / disable ──────────────────────────────────────────────────────
 
-(defun ns/install-eat-hooks ()
-  (add-hook 'eat-update-hook #'ns/eat-on-update nil t))
+(defun my-ns-install-eat-hooks ()
+  (add-hook 'eat-update-hook #'my-ns-eat-on-update nil t))
 
 (defun enable-native-speaker ()
   "Enable NativeSpeaker eat tracking and connect."
   (interactive)
-  (setq ns/enabled t)
-  (advice-add 'eat--post-prompt :after #'ns/on-post-prompt '((name . native-speaker)))
-  (ns/connect)
-  (add-hook 'eat-mode-hook #'ns/install-eat-hooks)
+  (setq my-ns-enabled t)
+  (advice-add 'eat--post-prompt :after #'my-ns-on-post-prompt '((name . native-speaker)))
+  (my-ns-connect)
+  (add-hook 'eat-mode-hook #'my-ns-install-eat-hooks)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
-      (when (derived-mode-p 'eat-mode) (ns/install-eat-hooks))))
-  (message "NativeSpeaker: enabled (%s)" ns/socket-path))
+      (when (derived-mode-p 'eat-mode) (my-ns-install-eat-hooks))))
+  (message "NativeSpeaker: enabled (%s)" my-ns-socket-path))
 
 (defun disable-native-speaker ()
   "Disable NativeSpeaker eat tracking and close connection."
   (interactive)
-  (setq ns/enabled nil)
+  (setq my-ns-enabled nil)
   (advice-remove 'eat--post-prompt 'native-speaker)
   (advice-remove 'eat--send-string 'native-speaker)
-  (remove-hook 'eat-mode-hook #'ns/install-eat-hooks)
+  (remove-hook 'eat-mode-hook #'my-ns-install-eat-hooks)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when (derived-mode-p 'eat-mode)
-        (remove-hook 'eat-update-hook #'ns/eat-on-update t))))
-  (when (timerp ns/debounce-timer) (cancel-timer ns/debounce-timer))
-  (ns/disconnect)
+        (remove-hook 'eat-update-hook #'my-ns-eat-on-update t))))
+  (when (timerp my-ns-debounce-timer) (cancel-timer my-ns-debounce-timer))
+  (my-ns-disconnect)
   (message "NativeSpeaker: disabled"))
 
 ;;; ── Status / reset ────────────────────────────────────────────────────────────
@@ -251,11 +251,11 @@ Capped at 1000 chars.  NativeSpeaker extracts the last sentence internally."
   "Show NativeSpeaker connection and server status."
   (interactive)
   (message "NativeSpeaker: conn=%s server=%s eat=%s socket=%s last=%S"
-           (if (and ns/process (process-live-p ns/process)) "up" "down")
-           (if (ns/server-alive-p) "alive" "dead")
-           (if ns/enabled "on" "off")
-           ns/socket-path
-           (truncate-string-to-width ns/last-sent 50 nil nil "…")))
+           (if (and my-ns-process (process-live-p my-ns-process)) "up" "down")
+           (if (my-ns-server-alive-p) "alive" "dead")
+           (if my-ns-enabled "on" "off")
+           my-ns-socket-path
+           (truncate-string-to-width my-ns-last-sent 50 nil nil "…")))
 
 ;; Auto-enable disabled; run M-x enable-native-speaker manually when needed.
 ;; (with-eval-after-load 'eat

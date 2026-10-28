@@ -1,8 +1,11 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-eldoc.el --- Eldoc configuration
 
 
 ;; for my-elisp-eldoc-var-docstring-with-value
 ;; (require 'my-utils)
+
+;;; Code:
 
 (defun my-eldoc-add-var-docstring-with-value ()
   (add-hook 'eldoc-documentation-functions
@@ -97,3 +100,5 @@
 
 
 (provide 'init-eldoc)
+
+;;; init-eldoc.el ends here

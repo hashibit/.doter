@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-editing.el --- Text editing commands
 
+;;; Code:
+
 (require 'my-visual-line)
 (require 'my-motion)
 
@@ -17,27 +19,33 @@
       (when (looking-at "^    ")
         (replace-match "")))))
 (defun increment-number-at-point ()
+  "Add 1 to the number at point."
   (interactive)
   (skip-chars-backward "0-9")
   (or (looking-at "[0-9]+") (error "No number at point"))
   (replace-match
    (number-to-string (1+ (string-to-number (match-string 0))))))
 (defun my-delete-to-bol ()
+  "Delete from the beginning of the line to point."
   (interactive)
   (delete-region (line-beginning-position) (point)))
 
 (defun my-delete-to-beginning ()
+  "Delete from the start of code on the line to point."
   (interactive)
   (delete-region (point) (save-excursion (mwim-beginning-of-code-or-line) (point))))
 
 (defun my-delete-to-end ()
+  "Delete from point to the end of the line."
   (interactive)
   (delete-region (point) (save-excursion (mwim-end-of-line) (point))))
 
 (defun my-delete-to-eof ()
+  "Delete from the beginning of the line to the end of the buffer."
   (interactive)
   (delete-region (line-beginning-position) (point-max)))
 (defun my-yank-but-check-newline-bellow (arg)
+  "Yank ARG. Replace the region, or yank a copied line below the current line."
   (interactive "p")
   (if (use-region-p)
       (progn
@@ -53,6 +61,7 @@
       (yank arg))))
 
 (defun my-yank-but-check-newline-above (arg)
+  "Yank ARG. Replace the region, or yank a copied line above the current line."
   (interactive "p")
   (if (use-region-p)
       (progn
@@ -71,6 +80,7 @@
 
 
 (defun my-toggle-case-char ()
+  "Toggle the case of each char in the region, or of the char at point."
   (interactive)
   (if (region-active-p)
       (let* ((i 0)
@@ -102,6 +112,7 @@
       (funcall f (point) (+ 1 (point)))
       (forward-char))))
 (defun my-comment-region-or-line()
+  "Comment or uncomment the lines of the region, or the current line."
   (interactive)
   (if (region-active-p)
       (let ((beg (save-excursion (goto-char (region-beginning))
@@ -113,12 +124,14 @@
         (comment-or-uncomment-region beg end))
     (comment-line 1)))
 (defun my-delete-char-or-kill-region (arg)
+  "Kill the region, or delete ARG chars."
   (interactive "p")
   (if (use-region-p)
       (kill-region (region-beginning) (region-end))
     (delete-char (or arg 1))))
 
 (defun my-kill-whole-line-or-kill-region (arg)
+  "Kill the region, or kill ARG whole lines."
   (interactive "p")
   (if (use-region-p)
       (kill-region (region-beginning) (region-end))
@@ -126,6 +139,7 @@
 
 
 (defun my-set-mark-command-or-deactivate-mark (_arg)
+  "Deactivate the region, or set the mark at point."
   (interactive "p")
   (if (use-region-p)
       (deactivate-mark)
@@ -143,11 +157,13 @@
       (delete-indentation nil (region-beginning) (region-end))
     (delete-indentation t)))
 (defun my-kill-word()
+  "Delete from point to the start of the next word."
   (interactive)
   (let ((start (point)))
     (my-forward-to-word)
     (delete-region start (point))))
 (defun my-break-to-multiple-lines(arg)
+  "Split the sexp at point onto a new line. In eat, send a newline."
   (interactive "*P")
   (if (derived-mode-p 'eat-mode)
       ;; (claude-code--eat-send-alt-return)
@@ -158,3 +174,5 @@
 
 
 (provide 'my-editing)
+
+;;; my-editing.el ends here

@@ -1,12 +1,15 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-eldoc-box.el --- Eldoc-box popup helpers
 
+;;; Code:
+
 (defvar eldoc-box-position-function)
 (defvar eldoc-box-offset)
 (defvar my-term-popup-show-p)
 
 
 (defun my-toggle-eldoc-box-help-at-point ()
+  "Show or hide the documentation popup for the thing at point."
   (interactive)
 
   ;; always use my-term-popup
@@ -25,7 +28,7 @@
     (if my-term-popup-show-p
         (my-term-popup-close)
       (show-eldoc-popup-at-point))))
-(defun my/eldoc-box-position-at-mouse (width _height)
+(defun my-eldoc-box-position-at-mouse (width _height)
   "Position eldoc-box childframe near the mouse cursor."
   (let* ((edges (window-pixel-edges))
          (right (nth 2 edges))
@@ -36,7 +39,7 @@
     (cons (- right width offset-right extra-left-padding) ; <--- 减去这个值就会往左移
           (+ top offset-top))))
 
-(defun my/eldoc-box-show-type-definition ()
+(defun my-eldoc-box-show-type-definition ()
   "Toggle eldoc-box display of the full type definition at point.
 Uses LSP textDocument/typeDefinition to navigate past re-exports directly
 to the interface/class/type declaration, then extracts the full block."
@@ -84,10 +87,12 @@ to the interface/class/type declaration, then extracts the full block."
                          (end  (or end (line-end-position 10))))
                     (font-lock-ensure beg end)
                     (let* ((text (buffer-substring beg end))
-                           (eldoc-box-position-function #'my/eldoc-box-position-at-mouse))
+                           (eldoc-box-position-function #'my-eldoc-box-position-at-mouse))
                       (eldoc-box--display text)))))
             ;; 不是用户已打开的 buffer，用完即关
             (unless existing (kill-buffer buf))))))))
 
 
 (provide 'my-eldoc-box)
+
+;;; my-eldoc-box.el ends here

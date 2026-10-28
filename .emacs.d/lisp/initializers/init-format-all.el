@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-format-all.el --- Format-all configuration
+
+;;; Code:
+
 (use-package format-all
   :commands format-all-mode
   :hook
@@ -18,3 +22,5 @@
 
 
 (provide 'init-format-all)
+
+;;; init-format-all.el ends here

@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-visual-line.el --- Visual line selection, copy and kill helpers
 
+;;; Code:
+
 (defvar my-visual-line-selection nil)
 (defvar my-visual-line-start-num nil)
 (defvar my-visual-line-selected nil)
@@ -87,3 +89,5 @@
 
 
 (provide 'my-visual-line)
+
+;;; my-visual-line.el ends here

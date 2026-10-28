@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-dired-ibuffer.el --- Dired and ibuffer configuration
+
+;;; Code:
+
 (require 'ibuffer)
 (require 'ibuf-ext)
 (defvar dired-dwim-target)
@@ -26,6 +30,7 @@
   (ibuffer-update nil t))
 
 (defun my-side-ibuffer-visit-and-quit-other ()
+  "Open the buffer at point and close the side ibuffer."
   (interactive)
   (ibuffer-visit-buffer-other-window)
   (my-quit-other-window))
@@ -39,6 +44,7 @@
   "RET" #'my-side-ibuffer-visit-and-quit-other)
 
 (defun side-ibuffer ()
+  "Show the file buffers in an ibuffer side window."
   (interactive)
   (let ((buffer
          (save-window-excursion
@@ -84,3 +90,5 @@
   (setq dired-dwim-target t))
 
 (provide 'init-dired-ibuffer)
+
+;;; init-dired-ibuffer.el ends here

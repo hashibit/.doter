@@ -1,4 +1,7 @@
 ;; -*- lexical-binding: t -*-
+;;; init-expand-region.el --- Expand-region configuration
+
+;;; Code:
 
 (use-package expand-region
   ;; my-toggle-er/* call er/* directly, so load at startup
@@ -13,6 +16,7 @@
 
 
 (defun my-toggle-er/mark-defun (_arg)
+  "Mark the defun, or go back to the saved point."
   (interactive "p")
   (if (use-region-p)
       (progn
@@ -22,6 +26,7 @@
     (er/mark-defun)))
 
 (defun my-toggle-er/mark-inside-paren (_arg)
+  "Mark inside the parens or quotes, or go back to the saved point."
   (interactive "p")
   (if (use-region-p)
       (progn
@@ -33,6 +38,7 @@
      ((er--point-inside-pairs-p) (er/mark-inside-pairs)))))
 
 (defun my-toggle-er/mark-outside-paren (_arg)
+  "Mark the parens or quotes, or go back to the saved point."
   (interactive "p")
   (if (use-region-p)
       (progn
@@ -46,3 +52,5 @@
 
 
 (provide 'init-expand-region)
+
+;;; init-expand-region.el ends here

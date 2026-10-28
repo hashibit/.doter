@@ -5,6 +5,9 @@
 ;; clang-format-buffer and clang-format-region are package autoloads.
 ;; (require 'clang-format)
 ;; (require 'cff)
+
+;;; Code:
+
 (autoload 'cff-find-other-file "cff" nil t)
 (require 's)
 

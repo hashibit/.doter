@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-window-buffer.el --- Window and buffer management commands
 
+;;; Code:
+
 (require 'seq)
 (defvar popper-open-popup-alist)
 (defvar ivy-ignore-buffers)
@@ -104,9 +106,11 @@
    (/ (window-body-width) 4)))
 
 (defun my-enarge-window-height()
+  "Make the selected window as tall as possible."
   (interactive)
   (enlarge-window 1000))
 (defun my-quit-other-window()
+  "Delete the other windows and close the imenu list."
   (interactive)
   (delete-other-windows)
   (ignore-errors
@@ -122,6 +126,7 @@
   (unless (one-window-p)
     (quit-window nil (next-window))))
 (defun popper-toggle-but-other-window()
+  "Toggle the latest popup, then select the other window."
   (interactive)
   (popper-toggle)
   (run-with-timer 0.05 nil
@@ -130,6 +135,7 @@
                       (other-window -1)))))
 
 (defun popper-cycle-but-other-window()
+  "Show the next popup, then select the other window."
   (interactive)
   (popper-cycle 0)
   (run-with-timer 0.05 nil
@@ -175,3 +181,5 @@ are not open now, then the ignored buffers."
 
 
 (provide 'my-window-buffer)
+
+;;; my-window-buffer.el ends here

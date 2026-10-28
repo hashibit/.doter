@@ -1,4 +1,7 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-all-the-icons.el --- All-the-icons configuration
+
+;;; Code:
 
 (use-package all-the-icons
   :defer t
@@ -8,3 +11,5 @@
 
 
 (provide 'init-all-the-icons)
+
+;;; init-all-the-icons.el ends here

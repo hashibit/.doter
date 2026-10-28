@@ -1,4 +1,7 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-blink-search.el --- Blink-search configuration
+
+;;; Code:
 
 (defvar blink-search-history-path)
 (defvar blink-search-db-path)
@@ -13,3 +16,5 @@
     (require 'blink-search)))
 
 (provide 'init-blink-search)
+
+;;; init-blink-search.el ends here

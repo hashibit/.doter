@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-flymake.el --- Flymake configuration
+
+;;; Code:
+
 (use-package flymake
   :hook
   ;; 在支持的语言模式中启用 flymake
@@ -36,12 +40,12 @@
   )
 
 ;; 完全禁用 before-string 指示符（即不显示 ! ? 等）
-(defun my/flymake-no-indicator (_type _pos)
+(defun my-flymake-no-indicator (_type _pos)
   "Return nil to suppress any before-string or fringe indicator."
   nil)
 
 ;; 强制移除 before-string（不再作为 advice 安装，见上面在 type 上的设置）
-(defun my/flymake-remove-before-string (&rest _)
+(defun my-flymake-remove-before-string (&rest _)
   "Remove before-string from all flymake overlays."
   (dolist (ov (overlays-in (point-min) (point-max)))
     (when (overlay-get ov 'flymake-overlay)
@@ -122,3 +126,5 @@
 
 
 (provide 'init-flymake)
+
+;;; init-flymake.el ends here

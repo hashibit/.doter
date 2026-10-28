@@ -1,7 +1,11 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-eshell.el --- Eshell and comint configuration
 
 ;; eshell with colors
 ;; SEE https://emacs.stackexchange.com/questions/51027/missing-color-support-for-exa-in-eshell
+
+;;; Code:
+
 (setq comint-terminfo-terminal "dumb-emacs-ansi")
 
 (let* ((terminfo-file (format "~/.terminfo/%s.ti" comint-terminfo-terminal))
@@ -30,3 +34,5 @@
 
 
 (provide 'init-eshell)
+
+;;; init-eshell.el ends here

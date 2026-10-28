@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-lang-perl.el --- Perl language configuration
 
+;;; Code:
+
 (require 'perl-ts-mode)
 
 

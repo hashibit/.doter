@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-utils.el --- Personal utility functions
 
+;;; Code:
+
 (require 'cl-lib)
 (require 'seq)
 (require 'f)
@@ -120,11 +122,13 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun my-M-x ()
+  "Refresh the buffer modes, then run `counsel-M-x'."
   (interactive)
   (refresh-current-mode)
   (counsel-M-x))
 
 (defun my-occur ()
+  "Search the buffer with `counsel-grep', for the region if active."
   (interactive)
   (if (region-active-p)
       (let* ((start (region-beginning))
@@ -135,6 +139,7 @@ If buffer-or-name is nil return current buffer's mode."
     (counsel-grep)))
 
 (defun my-rg-at-point ()
+  "Search the project with `counsel-rg', for the region if active."
   (interactive)
   (if (region-active-p)
       (let* ((start (region-beginning))
@@ -145,10 +150,12 @@ If buffer-or-name is nil return current buffer's mode."
     (counsel-rg)))
 
 (defun my-find-files ()
+  "Find a file with `counsel-find-file'."
   (interactive)
   (counsel-find-file))
 
 (defun my-mark-ring ()
+  "Jump to a mark in the mark ring, then recenter."
   (interactive)
   (counsel-mark-ring)
   (recenter))
@@ -202,6 +209,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun my-blink-search()
+  "Restart the blink-search process and start a search."
   (interactive)
   (blink-search-restart-process)
   (blink-search))
@@ -230,11 +238,13 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun start-zsh-term()
+  "Start a vterm terminal."
   (interactive)
   (vterm))
 
 
 (defun toggle-continuation-fringe-indicator ()
+  "Toggle the fringe arrows for continued lines."
   (interactive)
   (setq-default
    fringe-indicator-alist
@@ -243,11 +253,13 @@ If buffer-or-name is nil return current buffer's mode."
      (cons '(continuation right-curly-arrow left-curly-arrow) fringe-indicator-alist))))
 
 (defun my-toggle-truncate-lines-and-word-wrap()
+  "Toggle line truncation and word wrap."
   (interactive)
   (toggle-truncate-lines)
   (toggle-word-wrap))
 
 (defun compileandrun()
+  "Compile the current C++ file with g++ and run it."
   (interactive)
   (let* ((src (file-name-nondirectory (buffer-file-name)))
          (exe (file-name-sans-extension src)))
@@ -263,11 +275,13 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun my-set-buffer-use-tabs ()
+  "Indent with tabs, 4 wide, in this buffer."
   (interactive)
   (setq-local indent-tabs-mode t
               tab-width 4))
 
 (defun my-set-buffer-use-space ()
+  "Indent with spaces, 4 wide, in this buffer."
   (interactive)
   (setq-local indent-tabs-mode nil
               tab-width 4))
@@ -286,11 +300,13 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 (defun my-hide-title-bar ()
+  "Hide the frame title bar."
   (interactive)
   (modify-frame-parameters nil '((undecorated . t)))
   (my-M-x))
 
 (defun my-show-title-bar ()
+  "Show the frame title bar."
   (interactive)
   (modify-frame-parameters nil '((undecorated . nil)))
   (my-M-x))
@@ -328,6 +344,7 @@ Default port is 9910 if not provided."
     (message "Proxy set to: %s (bypass: %s)" proxy-url no-proxy-list)))
 
 (defun my-unset-proxy()
+  "Remove the proxy environment variables."
   (interactive)
   (dolist (var '("http_proxy" "https_proxy" "HTTP_PROXY" "HTTPS_PROXY"
                  "no_proxy" "NO_PROXY"))
@@ -350,6 +367,7 @@ Return trimmed stdout if success, nil otherwise."
 
 
 (defun cmake-download-cpm()
+  "Download CPM.cmake into the cmake folder of the project."
   (interactive)
   (let* ((cmake-dir (file-name-concat (cmake-project-find-root-directory) "cmake"))
          (cpm-file-path (file-name-concat cmake-dir "CPM.cmake")))
@@ -363,3 +381,5 @@ Return trimmed stdout if success, nil otherwise."
 
 
 (provide 'my-utils)
+
+;;; my-utils.el ends here

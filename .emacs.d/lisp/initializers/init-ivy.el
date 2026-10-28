@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-ivy.el --- Ivy configuration
 
+;;; Code:
+
 (defvar counsel-switch-buffer-preview-virtual-buffers)
 (defvar my-posframe-border-width)
 (defvar my-posframe-fringe-width)

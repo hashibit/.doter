@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-motion.el --- Cursor motion commands
 
+;;; Code:
+
 (require 'my-visual-line)
 
 
@@ -39,31 +41,37 @@
                              (backward-list 1)
                              (backward-char 1))))))))))); ))
 (defun my-next-line-or-mc/mark-next-like-this (arg)
+  "Mark the next match with the region active, else move down one line."
   (interactive "p")
   (if (use-region-p)
       (my-mc/mark-next-like-this arg)
     (line-move 1)))
 
 (defun my-prev-line-or-mc/mark-next-like-this (arg)
+  "Mark the previous match with the region active, else move up one line."
   (interactive "p")
   (if (use-region-p)
       (my-mc/mark-previous-like-this
        arg)
     (line-move -1)))
 (defun my-is-beginning-of-line ()
+  "Return non-nil if point is at the beginning of the line."
   (interactive)
   (bolp))
 
 
 (defun my-is-end-of-line ()
+  "Return non-nil if point is at the end of the line."
   (interactive)
   (eolp))
 (defun my-forward-char-no-cross-line ()
+  "Move forward one char, but not past the end of the line."
   (interactive)
   (unless (eolp)
     (forward-char)))
 
 (defun my-forward-to-word ()
+  "Move to the next word start, stopping at punctuation."
   (interactive)
   (let* ((pos-before (point))
          (pos-after (save-excursion
@@ -84,6 +92,7 @@
             (forward-to-word 1)))
       (forward-to-word 1))))
 (defun my-next-line(_args)
+  "Move down one line, extending a visual-line selection."
   (interactive "p")
   (setq this-command 'next-line)
   (if my-visual-line-selection
@@ -102,6 +111,7 @@
     (line-move 1)))
 
 (defun my-previous-line(_args)
+  "Move up one line, extending a visual-line selection."
   (interactive "p")
   (setq this-command 'previous-line)
   (if my-visual-line-selection
@@ -122,6 +132,7 @@
           (beginning-of-line))))
     (line-move -1)))
 (defun my-backward-char-no-cross-line ()
+  "Move back one char, but not past the beginning of the line."
   (interactive)
   (unless (bolp)
     (backward-char)))
@@ -141,12 +152,16 @@
         (goto-char pos)
       (message "Character `%c' not found in this line." char))))
 (defun my-scroll-cursor-down ()
+  "Move point down half a window."
   (interactive)
   (line-move (/ (window-height (selected-window)) 2)))
 
 (defun my-scroll-cursor-up ()
+  "Move point up half a window."
   (interactive)
   (line-move (- (/ (window-height (selected-window)) 2))))
 
 
 (provide 'my-motion)
+
+;;; my-motion.el ends here

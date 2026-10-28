@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-diminish.el --- Diminish configuration
+
+;;; Code:
+
 (require 'diminish)
 (defun my-purge-minor-modes (&rest _)
   "Hide noisy minor modes from the mode line.
@@ -41,3 +45,5 @@ runs after each file is loaded."
 
 
 (provide 'init-diminish)
+
+;;; init-diminish.el ends here

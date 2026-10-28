@@ -1,4 +1,6 @@
 ;; -*- lexical-binding: t -*-
+;;; init-terminal-notifier.el --- Terminal-notifier configuration
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Terminal notifier 
 ;; requires 'sudo port install terminal-notifier'
@@ -6,6 +8,8 @@
 ;;
 ;; (terminal-notifier-notify "Emacs notification"
 ;;                           "Something amusing happened")
+
+;;; Code:
 
 (defvar terminal-notifier-command
   (executable-find "terminal-notifier")
@@ -22,6 +26,7 @@
                  "-sender" "org.gnu.Emacs"))
 
 (defun timed-notification (time msg)
+  "Show the notification MSG at TIME."
   (interactive
    "sNotification when (e.g: 2 minutes, 60 seconds, 3 days): \nsMessage: ")
   (run-at-time time
@@ -30,3 +35,5 @@
                msg))
 
 (provide 'init-terminal-notifier)
+
+;;; init-terminal-notifier.el ends here

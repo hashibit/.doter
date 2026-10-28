@@ -1,4 +1,7 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-undo-tree.el --- Undo-tree configuration
+
+;;; Code:
 
 (use-package undo-tree
   :config
@@ -33,3 +36,5 @@
 
 
 (provide 'init-undo-tree)
+
+;;; init-undo-tree.el ends here

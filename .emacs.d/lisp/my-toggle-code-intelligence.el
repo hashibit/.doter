@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; my-toggle-code-intelligence.el --- Turn LSP highlight and code intelligence on and off
+
+;;; Code:
+
 (require 'init-flymake)
 
 (defvar-local my-code-intelligence t
@@ -63,10 +67,12 @@
     (setq my-eglot-highlight-disabled t)))
 
 (defun my-disable-eglot-highlight (&rest _)
+  "Turn off eglot symbol highlight, after a short delay."
   (interactive)
   (my-run-later-in-buffer #'my-disable-eglot-highlight--now))
 
 (defun my-enable-eglot-highlight (&rest _)
+  "Turn on eglot symbol highlight again."
   (interactive)
   (my-cancel-later #'my-disable-eglot-highlight--now)
   (ignore-errors
@@ -80,6 +86,7 @@
 
 
 (defun my-enable-paren-highlight ()
+  "Turn on the matching-paren highlight."
   (interactive)
   (my-cancel-later #'my-disable-paren-highlight--now)
   (ignore-errors
@@ -94,12 +101,14 @@
   (set-face-attribute 'show-paren-match nil :foreground "green" :background 'unspecified))
 
 (defun my-disable-paren-highlight ()
+  "Turn off the matching-paren highlight, after a short delay."
   (interactive)
   (my-run-later-in-buffer #'my-disable-paren-highlight--now))
 
 ;; (set-face-attribute 'show-paren-match nil :foreground 'unspecified :background 'unspecified :weight 'bold)))
 
 (defun my-enable-symbol-overlay-highlight ()
+  "Turn on symbol-overlay highlight."
   (interactive)
   (my-cancel-later #'my-disable-symbol-overlay-highlight--now)
   (when (or my-symbol-overlay-saved
@@ -115,11 +124,13 @@
     (symbol-overlay-mode 0)))
 
 (defun my-disable-symbol-overlay-highlight ()
+  "Turn off symbol-overlay highlight, after a short delay."
   (interactive)
   (my-run-later-in-buffer #'my-disable-symbol-overlay-highlight--now))
 
 
 (defun my-disable-code-intelligence ()
+  "Turn off highlight, electric pairs and other helpers while editing."
   (interactive)
   (when my-code-intelligence
     (my-disable-eglot-highlight)
@@ -133,6 +144,7 @@
     ))
 
 (defun my-enable-code-intelligence ()
+  "Turn the code intelligence helpers on again."
   (interactive)
   ;; avy / deadgrep 可能在另一个 buffer 结束，恢复所有被禁用的 buffer
   (when (or my-code-intelligence--disabled-buffers (not my-code-intelligence))
@@ -152,12 +164,14 @@
 
 
 (defun my-remove-all-highlight ()
+  "Remove line, paren and eglot highlights."
   (interactive)
   (remove-all-highlight)
   (my-disable-paren-highlight)
   (my-disable-eglot-highlight))
 
 (defun my-enable-all-highlight ()
+  "Turn on paren and eglot highlights."
   (interactive)
   (my-enable-paren-highlight)
   (my-enable-eglot-highlight))
@@ -165,3 +179,5 @@
 
 
 (provide 'my-toggle-code-intelligence)
+
+;;; my-toggle-code-intelligence.el ends here

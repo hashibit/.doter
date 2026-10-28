@@ -1,6 +1,10 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; enhanced-winner-mode.el --- Winner mode that also restores point and scroll
+
 ;;; 增强的 winner-mode 配置
 ;;; 同时保存和恢复窗口布局、光标位置和滚动位置
+
+;;; Code:
 
 (require 'cl-lib)
 (require 'ring)
@@ -154,3 +158,5 @@
 (keymap-global-set "C-x 4 s" #'enhanced-winner-save-now)
 
 (provide 'enhanced-winner-mode)
+
+;;; enhanced-winner-mode.el ends here

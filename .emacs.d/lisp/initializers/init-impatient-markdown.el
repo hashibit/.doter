@@ -1,6 +1,10 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-impatient-markdown.el --- Impatient-mode Markdown preview
 
 ;; render like github
+
+;;; Code:
+
 (defun my-markdown-html-github (buffer)
   (princ
    (with-current-buffer buffer
@@ -29,3 +33,5 @@
 
 
 (provide 'init-impatient-markdown)
+
+;;; init-impatient-markdown.el ends here

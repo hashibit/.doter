@@ -1,5 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-blamer.el --- Blamer configuration
 
+
+;;; Code:
 
 (use-package blamer
   :bind (("s-i" . blamer-show-commit-info)
@@ -20,3 +23,5 @@
 
 
 (provide 'init-blamer)
+
+;;; init-blamer.el ends here

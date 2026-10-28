@@ -1,8 +1,11 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-slime.el --- SLIME configuration
 
 ;;
 ;; brew install roswell
 ;;
+
+;;; Code:
 
 (defun my-slime-pulse-line (&rest _)
   (pulse-momentary-highlight-one-line (point)))
@@ -72,3 +75,5 @@
 
 
 (provide 'init-slime)
+
+;;; init-slime.el ends here

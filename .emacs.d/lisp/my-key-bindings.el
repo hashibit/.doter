@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; my-key-bindings.el --- Global, god-mode and special-buffer key bindings
+
+;;; Code:
+
 (require 'my-utils)
 
 (defvar dired-mode-map)
@@ -66,6 +70,7 @@
 
 
 (defun my-split-window-right ()
+  "Split the window right. In eat, open a new eat in the new window."
   (interactive)
   (split-window-right)
   (when (derived-mode-p 'eat-mode)
@@ -357,14 +362,17 @@
   (keymap-set projectile-mode-map "C-c f" 'projectile-command-map))
 
 (defun my-kill-whole-line-and-below ()
+  "Kill the current line and the line below."
   (interactive)
   (kill-whole-line 2))
 
 (defun my-kill-whole-line-and-above ()
+  "Kill the current line and the line above."
   (interactive)
   (kill-whole-line -2))
 
 (defun my-flip-buffer-to-window-include-special ()
+  "Switch to the previous buffer, special buffers included."
   (interactive)
   (flip-buffer-to-window t))
 
@@ -434,3 +442,5 @@
 
 
 (provide 'my-key-bindings)
+
+;;; my-key-bindings.el ends here

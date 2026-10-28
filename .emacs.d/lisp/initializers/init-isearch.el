@@ -14,6 +14,7 @@
 (add-hook 'isearch-mode-end-hook #'my-enable-code-intelligence)
 
 (defun my-change-cursor-type-when-isearch ()
+  "Use a yellow bar cursor in isearch, a red box cursor otherwise."
   (interactive)
   (if (bound-and-true-p isearch-mode)
       (progn

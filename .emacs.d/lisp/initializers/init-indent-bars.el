@@ -8,7 +8,7 @@
 
 ;;; Code:
 
-(defun my/indent-bars-enable-maybe ()
+(defun my-indent-bars-enable-maybe ()
   "Enable indent-bars-mode unless the buffer uses tab indentation."
   (unless (save-excursion
             (goto-char (point-min))
@@ -30,7 +30,7 @@
   (indent-bars-highlight-current-depth nil) ; pump up the BG blend on current
   (indent-bars-display-on-blank-lines nil)
   :hook
-  (prog-mode . my/indent-bars-enable-maybe)
+  (prog-mode . my-indent-bars-enable-maybe)
   (indent-bars-mode . indent-bars-reset))
 
 (provide 'init-indent-bars)

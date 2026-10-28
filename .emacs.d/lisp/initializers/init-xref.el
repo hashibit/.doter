@@ -1,5 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-xref.el --- Xref configuration
 
+
+;;; Code:
 
 (eval-when-compile (require 'ivy))
 (declare-function ivy-call "ivy")
@@ -15,6 +18,7 @@
 (defvar ivy-minibuffer-map)
 
 (defun my-recenter-scroll-to-top ()
+  "Put the current line near the top of the window."
   (interactive)
   (recenter 1 t))
 
@@ -59,6 +63,7 @@
 (advice-add 'xref-go-forward :after #'my-xref--restore-window-start)
 
 (defun my-ivy-xref-call-or-done ()
+  "Preview the xref candidate, or finish when it does not move."
   (interactive)
   (let (orig-point orig-buffer new-point new-buffer)
     (with-ivy-window
@@ -215,3 +220,5 @@
 
 
 (provide 'init-xref)
+
+;;; init-xref.el ends here

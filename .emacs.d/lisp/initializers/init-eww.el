@@ -1,7 +1,11 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-eww.el --- Eww configuration
 
 ;; eww / shr 默认正文用 variable-pitch（"Sans Serif"），代码用 fixed-pitch（"Monospace"），
 ;; 都不是 IBM Plex，看着很怪。关掉 shr-use-fonts 后统一用 default face（IBM Plex Mono）。
+
+;;; Code:
+
 (use-package shr
   :ensure nil
   :defer t
@@ -22,3 +26,5 @@
 
 
 (provide 'init-eww)
+
+;;; init-eww.el ends here

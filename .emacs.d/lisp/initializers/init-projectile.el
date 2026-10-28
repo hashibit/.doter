@@ -1,4 +1,7 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-projectile.el --- Projectile configuration
+
+;;; Code:
 
 (defvar ignored-projectile-projects (list "/opt/homebrew/" "Xcode.app" "node_modules"))
 
@@ -112,21 +115,22 @@
       (projectile-find-file))))
 
 (defun my-projectile-switch-project-find-file ()
+  "Switch to a project and find a file in it."
   (interactive)
   (let ((projectile-switch-project-action #'projectile-find-file))
     (projectile-switch-project)))
 
-(defun my/return-t (&rest _) t)
+(defun my-return-t (&rest _) t)
 
-(defun my/disable-yornp (orig-fun &rest args)
+(defun my-disable-yornp (orig-fun &rest args)
   "Call ORIG-FUN with ARGS, answering every yes/no prompt with yes."
-  (cl-letf (((symbol-function 'yes-or-no-p) #'my/return-t)
-            ((symbol-function 'y-or-n-p) #'my/return-t))
+  (cl-letf (((symbol-function 'yes-or-no-p) #'my-return-t)
+            ((symbol-function 'y-or-n-p) #'my-return-t))
     (apply orig-fun args)))
 
 
-(advice-add 'projectile-compile-project :around #'my/disable-yornp)
-(advice-add 'projectile-run-project :around #'my/disable-yornp)
+(advice-add 'projectile-compile-project :around #'my-disable-yornp)
+(advice-add 'projectile-run-project :around #'my-disable-yornp)
 
 
 
@@ -162,3 +166,5 @@ Override existing value with NEW-VALUE if it's set."
 
 
 (provide 'init-projectile)
+
+;;; init-projectile.el ends here

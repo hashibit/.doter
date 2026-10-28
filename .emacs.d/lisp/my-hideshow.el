@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; my-hideshow.el --- Code folding commands on top of hideshow
 
+;;; Code:
+
 (require 'cl-lib)
 (declare-function hs-toggle-all "hideshow")
 (declare-function hs-toggle-hiding "hideshow")
@@ -48,11 +50,13 @@
     (hs-toggle-all)))
 
 (defun my-hs-toggle-hiding ()
+  "Fold or unfold the block at point."
   (interactive)
   (hs-minor-mode 1)
   (hs-toggle-hiding))
 
 (defun my-hide-all ()
+  "Fold all top-level blocks."
   (interactive)
   (hs-minor-mode 1)
   (hs-hide-all))
@@ -61,3 +65,5 @@
 
 
 (provide 'my-hideshow)
+
+;;; my-hideshow.el ends here

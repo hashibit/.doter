@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-yasnippet.el --- Yasnippet configuration
+
+;;; Code:
+
 (require 'my-toggle-code-intelligence)
 
 
@@ -34,3 +38,5 @@
 
 
 (provide 'init-yasnippet)
+
+;;; init-yasnippet.el ends here

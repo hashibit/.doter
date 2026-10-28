@@ -59,6 +59,7 @@ Each project gets its own buffer. The shell starts in the project root."
           buf))))
 
 (defun my-toggle-vterm ()
+  "Show the eat popup of the current project, or close it when in eat."
   (interactive)
   (if (derived-mode-p 'eat-mode)
       (cond

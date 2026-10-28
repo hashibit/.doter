@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-avy.el --- Avy configuration
+
+;;; Code:
+
 (require 'avy)
 (setq avy-keys (list ?a ?s ?d ?f ?g ?w ?e ?v ?m ?n ?i ?o ?h ?j ?k ?l ?\;))
 (setq avy-background 't)
@@ -29,3 +33,5 @@
 (advice-add 'avy-action-goto :before #'my-avy-end)
 
 (provide 'init-avy)
+
+;;; init-avy.el ends here

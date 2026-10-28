@@ -1,4 +1,7 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-ace-window.el --- Ace-window configuration
+
+;;; Code:
 
 (use-package ace-window
   :ensure t
@@ -17,3 +20,5 @@
 
 
 (provide 'init-ace-window)
+
+;;; init-ace-window.el ends here

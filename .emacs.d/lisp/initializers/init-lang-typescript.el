@@ -7,6 +7,9 @@
 
 ;; 纯 .js 走原生 treesit JS mode，避免 JSX parser 误判（如 `a < b > c`）
 ;; 和 LSP 发错 languageId（"javascriptreact" vs "javascript"）。
+
+;;; Code:
+
 (use-package js
   :mode ("\\.js\\'" . js-ts-mode)
   :hook (js-ts-mode . hs-minor-mode)
@@ -23,7 +26,39 @@
     (js-ts-mode)))
 
 (defun my-jtsx-disable-rainbow-delimiters ()
+  "Turn off rainbow delimiters in this buffer."
   (rainbow-delimiters-mode -1))
+
+(defvar jtsx-jsx-mode-map)
+(defvar jtsx-tsx-mode-map)
+
+(defun my-jtsx-bind-keys-to-mode-map (mode-map)
+  "Bind keys to MODE-MAP."
+  (keymap-set mode-map "C-c C-j" #'jtsx-jump-jsx-element-tag-dwim)
+  (keymap-set mode-map "C-c j o" #'jtsx-jump-jsx-opening-tag)
+  (keymap-set mode-map "C-c j c" #'jtsx-jump-jsx-closing-tag)
+  (keymap-set mode-map "C-c j r" #'jtsx-rename-jsx-element)
+  (keymap-set mode-map "C-c <down>" #'jtsx-move-jsx-element-tag-forward)
+  (keymap-set mode-map "C-c <up>" #'jtsx-move-jsx-element-tag-backward)
+  (keymap-set mode-map "C-c C-<down>" #'jtsx-move-jsx-element-forward)
+  (keymap-set mode-map "C-c C-<up>" #'jtsx-move-jsx-element-backward)
+  (keymap-set mode-map "C-c C-S-<down>" #'jtsx-move-jsx-element-step-in-forward)
+  (keymap-set mode-map "C-c C-S-<up>" #'jtsx-move-jsx-element-step-in-backward)
+  (keymap-set mode-map "C-c j w" #'jtsx-wrap-in-jsx-element)
+  (keymap-set mode-map "C-c j u" #'jtsx-unwrap-jsx)
+  (keymap-set mode-map "C-c j d n" #'jtsx-delete-jsx-node)
+  (keymap-set mode-map "C-c j d a" #'jtsx-delete-jsx-attribute)
+  (keymap-set mode-map "C-c j t" #'jtsx-toggle-jsx-attributes-orientation)
+  (keymap-set mode-map "C-c j h" #'jtsx-rearrange-jsx-attributes-horizontally)
+  (keymap-set mode-map "C-c j v" #'jtsx-rearrange-jsx-attributes-vertically))
+
+(defun my-jtsx-bind-keys-to-jsx-mode-map ()
+  "Bind JTSX keys to jsx mode map."
+  (my-jtsx-bind-keys-to-mode-map jtsx-jsx-mode-map))
+
+(defun my-jtsx-bind-keys-to-tsx-mode-map ()
+  "Bind JTSX keys to tsx mode map."
+  (my-jtsx-bind-keys-to-mode-map jtsx-tsx-mode-map))
 
 (use-package jtsx
   :ensure t
@@ -47,36 +82,8 @@
   ;; (jtsx-enable-jsx-element-tags-auto-sync nil)
   (jtsx-enable-all-syntax-highlighting-features t)
   :config
-  (defun jtsx-bind-keys-to-mode-map (mode-map)
-    "Bind keys to MODE-MAP."
-    (keymap-set mode-map "C-c C-j" #'jtsx-jump-jsx-element-tag-dwim)
-    (keymap-set mode-map "C-c j o" #'jtsx-jump-jsx-opening-tag)
-    (keymap-set mode-map "C-c j c" #'jtsx-jump-jsx-closing-tag)
-    (keymap-set mode-map "C-c j r" #'jtsx-rename-jsx-element)
-    (keymap-set mode-map "C-c <down>" #'jtsx-move-jsx-element-tag-forward)
-    (keymap-set mode-map "C-c <up>" #'jtsx-move-jsx-element-tag-backward)
-    (keymap-set mode-map "C-c C-<down>" #'jtsx-move-jsx-element-forward)
-    (keymap-set mode-map "C-c C-<up>" #'jtsx-move-jsx-element-backward)
-    (keymap-set mode-map "C-c C-S-<down>" #'jtsx-move-jsx-element-step-in-forward)
-    (keymap-set mode-map "C-c C-S-<up>" #'jtsx-move-jsx-element-step-in-backward)
-    (keymap-set mode-map "C-c j w" #'jtsx-wrap-in-jsx-element)
-    (keymap-set mode-map "C-c j u" #'jtsx-unwrap-jsx)
-    (keymap-set mode-map "C-c j d n" #'jtsx-delete-jsx-node)
-    (keymap-set mode-map "C-c j d a" #'jtsx-delete-jsx-attribute)
-    (keymap-set mode-map "C-c j t" #'jtsx-toggle-jsx-attributes-orientation)
-    (keymap-set mode-map "C-c j h" #'jtsx-rearrange-jsx-attributes-horizontally)
-    (keymap-set mode-map "C-c j v" #'jtsx-rearrange-jsx-attributes-vertically))
-
-  (defun jtsx-bind-keys-to-jtsx-jsx-mode-map ()
-    "Bind JTSX keys to jsx mode map."
-    (jtsx-bind-keys-to-mode-map jtsx-jsx-mode-map))
-
-  (defun jtsx-bind-keys-to-jtsx-tsx-mode-map ()
-    "Bind JTSX keys to tsx mode map."
-    (jtsx-bind-keys-to-mode-map jtsx-tsx-mode-map))
-
-  (jtsx-bind-keys-to-jtsx-jsx-mode-map)
-  (jtsx-bind-keys-to-jtsx-tsx-mode-map)
+  (my-jtsx-bind-keys-to-jsx-mode-map)
+  (my-jtsx-bind-keys-to-tsx-mode-map)
 
   ;; eglot 通过 major-mode symbol 上的 eglot-language-id 属性确定 languageId。
   ;; jtsx 派生自 ts 内建 mode，但 eglot 不自动识别，需显式声明。

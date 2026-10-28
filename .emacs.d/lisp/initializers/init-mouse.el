@@ -1,15 +1,21 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-mouse.el --- Mouse configuration
 
 
 ;; enable mouse click in terminal
+
+;;; Code:
+
 (unless (display-graphic-p)
   (xterm-mouse-mode 1))
 
 (defun my-mouse-scroll-down-2 ()
+  "Scroll down 2 lines."
   (interactive)
   (scroll-down 2))
 
 (defun my-mouse-scroll-up-2 ()
+  "Scroll up 2 lines."
   (interactive)
   (scroll-up 2))
 
@@ -22,35 +28,35 @@
 
 
 
-(defvar my/xref-gesture-last-time 0
+(defvar my-xref-gesture-last-time 0
   "Timestamp of the last successful xref gesture execution.")
 
-(defvar my/xref-gesture-delay 0.5
+(defvar my-xref-gesture-delay 0.5
   "Minimum time in seconds between gesture triggers (Rate Limit).")
 
-(defun my/xref-go-back-throttled ()
+(defun my-xref-go-back-throttled ()
   "Throttled version of `xref-go-back` for touch gestures.
 Ignores calls if they happen too frequently."
   (interactive)
   (let ((now (float-time)))
-    (if (> (- now my/xref-gesture-last-time) my/xref-gesture-delay)
+    (if (> (- now my-xref-gesture-last-time) my-xref-gesture-delay)
         ;; 时间间隔足够，执行命令并更新时间
         (progn
-          (setq my/xref-gesture-last-time now)
+          (setq my-xref-gesture-last-time now)
           (call-interactively #'xref-go-back))
       ;; 时间间隔太短，忽略本次触发 (可选：加个 message 调试)
       ;; (message "Gesture ignored (rate limit)")
       nil)))
 
-(defun my/xref-go-forward-throttled ()
+(defun my-xref-go-forward-throttled ()
   "Throttled version of `xref-go-forward` for touch gestures.
 Ignores calls if they happen too frequently."
   (interactive)
   (let ((now (float-time)))
-    (if (> (- now my/xref-gesture-last-time) my/xref-gesture-delay)
+    (if (> (- now my-xref-gesture-last-time) my-xref-gesture-delay)
         ;; 时间间隔足够，执行命令并更新时间
         (progn
-          (setq my/xref-gesture-last-time now)
+          (setq my-xref-gesture-last-time now)
           (call-interactively #'xref-go-forward))
       ;; 时间间隔太短，忽略本次触发 (可选：加个 message 调试)
       ;; (message "Gesture ignored (rate limit)")
@@ -62,9 +68,9 @@ Ignores calls if they happen too frequently."
 (keymap-global-set "s-<mouse-1>" #'my-mouse-find-definition-at-mouse)
 
 ;; 绑定按键
-(keymap-global-set "s-<mouse-3>"           #'my/xref-go-back-throttled)
-(keymap-global-set "s-<triple-wheel-down>" #'my/xref-go-back-throttled)
-(keymap-global-set "s-<triple-wheel-up>"   #'my/xref-go-forward-throttled)
+(keymap-global-set "s-<mouse-3>"           #'my-xref-go-back-throttled)
+(keymap-global-set "s-<triple-wheel-down>" #'my-xref-go-back-throttled)
+(keymap-global-set "s-<triple-wheel-up>"   #'my-xref-go-forward-throttled)
 
 
 
@@ -117,4 +123,10 @@ Ignores calls if they happen too frequently."
 (keymap-global-unset "<mouse-3>")
 (context-menu-mode 1)
 
+;; Old names, so M-x my/... still works.
+(define-obsolete-function-alias 'my/xref-go-back-throttled #'my-xref-go-back-throttled "2026-10-27")
+(define-obsolete-function-alias 'my/xref-go-forward-throttled #'my-xref-go-forward-throttled "2026-10-27")
+
 (provide 'init-mouse)
+
+;;; init-mouse.el ends here

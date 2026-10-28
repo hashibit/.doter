@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; hidden-mode-line.el --- Hide the mode line in a buffer
+
+;;; Code:
+
 (defvar-local hide-mode-line nil
   "Store the original mode-line-format when hidden-mode-line-mode is active.")
 
@@ -82,4 +86,4 @@ With optional ARG, enable if ARG is positive, disable otherwise."
 
 (provide 'hidden-mode-line)
 
-
+;;; hidden-mode-line.el ends here

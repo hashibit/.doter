@@ -1,15 +1,20 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-neotree.el --- Neotree configuration
+
+;;; Code:
 
 (defvar neo-window-width)
 
 
 (defun my-neotree-window-narrow ()
+  "Make the neotree window 25 columns wide."
   (interactive)
   (setq neo-window-width 25)
   (neo-window--zoom 'minimize) ;; private method here.
   )
 
 (defun my-neotree-window-enlarge ()
+  "Make the neotree window a quarter of the frame wide."
   (interactive)
   (setq neo-window-width (/ (frame-width) 4))
   (neo-window--zoom 'minimize) ;; private method here.
@@ -61,6 +66,7 @@
       (message "Could not find git project root."))))
 
 (defun my-neotree-toggle ()
+  "Show neotree, or show the project root when it is open."
   (interactive)
   (if
       (and (fboundp 'neo-global--window-exists-p)
@@ -69,6 +75,7 @@
     (neotree-show)))
 
 (defun my-neotree-find ()
+  "Show the current file in neotree."
   (interactive)
   (unless (fboundp 'neo-global--window-exists-p)
     (neotree-show))
@@ -85,3 +92,5 @@
 
 
 (provide 'init-neotree)
+
+;;; init-neotree.el ends here

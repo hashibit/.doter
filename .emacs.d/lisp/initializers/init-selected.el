@@ -1,10 +1,14 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-selected.el --- Selected-mode configuration
+
+;;; Code:
 
 (defvar my-visual-line-selection)
 (declare-function mwim-end-of-code-or-line "mwim")
 (declare-function mwim-beginning-of-code-or-line "mwim")
 
 (defun my-kill-region-and-insert-d-in-selected()
+  "Kill the region and insert d (unless in god-mode)."
   (interactive)
   (kill-region (region-beginning) (region-end))
   (when my-visual-line-selection (delete-char 1))
@@ -12,6 +16,7 @@
     (insert-char ?d)))
 
 (defun my-kill-region-and-insert-s-in-selected()
+  "Kill the region and insert s (unless in god-mode)."
   (interactive)
   (kill-region (region-beginning) (region-end))
   (when my-visual-line-selection (delete-char 1))
@@ -21,12 +26,14 @@
   (god-local-mode -1))
 
 (defun my-select-to-eol()
+  "Extend the region to the end of code on the line."
   (interactive)
   (mwim-end-of-code-or-line)
   ;; (exchange-point-and-mark)
   )
 
 (defun my-select-to-bol()
+  "Extend the region to the start of code on the line."
   (interactive)
   (mwim-beginning-of-code-or-line)
   ;; (exchange-point-and-mark)
@@ -89,3 +96,5 @@
 
 
 (provide 'init-selected)
+
+;;; init-selected.el ends here

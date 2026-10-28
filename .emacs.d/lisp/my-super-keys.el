@@ -14,12 +14,13 @@
 (bind-key "M-s-o"  #'ff-find-other-file)
 
 (bind-key* "s-w" #'kill-current-buffer)
-(bind-key "s-K" #'my/eldoc-box-show-type-definition)
+(bind-key "s-K" #'my-eldoc-box-show-type-definition)
 (bind-key* "s-t" #'tab-bar-new-tab)
 (bind-key* "s-n" #'+funcs/new-empty-buffer)
 (bind-key* "s-N" #'make-frame)
 
 (defun my-eat-new-in-same-window ()
+  "Open a new eat terminal in the selected window."
   (interactive)
   (let ((display-buffer-overriding-action '(display-buffer-same-window)))
     (eat nil t)))
@@ -28,6 +29,7 @@
 (bind-key* "s-o" #'eat-floating-toggle)
 
 (defun my-s-c()
+  "Copy the region (eat-aware)."
   (interactive)
   (if (derived-mode-p 'eat-mode)
       (my-eat-copy-region)
@@ -35,6 +37,7 @@
 
 (bind-key "s-c" #'my-s-c)
 (defun my-s-v ()
+  "Paste (eat-aware)."
   (interactive)
   (if (derived-mode-p 'eat-mode)
       (eat-yank)

@@ -1,4 +1,8 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-multi-cursor.el --- Multiple-cursors configuration
+
+;;; Code:
+
 (declare-function er/mark-symbol "expand-region")
 (declare-function mc/mark-next-like-this-word "mc-mark-more")
 (declare-function mc/mark-previous-like-this-word "mc-mark-more")
@@ -25,6 +29,7 @@
   (add-hook 'multiple-cursors-mode-disabled-hook #'my-enable-code-intelligence))
 
 (defun my-mc/mark-next-like-this (arg)
+  "Add a cursor at the next match of the symbol or region."
   (interactive "p")
   (if (region-active-p)
       (message "run my-mc/mark-next-like-this")
@@ -48,6 +53,7 @@
 
 
 (defun my-mc/mark-previous-like-this (arg)
+  "Add a cursor at the previous match of the symbol or region."
   (interactive "p")
   (if (region-active-p)
       (message "run my-mc/mark-previous-like-this")
@@ -61,6 +67,7 @@
 
 
 (defun my-mc/skip-to-next-like-this (_arg)
+  "Skip the current match and mark the next one."
   (interactive "p")
   ;; copy from multiple-cursors-20211112.2223/mc-cycle-cursors.el
   (mc/cycle
@@ -94,3 +101,5 @@
    ("C-x C-d" . mc/unmark-previous-like-this)))
 
 (provide 'init-multi-cursor)
+
+;;; init-multi-cursor.el ends here

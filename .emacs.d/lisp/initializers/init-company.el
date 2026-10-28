@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-company.el --- Company configuration
 
+;;; Code:
+
 (require 'my-toggle-code-intelligence)
 
 (defvar company-dabbrev-downcase)

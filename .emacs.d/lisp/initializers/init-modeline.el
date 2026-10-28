@@ -1,5 +1,10 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-modeline.el --- Mode line configuration
+
 ;; 保持原始变量定义
+
+;;; Code:
+
 (defvar-local buffer-filename-with-git-directory nil
   "Parent directory of the current directory.
 This variable is nil if the current buffer isn't visiting a file.")
@@ -71,3 +76,5 @@ Example: \"project/src/main/java/File.java\" -> \"p/s/m/j/File.java\""
 ;; Face configuration moved to custom-set-faces
 
 (provide 'init-modeline)
+
+;;; init-modeline.el ends here

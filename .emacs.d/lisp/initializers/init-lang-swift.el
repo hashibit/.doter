@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-lang-swift.el --- Swift language configuration
 
+;;; Code:
+
 (use-package swift-mode
   :defer t)
 ;; 格式化由 format-all-mode（挂在 prog-mode-hook）统一处理，走 swiftformat。

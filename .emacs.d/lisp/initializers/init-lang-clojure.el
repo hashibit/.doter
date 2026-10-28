@@ -149,20 +149,24 @@
 ;; 自定义函数
 ;; =============================================================================
 
-(defun my/cider-repl-reset ()
+(defun my-cider-repl-reset ()
   "Reset the CIDER REPL namespace."
   (interactive)
   (cider-interactive-eval "(user/reset)"))
 
-(defun my/cider-refresh ()
+(defun my-cider-refresh ()
   "Refresh changed namespaces."
   (interactive)
   (cider-interactive-eval "(clojure.tools.namespace.repl/refresh)"))
 
 ;; 快捷键绑定
 (with-eval-after-load 'cider
-  (keymap-set cider-mode-map "C-c C-r r" #'my/cider-repl-reset)
-  (keymap-set cider-mode-map "C-c C-r f" #'my/cider-refresh))
+  (keymap-set cider-mode-map "C-c C-r r" #'my-cider-repl-reset)
+  (keymap-set cider-mode-map "C-c C-r f" #'my-cider-refresh))
+
+;; Old names, so M-x my/... still works.
+(define-obsolete-function-alias 'my/cider-refresh #'my-cider-refresh "2026-10-27")
+(define-obsolete-function-alias 'my/cider-repl-reset #'my-cider-repl-reset "2026-10-27")
 
 (provide 'init-lang-clojure)
 

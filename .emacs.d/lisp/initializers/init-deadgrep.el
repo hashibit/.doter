@@ -1,20 +1,27 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-deadgrep.el --- Deadgrep configuration
+
+;;; Code:
+
 (declare-function deadgrep-mode "deadgrep")
 (declare-function deadgrep-visit-result-other-window "deadgrep")
 
 (defun my-deadgrep-edit-enter ()
+  "Prepare a deadgrep buffer for editing."
   (interactive)
   (my-disable-code-intelligence)
   (refresh-current-mode))
 
 
 (defun my-deadgrep-edit-exit ()
+  "Stop editing a deadgrep buffer."
   (interactive)
   (my-enable-code-intelligence)
   (refresh-current-mode)
   (deadgrep-mode))
 
 (defun my-deadgrep-visit-result-other-window-and-select ()
+  "Open the result in the other window and select it."
   (interactive)
   (deadgrep-visit-result-other-window)
   (other-window 1))
@@ -68,3 +75,5 @@
 
 
 (provide 'init-deadgrep)
+
+;;; init-deadgrep.el ends here

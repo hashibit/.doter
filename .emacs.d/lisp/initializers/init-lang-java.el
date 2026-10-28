@@ -213,6 +213,7 @@
     :initializationOptions ,(java-eglot-initialization-options)))
 
 (defun eglot-clear-project-jdtls-data()
+  "Delete the jdtls data of this project and restart eglot."
   (interactive)
   (delete-directory
    (file-name-concat jdt-language-server-workspaces (java--project-name))

@@ -1,10 +1,14 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-centaur.el --- Centaur-tabs configuration
+
+;;; Code:
 
 (declare-function centaur-tabs-view "centaur-tabs-functions")
 (declare-function centaur-tabs-current-tabset "centaur-tabs-functions")
 (declare-function centaur-tabs-buffer-select-tab "centaur-tabs-functions")
 
 (defun my-centaur-select-tab (n)
+  "Select centaur tab number N."
   (interactive "p")
   (let* ((tabs-view (centaur-tabs-view (centaur-tabs-current-tabset t)))
          (tabs-count (length tabs-view))
@@ -161,3 +165,5 @@
 
 
 (provide 'init-centaur)
+
+;;; init-centaur.el ends here

@@ -1,4 +1,8 @@
 ;; -*- lexical-binding: t -*-
+;;; load-ql.el --- Load lispy's Common Lisp support
+
+;;; Code:
+
 (require 'lispy)
 (require 'le-lisp)
 
@@ -7,3 +11,5 @@
 
 
 (provide 'load-ql)
+
+;;; load-ql.el ends here

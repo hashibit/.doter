@@ -10,6 +10,18 @@
 
 (require 'cl-lib)
 
+(defvar popper-window-height)
+
+(defun my-popper-maximum-height ()
+  "Make popups almost as tall as the window."
+  (interactive)
+  (setq popper-window-height (- (window-height) 2)))
+
+(defun my-popper-restore-height ()
+  "Make popups 60% of the frame height again."
+  (interactive)
+  (setq popper-window-height 0.6))
+
 (use-package popper
   :ensure t
   :demand t
@@ -35,24 +47,17 @@
   (popper-mode +1)
   (popper-echo-mode +1)
   :config
-  (defun my-popper-maximum-height() (interactive) (setq popper-window-height (- (window-height) 2)))
-  (defun my-popper-restore-height() (interactive) (setq popper-window-height 0.6))
   (my-popper-restore-height))
 
 
-
-
-
-
-
-(defvar popper-saved-enhanced-config nil
+(defvar my-popper-saved-enhanced-config nil
   "保存 popper 打开前的增强窗口配置。")
 
-(cl-defstruct popper-window-state
+(cl-defstruct my-popper-window-state
   config
   window-details)
 
-(defun popper-collect-window-details ()
+(defun my-popper-collect-window-details ()
   "收集当前所有窗口的详细信息。"
   (mapcar (lambda (window)
             (list :window window
@@ -62,22 +67,22 @@
                   :window-end (window-end window)))
           (window-list)))
 
-(defun popper-save-enhanced-layout (&rest _args)
+(defun my-popper-save-enhanced-layout (&rest _args)
   "保存增强的窗口布局（包括光标和滚动位置）。"
-  (setq popper-saved-enhanced-config
-        (make-popper-window-state
+  (setq my-popper-saved-enhanced-config
+        (make-my-popper-window-state
          :config (current-window-configuration)
-         :window-details (popper-collect-window-details))))
+         :window-details (my-popper-collect-window-details))))
 
-(defun popper-restore-enhanced-layout (&rest _args)
+(defun my-popper-restore-enhanced-layout (&rest _args)
   "恢复增强的窗口布局。"
-  (when popper-saved-enhanced-config
+  (when my-popper-saved-enhanced-config
     ;; 先恢复窗口配置
     (set-window-configuration
-     (popper-window-state-config popper-saved-enhanced-config))
+     (my-popper-window-state-config my-popper-saved-enhanced-config))
 
     ;; 然后恢复详细位置信息
-    (dolist (detail (popper-window-state-window-details popper-saved-enhanced-config))
+    (dolist (detail (my-popper-window-state-window-details my-popper-saved-enhanced-config))
       (let ((window (plist-get detail :window))
             (buffer (plist-get detail :buffer)))
         (when (and (window-live-p window)
@@ -86,14 +91,13 @@
           (set-window-start window (plist-get detail :window-start) t)
           (set-window-point window (plist-get detail :point)))))
 
-    (setq popper-saved-enhanced-config nil)))
+    (setq my-popper-saved-enhanced-config nil)))
 
 ;; 使用增强版 advice
 ;; 这个是在打开 popper 的时候。我们的 popper 在底部打开
-(advice-add 'popper-select-popup-at-bottom :before #'popper-save-enhanced-layout)
+(advice-add 'popper-select-popup-at-bottom :before #'my-popper-save-enhanced-layout)
 ;; 这是个 popper 在关闭的时候
-(advice-add 'popper-close-latest :after #'popper-restore-enhanced-layout)
-
+(advice-add 'popper-close-latest :after #'my-popper-restore-enhanced-layout)
 
 
 (provide 'init-popper)

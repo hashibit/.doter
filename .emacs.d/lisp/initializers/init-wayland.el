@@ -1,5 +1,10 @@
 ;; -*- lexical-binding: t -*-
+;;; init-wayland.el --- Wayland clipboard configuration
+
 ;; 启用剪贴板共享
+
+;;; Code:
+
 (setq select-enable-clipboard t)
 (setq select-enable-primary t)
 
@@ -28,3 +33,5 @@
   (setq interprogram-paste-function 'wl-paste))
 
 (provide 'init-wayland)
+
+;;; init-wayland.el ends here

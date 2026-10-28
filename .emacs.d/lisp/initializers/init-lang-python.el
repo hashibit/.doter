@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-lang-python.el --- Python language configuration
 
+;;; Code:
+
 (defun my-python-mode-hook()
   "Hook for Python mode configuration."
   ;; Python-specific configuration can be added here

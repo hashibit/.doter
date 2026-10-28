@@ -1,6 +1,10 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-dashboard.el --- Dashboard configuration
 
 ;; use-package with package.el:
+
+;;; Code:
+
 (use-package dashboard
   :ensure t
   :config
@@ -11,3 +15,5 @@
 
 
 (provide 'init-dashboard)
+
+;;; init-dashboard.el ends here
