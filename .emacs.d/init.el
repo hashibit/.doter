@@ -453,7 +453,8 @@
 
 ;;; UI and Navigation Tools
 (require 'init-all-the-icons)
-(require 'init-neotree)
+;; treemacs replaces neotree.
+;; (require 'init-neotree)
 (require 'init-treemacs)
 (require 'init-multi-cursor)
 (require 'init-undo-tree)

@@ -278,8 +278,10 @@
 
   (keymap-set god-local-mode-map "SPC 2" #'treemacs)
   (keymap-set god-local-mode-map "SPC 3" #'side-ibuffer)
-  (keymap-set god-local-mode-map "SPC n" #'my-neotree-toggle)
-  (keymap-set god-local-mode-map "SPC N" #'my-neotree-find)
+  ;; (keymap-set god-local-mode-map "SPC n" #'my-neotree-toggle)
+  ;; (keymap-set god-local-mode-map "SPC N" #'my-neotree-find)
+  (keymap-set god-local-mode-map "SPC n" #'treemacs)
+  (keymap-set god-local-mode-map "SPC N" #'treemacs-find-file)
   (keymap-set god-local-mode-map "SPC s" #'counsel-imenu)
   (keymap-set god-local-mode-map "SPC S" #'my-occur)
   (keymap-set god-local-mode-map "SPC i" #'imenu-list-smart-toggle)
