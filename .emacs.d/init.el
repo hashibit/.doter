@@ -350,7 +350,7 @@
 ;; Call functions from my-utils after loading
 
 ;;; Benchmark
-(require 'init-benchmark)
+;; (require 'init-benchmark)
 
 ;;; Core Initializers (immediate loading required)
 (require 'init-god)

@@ -11,6 +11,11 @@
 ;; Packages are activated explicitly by `package-initialize' in init.el.
 (setq package-enable-at-startup nil)
 
+;; Load a .el file when it is newer than its .elc.
+;; elpa/ is in git and *.elc is not, so a pulled package update
+;; must not run with a stale .elc.
+(setq load-prefer-newer t)
+
 ;; Keep native-comp warnings out of the way.
 (setq native-comp-async-report-warnings-errors 'silent)
 
