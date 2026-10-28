@@ -1,6 +1,15 @@
-;;; -*- lexical-binding: t -*-
-;; Taken from https://andreyor.st/posts/2020-05-10-making-emacs-tabs-look-like-in-atom/
-;; https://github.com/andreyorst/dotfiles/blob/740d346088ce5a51804724659a895d13ed574f81/.config/emacs/README.org#tabline
+;; -*- lexical-binding: t -*-
+;;; init-tabline.el --- Atom-like tab-line
+
+;;; Commentary:
+;;
+;;  Tab-line that looks like Atom's tabs. Not loaded by init.el now.
+;;
+;;  Taken from https://andreyor.st/posts/2020-05-10-making-emacs-tabs-look-like-in-atom/
+;;  https://github.com/andreyorst/dotfiles/blob/740d346088ce5a51804724659a895d13ed574f81/.config/emacs/README.org#tabline
+;;
+
+;;; Code:
 
 (require 'seq)
 
@@ -20,7 +29,11 @@
   :type 'integer
   :group 'tab-line)
 
-(defun my/set-tab-theme ()
+
+;;; Faces
+
+(defun my-set-tab-theme ()
+  "Set the tab-line faces."
   (let ((bg (face-attribute 'mode-line :background))
         (fg (face-attribute 'default :foreground))
         (_hg (face-attribute 'default :background))
@@ -35,8 +48,7 @@
                         :family family
                         :height 0.8
                         :inherit 'default
-                        :box nil ;; (list :line-width -1 :color base)
-                        )
+                        :box nil) ;; (list :line-width -1 :color base)
     (set-face-attribute 'tab-line-tab-modified nil
                         :foreground modified-fg)
     (set-face-attribute 'tab-line-tab nil
@@ -64,7 +76,10 @@
                         :inherit nil
                         :box (list :line-width box-width :color hi-bg))))
 
-(defun my/tab-line-name-buffer (buffer &rest _buffers)
+
+;;; Tab names, closing and grouping
+
+(defun my-tab-line-name-buffer (buffer &rest _buffers)
   "Create name for tab with padding and truncation.
 If buffer name is shorter than `my-tab-line-tab-max-width' it gets
 centered with spaces, otherwise it is truncated, to preserve
@@ -93,7 +108,7 @@ truncates text if needed.  Minimal width can be set with
                (buffer-name (concat padding buffer-name)))
           (concat buffer-name (make-string (- tab-width (length buffer-name)) ?\s)))))))
 
-(defun my/tab-line-close-tab (tab)
+(defun my-tab-line-close-tab (tab)
   "Close TAB, used as `tab-line-close-tab-function'.
 If tab is presented in another window, close the tab by using
 `bury-buffer` function.  If tab is unique to all existing
@@ -120,6 +135,21 @@ function."
            (unless (cdr tab-list)
              (ignore-errors (delete-window window)))))))
 
+;; sort tabs
+(defun my-tab-line-editor-group (buf)
+  "Put normal editor buffers in one tab group. Return nil for others."
+  (let ((bufname (buffer-name buf)))
+    (if (my-god-this-is-normal-editor-buffer bufname) "> " nil)))
+
+(defun my-tab-line-buffer-less-p (buf1 buf2)
+  "Sort tabs: return non-nil if BUF1's name sorts before BUF2's."
+  (let ((name1 (buffer-name buf1))
+        (name2 (buffer-name buf2)))
+    (string< name1 name2)))
+
+
+;;; Tab-line
+
 (use-package tab-line
   :ensure nil
   :hook (after-init . global-tab-line-mode)
@@ -130,10 +160,10 @@ function."
   ("s-w" . kill-current-buffer)
   :config
   (setq tab-line-close-button-show t
-        tab-line-close-tab-function #'my/tab-line-close-tab
+        tab-line-close-tab-function #'my-tab-line-close-tab
         tab-line-new-button-show nil
         tab-line-separator ""
-        tab-line-tab-name-function #'my/tab-line-name-buffer
+        tab-line-tab-name-function #'my-tab-line-name-buffer
         tab-line-right-button (propertize (if (char-displayable-p ?▶) " ▶ " " > ")
                                           'keymap tab-line-right-map
                                           'mouse-face 'tab-line-highlight
@@ -147,7 +177,7 @@ function."
                                           'mouse-face 'tab-line-close-highlight
                                           'help-echo "Click to close tab"))
 
-  (my/set-tab-theme)
+  (my-set-tab-theme)
 
   ;;(dolist (mode '(ediff-mode process-menu-mode term-mode vterm-mode))
   ;;(add-to-list 'tab-line-exclude-modes mode))
@@ -160,22 +190,10 @@ function."
   (dolist (mode '(ediff-mode process-menu-mode))
     (add-to-list 'tab-line-exclude-modes mode))
 
-  (setq tab-line-tabs-buffer-group-function #'my-editor-group)
-  (setq tab-line-tabs-buffer-group-sort-function #'buffer-comp-less-p)
+  (setq tab-line-tabs-buffer-group-function #'my-tab-line-editor-group)
+  (setq tab-line-tabs-buffer-group-sort-function #'my-tab-line-buffer-less-p)
   (setq tab-line-tabs-function #'tab-line-tabs-buffer-groups))
 
-
-;; sort tabs
-;;
-
-(defun my-editor-group(buf)
-  (let ((bufname (buffer-name buf)))
-    (if (my-god-this-is-normal-editor-buffer bufname) "> " nil)))
-
-(defun buffer-comp-less-p(buf1 buf2)
-  (let ((name1 (buffer-name buf1))
-        (name2 (buffer-name buf2)))
-    (string< name1 name2)))
 
 ;; (setq my/current-tab-list (list (current-buffer)))
 ;; (setq tab-line-tabs-function 'tab-line-tabs-mode-buffers)
@@ -204,3 +222,5 @@ function."
 ;; (global-tab-line-mode t)
 
 (provide 'init-tabline)
+
+;;; init-tabline.el ends here

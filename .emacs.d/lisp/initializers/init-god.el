@@ -1,6 +1,24 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-god.el --- God mode configuration
 
+;;; Commentary:
+;;
+;;  God mode, buffer classes and the per-buffer mode switching.
+;;
+;;  Buffer classes:
+;;    normal     god-mode and `my-keys-minor-mode' on.
+;;    special    god-mode off, `my-special-buffer-keys-minor-mode' on.
+;;    legendary  god-mode and both key modes off.
+;;
+;;  Layout:
+;;    1. Settings.  2. Buffer class lists.  3. Classification.
+;;    4. Window margins and visuals.  5. Mode switching.
+;;    6. Insert-mode commands.  7. Isearch.  8. Tab bar and cursor.
+;;    9. Hooks.
+;;
+
+;;; Code:
+
 (require 'god-mode)
 
 (defvar darker-window-bg-color)
@@ -9,9 +27,21 @@
 (declare-function mwim-end-of-code-or-line "mwim")
 (declare-function mwim-beginning-of-code-or-line "mwim")
 
+
+;;; Settings
+
 (setq god-exempt-major-modes nil
       god-exempt-predicates nil
       god-mode-alist '((nil . "C-") ("r" . "M-") ("R" . "C-M-")))
+
+;; donot warnning, just wrap search
+(setq isearch-wrap-pause 'no-ding
+      isearch-repeat-on-direction-change t)
+
+(blink-cursor-mode -1)
+
+
+;;; Buffer class lists
 
 ;; special-buffers are not affected by god-mode bindings, but affected by my-special-buffer-keys-minor-mode-map
 (defvar special-buffer-modes
@@ -52,7 +82,6 @@
                          "*fzf*"
                          "*Ilist"
                          "*NeoTree*"))
-
 
 ;; legendary-buffers are not affected by god-mode AND my-special-buffer-keys-minor-mode-map
 (defvar legendary-buffers (list
@@ -96,23 +125,39 @@
                          "cnfonts-ui-mode"
                          "deadgrep-edit-mode"))
 
+(defvar should-not-display-dark-background-modes (list
+                                                  "dired-mode"
+                                                  "eat-mode"
+                                                  "eldoc-box-mode"
+                                                  "xwidget-webkit-mode"
+                                                  "minibuffer-mode"
+                                                  "dashboard-mode"))
 
-(defun my-change-buffer-name-from-special-to-legendary(buffer-name)
+(defvar should-not-display-no-paddings-modes (list
+                                              "xwidget-webkit-mode"))
+
+(defun my-change-buffer-name-from-special-to-legendary (buffer-name)
+  "Move BUFFER-NAME from `special-buffers' to `legendary-buffers'."
   (setq special-buffers (remove buffer-name special-buffers))
   (add-to-list 'legendary-buffers buffer-name))
 
-(defun my-change-buffer-name-from-legendary-to-special(buffer-name)
+(defun my-change-buffer-name-from-legendary-to-special (buffer-name)
+  "Move BUFFER-NAME from `legendary-buffers' to `special-buffers'."
   (setq legendary-buffers (remove buffer-name legendary-buffers))
   (add-to-list 'special-buffers buffer-name))
 
-
-(defun my-add-to-legendary-buffers(buffer-names)
+(defun my-add-to-legendary-buffers (buffer-names)
+  "Add BUFFER-NAMES (a string or a list) to `legendary-buffers'."
   (dolist (element (if (listp buffer-names) buffer-names (list buffer-names)))
     (add-to-list 'legendary-buffers element)))
 
-(defun my-remove-from-legendary-buffers(buffer-names)
+(defun my-remove-from-legendary-buffers (buffer-names)
+  "Remove BUFFER-NAMES (a string or a list) from `legendary-buffers'."
   (dolist (element (if (listp buffer-names) buffer-names (list buffer-names)))
     (setq legendary-buffers (remove element legendary-buffers))))
+
+
+;;; Classification
 
 (defun my-god--buffer-mode-name (bufname)
   "Return the major mode name of buffer BUFNAME as a string."
@@ -142,39 +187,9 @@
   "Check if hi-line mode should be enabled."
   (not (bound-and-true-p smerge-mode)))
 
-(defun my-god-should-enable-line-number-mode()
+(defun my-god-should-enable-line-number-mode ()
   "Check if line number mode should be enabled."
   (not (derived-mode-p 'vterm-mode)))
-
-(defvar should-not-display-dark-background-modes (list
-                                                  "dired-mode"
-                                                  "eat-mode"
-                                                  "eldoc-box-mode"
-                                                  "xwidget-webkit-mode"
-                                                  "minibuffer-mode"
-                                                  "dashboard-mode"))
-
-(defvar should-not-display-no-paddings-modes (list
-                                              "xwidget-webkit-mode"))
-(defvar-local my-window-margins nil
-  "Buffer-local (LEFT . RIGHT) margins overriding `my/set-margins-all-windows'.")
-
-(defun my/set-margins-all-windows ()
-  "给所有窗口设置边距，排除指定的 major mode 以及设置了 `my-window-margins' 的 buffer"
-  (dolist (window (window-list))
-    (with-current-buffer (window-buffer window)
-      (let ((margins (cond (my-window-margins)
-                           ((member (symbol-name major-mode) should-not-display-no-paddings-modes)
-                            '(0 . 0))   ; 排除的模式设置为0
-                           (t '(1 . 1)))) ; 其他模式设置边距
-            (current (window-margins window)))
-        (unless (and (eql (or (car current) 0) (car margins))
-                     (eql (or (cdr current) 0) (cdr margins)))
-          (set-window-margins window (car margins) (cdr margins)))))))
-
-;; 在窗口配置改变时自动设置边距
-(add-hook 'window-configuration-change-hook #'my/set-margins-all-windows)
-
 
 (defun my-god-this-is-dark-background-buffer (bufname)
   "Check if BUFNAME should have dark background."
@@ -200,8 +215,24 @@
   (my-god--prefix-match-p should-not-display-no-paddings-modes
                           (my-god--buffer-mode-name bufname)))
 
-(defvar-local my-god-mode-is-active-flag nil
-  "Non-nil if god-mode was explicitly enabled in this buffer.")
+
+;;; Window margins and visuals
+
+(defvar-local my-window-margins nil
+  "Buffer-local (LEFT . RIGHT) margins overriding `my-set-margins-all-windows'.")
+
+(defun my-set-margins-all-windows ()
+  "给所有窗口设置边距，排除指定的 major mode 以及设置了 `my-window-margins' 的 buffer"
+  (dolist (window (window-list))
+    (with-current-buffer (window-buffer window)
+      (let ((margins (cond (my-window-margins)
+                           ((member (symbol-name major-mode) should-not-display-no-paddings-modes)
+                            '(0 . 0))   ; 排除的模式设置为0
+                           (t '(1 . 1)))) ; 其他模式设置边距
+            (current (window-margins window)))
+        (unless (and (eql (or (car current) 0) (car margins))
+                     (eql (or (cdr current) 0) (cdr margins)))
+          (set-window-margins window (car margins) (cdr margins)))))))
 
 (defun refresh-current-mode-visuals ()
   "Apply visual settings for the current buffer (background, margins)."
@@ -217,7 +248,13 @@
   (when (and (my-god-this-buffer-window-no-padding (buffer-name))
              (not my-window-margins))
     (setq my-window-margins '(0 . 0))
-    (my/set-margins-all-windows)))
+    (my-set-margins-all-windows)))
+
+
+;;; Mode switching
+
+(defvar-local my-god-mode-is-active-flag nil
+  "Non-nil if god-mode was explicitly enabled in this buffer.")
 
 (defun my-god--setup-legendary-or-special-buffer ()
   "Set modes for legendary/special buffers; return nil for normal buffers."
@@ -265,8 +302,6 @@ When switching to an existing buffer, respect its prior god-mode state."
     (setq my-god-mode-is-active-flag t)
     (my-special-buffer-keys-minor-mode 0))))
 
-(add-hook 'find-file-hook #'my-init-god-mode-for-new-buffer)
-
 (defun my-quit-god-mode ()
   "Quit god mode."
   (interactive)
@@ -288,15 +323,18 @@ When switching to an existing buffer, respect its prior god-mode state."
   (cl-assert (eq curr (current-buffer))) ;; Always t
   (refresh-current-mode))
 
-(add-hook 'switch-buffer-functions #'my-god-mode-with-switch-any-buffer)
+
+;;; Insert-mode commands
 
 (defun my-god-below-newline-and-insert-mode ()
+  "Open a new line below and quit god mode."
   (interactive)
   (end-of-line)
   (newline-and-indent)
   (my-quit-god-mode))
 
 (defun my-god-above-newline-and-insert-mode ()
+  "Open a new line above and quit god mode."
   (interactive)
   (beginning-of-line)
   (newline)
@@ -305,31 +343,82 @@ When switching to an existing buffer, respect its prior god-mode state."
   (my-quit-god-mode))
 
 (defun my-god-mwin-end-and-insert-mode ()
+  "Go to the end of code or line and quit god mode."
   (interactive)
   (mwim-end-of-code-or-line)
   (my-quit-god-mode))
 
 (defun my-god-mwin-beginning-and-insert-mode ()
+  "Go to the beginning of code or line and quit god mode."
   (interactive)
   (mwim-beginning-of-code-or-line)
   (my-quit-god-mode))
 
 (defun my-god-char-forward-and-insert-mode ()
+  "Move forward one char and quit god mode."
   (interactive)
   (forward-char)
   (my-quit-god-mode))
 
-;; donot warnning, just wrap search
-(setq isearch-wrap-pause 'no-ding
-      isearch-repeat-on-direction-change t)
+
+;;; Isearch
 
 (defun isearch-repeat-forward+ ()
+  "Repeat isearch forward."
   (interactive)
   (isearch-repeat-forward))
 
 (defun isearch-repeat-backward+ ()
+  "Repeat isearch backward."
   (interactive)
   (isearch-repeat-backward))
+
+(defun my-god-isearch-exit-next-line ()
+  "Exit isearch and move to the next line."
+  (interactive)
+  (isearch-exit)
+  (line-move 1))
+
+(defun my-god-isearch-exit-previous-line ()
+  "Exit isearch and move to the previous line."
+  (interactive)
+  (isearch-exit)
+  (line-move -1))
+
+(defun my-god-isearch-exit-forward-char ()
+  "Exit isearch and move forward one char on the line."
+  (interactive)
+  (isearch-exit)
+  (my-forward-char-no-cross-line))
+
+(defun my-search-selection ()
+  "search for selected text"
+  (interactive)
+  (if (region-active-p)
+      (let ((isearch-forward-thing-at-point '(region))
+            (case-fold-search 'default))
+        (message "search the marked region")
+        (isearch-forward-thing-at-point)
+        ;; activate god-mode-isearch
+        (god-mode-isearch-activate)
+        ;; 跳到下一个匹配（跳过选区本身）
+        (isearch-repeat-forward))
+    (isearch-forward-symbol-at-point)
+    (god-mode-isearch-activate)))
+
+(defun my-isearch-forward ()
+  "Start isearch forward in god-mode isearch."
+  (interactive)
+  (isearch-mode t nil nil nil)
+  (god-mode-isearch-activate)
+  (isearch-repeat-forward+))
+
+(defun my-isearch-backward ()
+  "Start isearch backward in god-mode isearch."
+  (interactive)
+  (isearch-mode nil nil nil nil)
+  (god-mode-isearch-activate)
+  (isearch-repeat-backward+))
 
 (require 'god-mode-isearch)
 (keymap-set isearch-mode-map "TAB" #'god-mode-isearch-activate)
@@ -344,20 +433,6 @@ When switching to an existing buffer, respect its prior god-mode state."
 (keymap-set isearch-mode-map "C-s" #'isearch-repeat-forward+)
 (keymap-set isearch-mode-map "C-r" #'isearch-repeat-backward+)
 
-(defun my-god-isearch-exit-next-line ()
-  (interactive)
-  (isearch-exit)
-  (line-move 1))
-
-(defun my-god-isearch-exit-previous-line ()
-  (interactive)
-  (isearch-exit)
-  (line-move -1))
-
-(defun my-god-isearch-exit-forward-char ()
-  (interactive)
-  (isearch-exit)
-  (my-forward-char-no-cross-line))
 ;; like vim
 ;; reset all other keys. then add our specific keys.
 ;; (char-table range t 覆盖所有字符；"<t>" 默认绑定还会吞掉非字符事件，不等价)
@@ -378,35 +453,8 @@ When switching to an existing buffer, respect its prior god-mode state."
 (keymap-set god-mode-isearch-map "r" #'isearch-repeat-backward+)
 (keymap-set god-mode-isearch-map "RET" #'isearch-exit)
 
-(defun my-search-selection ()
-  "search for selected text"
-  (interactive)
-  (if (region-active-p)
-      (let ((isearch-forward-thing-at-point '(region))
-            (case-fold-search 'default))
-        (message "search the marked region")
-        (isearch-forward-thing-at-point)
-        ;; activate god-mode-isearch
-        (god-mode-isearch-activate)
-        ;; 跳到下一个匹配（跳过选区本身）
-        (isearch-repeat-forward))
-    (progn
-      (isearch-forward-symbol-at-point)
-      (god-mode-isearch-activate))))
 
-(defun my-isearch-forward ()
-  (interactive)
-  (isearch-mode t nil nil nil)
-  (god-mode-isearch-activate)
-  (isearch-repeat-forward+))
-
-(defun my-isearch-backward ()
-  (interactive)
-  (isearch-mode nil nil nil nil)
-  (god-mode-isearch-activate)
-  (isearch-repeat-backward+))
-
-(blink-cursor-mode -1)
+;;; Tab bar and cursor
 
 (defvar my-god--tab-bar-tab-state nil
   "Last state (`god' or `insert') applied to the `tab-bar-tab' face.")
@@ -421,76 +469,85 @@ When switching to an existing buffer, respect its prior god-mode state."
                         :box `(:line-width (1 . 2) :color ,color :style flat-button))))
 
 (defun my-god-mode-update-cursor-type ()
+  "Update cursor, hl-line, line numbers and tab color for the god-mode state."
   (setq cursor-type 'box)
   (set-cursor-color "red")
   (sp--maybe-init)
   (if (bound-and-true-p god-local-mode)
       (progn
-        ;; (set-face-attribute 'hl-line nil :background (face-background 'default))
         (set-face-background 'hl-line hl-line-bg-color)
-        ;; reset
         (when (my-god-this-is-normal-editor-buffer (buffer-name))
           (if (my-god-should-enable-hi-line-mode) (hl-line-mode 1) (hl-line-mode 0))
           (when (my-god-should-enable-line-number-mode)
-            (display-line-numbers-mode 1)
-            ;; (set-face-foreground 'line-number-current-line "gray33")
-           ;;;;  (set-face-attribute 'line-number-current-line nil
-           ;;;;    :foreground (or (face-foreground 'line-number) 'unspecified)
-           ;;;;    :background (or (face-background 'line-number) 'unspecified))
-            ))
-        ;; (when (display-graphic-p)
-        ;;  (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
-        ;;  (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
-        ;;  (set-face-attribute 'window-divider-first-pixel nil :foreground "green")
-        ;;  ;; (set-face-attribute 'mode-line nil          :background "#7AA2F7" :foreground "#262831" :overline "#374250"   :box nil) ;; draw a line above mode-line
-        ;;  ;; (set-face-attribute 'mode-line-inactive nil :background "#262831" :foreground "#7AA2F7" :overline "#374250"  :box nil)
-        ;;  ;; (set-face-attribute 'mode-line-buffer-id nil :distant-foreground "#262831" :foreground "#7AA2F7")
-        ;;)
-        ;; (unless (display-graphic-p)
-        ;;   (set-face-attribute 'mode-line          nil :foreground "black" :background "#00AFFF")
-        ;;   (set-face-attribute 'mode-line-inactive nil :foreground "#00AFFF" :background "black")
-        ;;   )
-        ;; (setq cursor-type 'bar)
-        ;; (set-cursor-color "red")
-        ;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "gray" ))
-        ;; (set-face-attribute 'mode-line nil :background "#38424B")
-        ;; (set-face-foreground 'vertical-border "#353535")
-        (my-god--set-tab-bar-tab-face 'god "#199DFF")
+            (display-line-numbers-mode 1)))
+        (my-god--set-tab-bar-tab-face 'god "#199DFF"))
+    (when (my-god-this-is-normal-editor-buffer (buffer-name))
+      (my-god--set-tab-bar-tab-face 'insert "yellow")
+      (when (my-god-should-enable-line-number-mode)
+        (display-line-numbers-mode 1)))))
 
-        ;; (set-face-foreground 'vertical-border "#374250")
-        )
-    (progn
-      ;; (set-face-attribute 'hl-line nil :background (face-background 'default))
-      ;; (set-face-background 'hl-line hl-line-bg-color)
-      (when (my-god-this-is-normal-editor-buffer (buffer-name))
-        ;; (set-face-foreground 'vertical-border "#7fdc59")
+;; Old face experiments, moved out of `my-god-mode-update-cursor-type'.
+;;
+;; God-mode branch:
+;; (set-face-attribute 'hl-line nil :background (face-background 'default))
+;; ;; reset
+;; (set-face-foreground 'line-number-current-line "gray33")
+;;;;  (set-face-attribute 'line-number-current-line nil
+;;;;    :foreground (or (face-foreground 'line-number) 'unspecified)
+;;;;    :background (or (face-background 'line-number) 'unspecified))
+;; (when (display-graphic-p)
+;;  (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
+;;  (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
+;;  (set-face-attribute 'window-divider-first-pixel nil :foreground "green")
+;;  ;; (set-face-attribute 'mode-line nil          :background "#7AA2F7" :foreground "#262831" :overline "#374250"   :box nil) ;; draw a line above mode-line
+;;  ;; (set-face-attribute 'mode-line-inactive nil :background "#262831" :foreground "#7AA2F7" :overline "#374250"  :box nil)
+;;  ;; (set-face-attribute 'mode-line-buffer-id nil :distant-foreground "#262831" :foreground "#7AA2F7")
+;;)
+;; (unless (display-graphic-p)
+;;   (set-face-attribute 'mode-line          nil :foreground "black" :background "#00AFFF")
+;;   (set-face-attribute 'mode-line-inactive nil :foreground "#00AFFF" :background "black")
+;;   )
+;; (setq cursor-type 'bar)
+;; (set-cursor-color "red")
+;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "gray" ))
+;; (set-face-attribute 'mode-line nil :background "#38424B")
+;; (set-face-foreground 'vertical-border "#353535")
+;; (set-face-foreground 'vertical-border "#374250")
+;;
+;; Insert branch:
+;; (set-face-attribute 'hl-line nil :background (face-background 'default))
+;; (set-face-background 'hl-line hl-line-bg-color)
+;; (set-face-foreground 'vertical-border "#7fdc59")
+;; (set-face-foreground 'line-number-current-line "#7fdc59")
+;;;;; (set-face-attribute 'line-number-current-line nil :foreground "black" :background "#7fdc59")
+;; (when (display-graphic-p)
+;;   (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
+;;   (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
+;;   (set-face-attribute 'window-divider-first-pixel nil :foreground "green")
+;;   ;; (set-face-attribute 'mode-line nil          :background "#7fdc59" :foreground "black" :overline "green"   :box nil) ;; draw a line above mode-line
+;;   ;; (set-face-attribute 'mode-line-inactive nil :background "#262831" :foreground "#7AA2F7" :overline "#374250"  :box nil)
+;;   ;; (set-face-attribute 'mode-line-buffer-id nil :distant-foreground "#7AA2F7" :foreground "black")
+;;   )
+;; (unless (display-graphic-p)
+;;   (set-face-attribute 'mode-line          nil :foreground "black" :background "cyan")
+;;   (set-face-attribute 'mode-line-inactive nil :foreground "#00AFFF" :background "black")
+;;   )
+;; (setq cursor-type 'bar)
+;; (set-cursor-color "red")
+;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "green" ))
+;;(set-face-attribute 'mode-line nil :background "#38424B")
+;; (set-face-foreground 'vertical-border window-divider-color)
 
-        (my-god--set-tab-bar-tab-face 'insert "yellow")
-        (when (my-god-should-enable-line-number-mode)
-          (display-line-numbers-mode 1)
-          ;; (set-face-foreground 'line-number-current-line "#7fdc59")
-          ;;;;; (set-face-attribute 'line-number-current-line nil :foreground "black" :background "#7fdc59")
-          ))
-      ;; (when (display-graphic-p)
-      ;;   (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
-      ;;   (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
-      ;;   (set-face-attribute 'window-divider-first-pixel nil :foreground "green")
-      ;;   ;; (set-face-attribute 'mode-line nil          :background "#7fdc59" :foreground "black" :overline "green"   :box nil) ;; draw a line above mode-line
-      ;;   ;; (set-face-attribute 'mode-line-inactive nil :background "#262831" :foreground "#7AA2F7" :overline "#374250"  :box nil)
-      ;;   ;; (set-face-attribute 'mode-line-buffer-id nil :distant-foreground "#7AA2F7" :foreground "black")
-      ;;   )
-      ;; (unless (display-graphic-p)
-      ;;   (set-face-attribute 'mode-line          nil :foreground "black" :background "cyan")
-      ;;   (set-face-attribute 'mode-line-inactive nil :foreground "#00AFFF" :background "black")
-      ;;   )
-      ;; (setq cursor-type 'bar)
-      ;; (set-cursor-color "red")
-      ;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "green" ))
-      ;;(set-face-attribute 'mode-line nil :background "#38424B")
-      ;; (set-face-foreground 'vertical-border window-divider-color)
-      )))
 
+;;; Hooks
+
+;; 在窗口配置改变时自动设置边距
+(add-hook 'window-configuration-change-hook #'my-set-margins-all-windows)
+(add-hook 'find-file-hook #'my-init-god-mode-for-new-buffer)
+(add-hook 'switch-buffer-functions #'my-god-mode-with-switch-any-buffer)
 (add-hook 'god-mode-enabled-hook #'my-god-mode-update-cursor-type)
 (add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor-type)
 
 (provide 'init-god)
+
+;;; init-god.el ends here

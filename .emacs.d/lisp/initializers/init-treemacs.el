@@ -1,4 +1,18 @@
-;;; -*- lexical-binding: t -*-
+;; -*- lexical-binding: t -*-
+;;; init-treemacs.el --- Treemacs file tree configuration
+
+;;; Commentary:
+;;
+;;  Treemacs: commands, look, and one tree per tab-bar tab.
+;;
+;;  Layout:
+;;    1. Width commands.  2. File commands.  3. Mode hook functions.
+;;    4. Faces.  5. Override and ignore predicate.
+;;    6. `use-package treemacs'.  7. Tab-bar scope.
+;;
+
+;;; Code:
+
 (require 'fringe)
 (eval-when-compile (require 'dash))
 
@@ -30,39 +44,52 @@
 (declare-function projectile-acquire-root "projectile")
 (declare-function projectile-find-file-in-directory "projectile")
 
-(defun my-add-padding-for-treemacs ()
-  ;; treemacs 窗口不要边距（见 init-god 的 my/set-margins-all-windows）
-  (setq-local my-window-margins '(0 . 0))
-  (when-let* ((window (treemacs-get-local-window)))
-    (set-window-margins window 0 0)))
+;; 例如 12pt = 120
+(defvar my-font-height (if (my-system-type-is-darwin) 130 110))
 
-;; treemacs 自己把 default/fringe remap 到 treemacs-window-background-face
-(defun dim-treemacs-window-background ()
-  (set-face-attribute 'treemacs-window-background-face nil
-                      :background darker-window-bg-color))
+
+;;; Width commands
 
 (defun my-reset-treemacs-width ()
+  "Reset the treemacs window width to 35."
   (interactive)
   (setq-default treemacs-width 35)
   (treemacs-set-width t))
 
 (defun my-decrease-treemacs-width ()
+  "Make the treemacs window 25 columns wide."
   (interactive)
   (let ((treemacs-width 25))
     (treemacs-set-width t)))
 
 (defun my-increase-treemacs-width ()
+  "Make the treemacs window a third of the frame wide."
   (interactive)
   (let ((treemacs-width (/ (frame-width) 3)))
     (treemacs-set-width t)))
 
-(defun my-treemacs-mark-or-unmark-path-at-point()
+
+;;; File commands
+
+(defun my-treemacs-add-and-display-current-project ()
+  "Show the current project in treemacs and select the current file."
+  (interactive)
+  (with-selected-window (get-buffer-window (current-buffer))
+    (treemacs-add-and-display-current-project))
+  (treemacs-find-file)
+  (treemacs-select-window)
+  (when (display-graphic-p)
+    (setq-local cursor-type 'box)))
+
+(defun my-treemacs-mark-or-unmark-path-at-point ()
+  "Mark or unmark the path at point, then move down one line."
   (interactive)
   (treemacs-mark-or-unmark-path-at-point)
   (line-move 1))
 
 ;; 在 treemacs 之外最近使用的窗口打开文件
-(defun my-projectile-find-file-in-treemacs()
+(defun my-projectile-find-file-in-treemacs ()
+  "Find a project file and open it in the most recent other window."
   (interactive)
   (let ((root (projectile-acquire-root))
         (display-buffer-overriding-action
@@ -72,6 +99,7 @@
     (projectile-find-file-in-directory root)))
 
 (defun my-treemacs-duplicate-current-file ()
+  "Copy the file or directory at point next to itself."
   (interactive)
   (let* ((source (treemacs--prop-at-point :path))
          (destination (treemacs--parent-dir source))
@@ -87,7 +115,8 @@
     (funcall copy-fn source target)
     (treemacs-refresh)))
 
-(defun my-treemacs-delete-marked-or-current-file-without-confirm()
+(defun my-treemacs-delete-marked-or-current-file-without-confirm ()
+  "Delete the marked paths, or the path at point, without asking."
   (interactive)
   (cl-letf (((symbol-function 'yes-or-no-p) #'always))
     (if (bound-and-true-p treemacs--marked-paths)
@@ -96,7 +125,8 @@
   (treemacs-refresh))
 
 ;; 直接复制到当前目录（相当于在目录提示里直接回车）
-(defun my-treemacs-copy-marked-files-without-confirm()
+(defun my-treemacs-copy-marked-files-without-confirm ()
+  "Copy the marked files into the current directory without asking."
   (interactive)
   (if (null treemacs--marked-paths)
       (message "no marked files.")
@@ -106,23 +136,52 @@
     (treemacs-refresh)))
 
 
-(defun display-treemacs-widow-in-ace-window-selection ()
+;;; Mode hook functions
+
+(defun my-treemacs-no-margins ()
+  "Remove the window margins of the treemacs window."
+  ;; treemacs 窗口不要边距（见 init-god 的 my-set-margins-all-windows）
+  (setq-local my-window-margins '(0 . 0))
+  (when-let* ((window (treemacs-get-local-window)))
+    (set-window-margins window 0 0)))
+
+;; treemacs 自己把 default/fringe remap 到 treemacs-window-background-face
+(defun my-treemacs-dim-window-background ()
+  "Give the treemacs window the darker background."
+  (set-face-attribute 'treemacs-window-background-face nil
+                      :background darker-window-bg-color))
+
+(defun my-treemacs-show-in-ace-window ()
+  "Let ace-window select the treemacs window too."
   (with-eval-after-load 'ace-window
     (setq aw-ignored-buffers
           (delete 'treemacs-mode aw-ignored-buffers))))
 
-;;;; custom highlight for treemacs current line
-(defface my-treemacs-custom-line-highlight
-  '((t (:background "#292929" :weight normal)))
-  "Custom hl-line face for treemacs."
-  :group 'treemacs-faces)
-(defun change-treemacs-hl-line-mode ()
+(defun my-treemacs-set-hl-line-face ()
+  "Use `my-treemacs-custom-line-highlight' for the current line."
   (setq-local hl-line-face 'my-treemacs-custom-line-highlight)
   (when (overlayp hl-line-overlay)
     (overlay-put hl-line-overlay 'face hl-line-face))
   ;; (overlay-put hl-line-overlay 'pointer 'arrow)
   )
 
+
+;;; Faces
+
+;;;; custom highlight for treemacs current line
+(defface my-treemacs-custom-line-highlight
+  '((t (:background "#292929" :weight normal)))
+  "Custom hl-line face for treemacs."
+  :group 'treemacs-faces)
+
+;; 鼠标放上去的效果，加了下划线和 hl line 的背景色
+(defface my-treemacs-button-underline-only
+  '((t :underline t :box nil :inherit my-treemacs-custom-line-highlight))
+  "Face for hovered treemacs buttons: underline plus the custom line highlight."
+  :group 'treemacs-faces)
+
+
+;;; Override and ignore predicate
 
 ;; CAUTION: overrides private api `treemacs--find-repeated-file-name'
 ;; (copied from treemacs-core-utils.el) because i want _Copy1 instead of (Copy 1)
@@ -142,10 +201,8 @@ exists it returns /file/name_Copy2.ext etc."
       (setf new-path (treemacs-join-path dir (concat filename-no-ext (format template n) ext))))
     new-path))
 
-;;
 ;; 隐藏 python 的一些忽略文件
-;;
-(defun my/treemacs-ignore-pycache-and-egg-info (file-name _abs-path)
+(defun my-treemacs-ignore-pycache-and-egg-info (file-name _abs-path)
   "Ignore __pycache__ directories and *.egg-info directories."
   (or
    ;; 忽略名为 __pycache__ 的目录
@@ -157,11 +214,7 @@ exists it returns /file/name_Copy2.ext etc."
    ))
 
 
-;; 鼠标放上去的效果，加了下划线和 hl line 的背景色
-(defface my-treemacs-button-underline-only
-  '((t :underline t :box nil :inherit my-treemacs-custom-line-highlight))
-  "Face for hovered treemacs buttons: underline plus the custom line highlight."
-  :group 'treemacs-faces)
+;;; Treemacs
 
 (use-package treemacs
   :config
@@ -180,27 +233,68 @@ exists it returns /file/name_Copy2.ext etc."
   (setq treemacs-width-is-initially-locked nil)
   (treemacs-follow-mode 0)
 
-
   ;; (defun add-pointer-to-str(str) (propertize str 'pointer 'arrow))
   ;; (defun add-pointer-to-str-for-file-node(str) (propertize str 'pointer 'arrow))
   ;; (setq treemacs-file-name-transformer #'add-pointer-to-str-for-file-node)
   ;; (setq treemacs-directory-name-transformer #'add-pointer-to-str)
-
 
   (keymap-global-set "C-c C-p" treemacs-project-map)
   (keymap-global-set "C-c C-w" treemacs-workspace-map)
   ;; (treemacs-resize-icons 26)
 
   (advice-add 'treemacs--find-repeated-file-name :override #'my-treemacs--find-repeated-file-name)
-  (add-to-list 'treemacs-ignored-file-predicates #'my/treemacs-ignore-pycache-and-egg-info)
+  (add-to-list 'treemacs-ignored-file-predicates #'my-treemacs-ignore-pycache-and-egg-info)
   (put 'treemacs-button 'mouse-face 'my-treemacs-button-underline-only)
 
-  (add-hook 'treemacs-mode-hook #'my-add-padding-for-treemacs)
-  (add-hook 'treemacs-mode-hook #'display-treemacs-widow-in-ace-window-selection)
-  (add-hook 'treemacs-mode-hook #'dim-treemacs-window-background)
-  (add-hook 'treemacs-mode-hook #'change-treemacs-hl-line-mode)
+  (add-hook 'treemacs-mode-hook #'my-treemacs-no-margins)
+  (add-hook 'treemacs-mode-hook #'my-treemacs-show-in-ace-window)
+  (add-hook 'treemacs-mode-hook #'my-treemacs-dim-window-background)
+  (add-hook 'treemacs-mode-hook #'my-treemacs-set-hl-line-face)
   (add-hook 'treemacs-mode-hook #'my-special-buffer-keys-minor-mode)
   ;; (add-hook 'treemacs-mode-hook #'my-set-large-line-height)
+
+  ;; (treemacs-create-theme "simple"
+  ;;   :config
+  ;;   (progn
+  ;;     (treemacs-create-icon :icon (format "%s\t" (all-the-icons-octicon "repo" :height 1.2 :v-adjust -0.1 :face 'font-lock-string-face))
+  ;;                           :extensions (root-closed root-open)
+  ;;                           :fallback 'same-as-icon)
+  ;;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "expand_more" :height 1.2 :v-adjust -0.2 :face 'default)
+  ;;                                         (propertize " " 'display '(space . (:width (0)))))
+  ;;                           :extensions (dir-open)
+  ;;                           :fallback 'same-as-icon)
+  ;;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "chevron_right" :height 1.2 :v-adjust -0.2 :face 'default)
+  ;;                                         (propertize " " 'display '(space . (:width (0)))))
+  ;;                           :extensions (dir-closed)
+  ;;                           :fallback 'same-as-icon)
+  ;;     (treemacs-create-icon :icon (propertize " " 'display '(space . (:width (18))))
+  ;;                           :extensions (fallback)
+  ;;                           :fallback 'same-as-icon)))
+
+  ;; terminal mode use simple theme
+  (if (display-graphic-p)
+      (progn
+        (require 'treemacs-all-the-icons)
+        (treemacs-load-theme "all-the-icons"))
+    (treemacs-load-theme "Default"))
+
+  ;; 只设置 :height，其他属性由 custom-set-faces 提供
+  ;; CFRS face configuration moved to custom-set-faces
+  (dolist (face '(tab-bar
+                  treemacs-directory-collapsed-face
+                  treemacs-directory-face
+                  treemacs-file-face
+                  treemacs-git-added-face
+                  treemacs-git-conflict-face
+                  treemacs-git-ignored-face
+                  treemacs-git-modified-face
+                  treemacs-git-renamed-face
+                  treemacs-git-unmodified-face
+                  treemacs-git-untracked-face
+                  treemacs-root-face
+                  treemacs-tags-face))
+    (set-face-attribute face nil :height 0.9))
+
   :bind
   (:map
    treemacs-mode-map
@@ -224,6 +318,8 @@ exists it returns /file/name_Copy2.ext etc."
    ("<double-mouse-1>" . treemacs-RET-action)))
 
 
+;;; Tab-bar scope
+
 ;; treemacs-tab-bar 用 tab 的 name 做 scope key，但 tab-bar-tab-name-current
 ;; 会让 tab 名随当前 buffer 变化（选中 treemacs 窗口时甚至变成 " *Treemacs-Buffer-..."），
 ;; 导致找不到 scope 对应的 treemacs buffer，报 "Wrong type argument: hash-table-p, nil"。
@@ -242,6 +338,7 @@ exists it returns /file/name_Copy2.ext etc."
   :after (treemacs)
   :ensure t
   :config
+  ;; Overrides: use the stable tab id as the scope key.
   (cl-defmethod treemacs-scope->current-scope ((_ (subclass treemacs-tab-bar-scope)))
     (if tab-bar-mode (my-treemacs-tab-id) 'none))
   (defun treemacs-tab-bar--on-tab-close (tab &rest _)
@@ -249,71 +346,6 @@ exists it returns /file/name_Copy2.ext etc."
   (treemacs-set-scope-type 'Tabs))
 
 
-
-(with-eval-after-load 'treemacs
-
-                                        ; (treemacs-create-theme "simple"
-                                        ;   :config
-                                        ;   (progn
-                                        ;     (treemacs-create-icon :icon (format "%s\t" (all-the-icons-octicon "repo" :height 1.2 :v-adjust -0.1 :face 'font-lock-string-face))
-                                        ;                           :extensions (root-closed root-open)
-                                        ;                           :fallback 'same-as-icon)
-                                        ;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "expand_more" :height 1.2 :v-adjust -0.2 :face 'default)
-                                        ;                                         (propertize " " 'display '(space . (:width (0)))))
-                                        ;                           :extensions (dir-open)
-                                        ;                           :fallback 'same-as-icon)
-                                        ;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "chevron_right" :height 1.2 :v-adjust -0.2 :face 'default)
-                                        ;                                         (propertize " " 'display '(space . (:width (0)))))
-                                        ;                           :extensions (dir-closed)
-                                        ;                           :fallback 'same-as-icon)
-                                        ;     (treemacs-create-icon :icon (propertize " " 'display '(space . (:width (18))))
-                                        ;                           :extensions (fallback)
-                                        ;                           :fallback 'same-as-icon)))
-
-  ;; terminal mode use simple theme
-  (if (display-graphic-p)
-      (progn
-        (require 'treemacs-all-the-icons)
-        (treemacs-load-theme "all-the-icons"))
-    (treemacs-load-theme "Default"))
-  ;;
-  )
-
-
-;; 例如 12pt = 120
-(defvar my-font-height (if (my-system-type-is-darwin) 130 110))
-
-;; 只设置 :height，其他属性由 custom-set-faces 提供
-(with-eval-after-load 'treemacs
-  (dolist (face '(
-                  tab-bar
-                  treemacs-directory-collapsed-face
-                  treemacs-directory-face
-                  treemacs-file-face
-                  treemacs-git-added-face
-                  treemacs-git-conflict-face
-                  treemacs-git-ignored-face
-                  treemacs-git-modified-face
-                  treemacs-git-renamed-face
-                  treemacs-git-unmodified-face
-                  treemacs-git-untracked-face
-                  treemacs-root-face
-                  treemacs-tags-face))
-    (set-face-attribute face nil :height 0.9)))
-
-
-;; CFRS face configuration moved to custom-set-faces
-
-
-(defun my-treemacs-add-and-display-current-project ()
-  (interactive)
-  (with-selected-window (get-buffer-window (current-buffer))
-    (treemacs-add-and-display-current-project))
-  (treemacs-find-file)
-  (treemacs-select-window)
-  (when (display-graphic-p)
-    (setq-local cursor-type 'box)))
-
-
-
 (provide 'init-treemacs)
+
+;;; init-treemacs.el ends here

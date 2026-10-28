@@ -1,8 +1,59 @@
 ;; -*- lexical-binding: t -*-
-;;; init-claude-code.el
+;;; init-claude-code.el --- claude-code.el configuration
+
+;;; Commentary:
+;;
+;;  claude-code.el, plus commands that start claude with another API
+;;  (Bailian, DeepSeek) or with the default one.  Not loaded by init.el now.
+;;
 
 ;;; Code:
 
+(declare-function claude-code "claude-code")
+(declare-function claude-code-toggle "claude-code")
+(declare-function claude-code--get-buffer-file-name "claude-code")
+(declare-function claude-code--format-file-reference "claude-code")
+(declare-function claude-code--do-send-command "claude-code")
+
+
+;;; Commands
+
+(defun my-send-command-with-buffer-or-region-context (cmd &optional _arg)
+  "Send CMD to Claude with context:
+- If region is active: include file + selected line range.
+- Otherwise: include the whole file (no line numbers).
+With prefix ARG, switch to Claude buffer after sending."
+  (interactive "sClaude command: \nP")
+  (let* ((file (claude-code--get-buffer-file-name)))
+    (unless file
+      (error "Current buffer is not associated with a file"))
+    (let* ((context (if (use-region-p)
+                        (claude-code--format-file-reference
+                         file
+                         (line-number-at-pos (region-beginning))
+                         (line-number-at-pos (region-end)))
+                      (format "@%s\n" file)))
+           (cmd-with-context (format "%s\n%s" cmd context))
+           (claude-buffer (claude-code--do-send-command cmd-with-context)))
+      (unless (get-buffer-window claude-buffer) (claude-code-toggle)))))
+
+(defun my-claude-code-deactivate-after-send (&rest _)
+  "Deactivate the mark and go to the beginning of the line."
+  (deactivate-mark)
+  (beginning-of-line))
+
+;; (defun my-select-claude-window ()
+;;   "Select the claude-code window if visible."
+;;   (let ((claude-window (seq-find (lambda (win)
+;;                                    (string-match-p "^\\*claude:" (buffer-name (window-buffer win))))
+;;                          (window-list))))
+;;     (when claude-window
+;;       (select-window claude-window)
+;;       (when (eq claude-code-terminal-backend 'eat)
+;;         (goto-char (point-max))))))
+
+
+;;; Packages
 
 ;; install required inheritenv dependency:
 (use-package inheritenv
@@ -34,38 +85,6 @@
   (setq claude-code-sandbox-program "claude")
   (setq claude-code-newline-keybinding-style 'newline-on-alt-return)
 
-  (defun my-send-command-with-buffer-or-region-context (cmd &optional _arg)
-    "Send CMD to Claude with context:
-- If region is active: include file + selected line range.
-- Otherwise: include the whole file (no line numbers).
-With prefix ARG, switch to Claude buffer after sending."
-    (interactive "sClaude command: \nP")
-    (let* ((file (claude-code--get-buffer-file-name)))
-      (unless file
-        (error "Current buffer is not associated with a file"))
-      (let* ((context (if (use-region-p)
-                          (claude-code--format-file-reference
-                           file
-                           (line-number-at-pos (region-beginning))
-                           (line-number-at-pos (region-end)))
-                        (format "@%s\n" file)))
-             (cmd-with-context (format "%s\n%s" cmd context))
-             (claude-buffer (claude-code--do-send-command cmd-with-context)))
-        (unless (get-buffer-window claude-buffer) (claude-code-toggle)))))
-
-  ;; (defun my-select-claude-window ()
-  ;;   "Select the claude-code window if visible."
-  ;;   (let ((claude-window (seq-find (lambda (win)
-  ;;                                    (string-match-p "^\\*claude:" (buffer-name (window-buffer win))))
-  ;;                          (window-list))))
-  ;;     (when claude-window
-  ;;       (select-window claude-window)
-  ;;       (when (eq claude-code-terminal-backend 'eat)
-  ;;         (goto-char (point-max))))))
-
-  (defun my-claude-code-deactivate-after-send (&rest _)
-    (deactivate-mark)
-    (beginning-of-line))
   (advice-add 'claude-code-send-region :after #'my-claude-code-deactivate-after-send)
   (advice-add 'my-send-command-with-buffer-or-region-context :after #'my-claude-code-deactivate-after-send)
 
@@ -74,9 +93,13 @@ With prefix ARG, switch to Claude buffer after sending."
   )
 
 
+;;; Start claude with another API
+
 (defvar my-bailian-api-key nil
   "Aliyun Bailian API key, entered at runtime (never stored in this file).")
+
 (defun claude-code-bailian (&optional api-key)
+  "Start claude with the Aliyun Bailian API. Ask for API-KEY when interactive."
   (interactive)
   (when (called-interactively-p 'interactive)
     (setq api-key (read-string "API Key: ")))
@@ -96,7 +119,9 @@ With prefix ARG, switch to Claude buffer after sending."
 
 (defvar my-ds-api-key nil
   "DeepSeek API key, entered at runtime (never stored in this file).")
+
 (defun claude-code-ds (&optional api-key)
+  "Start claude with the DeepSeek API. Ask for API-KEY when interactive."
   (interactive)
   (when (called-interactively-p 'interactive)
     (setq api-key (read-string "DeepSeek API Key: ")))
@@ -119,14 +144,15 @@ With prefix ARG, switch to Claude buffer after sending."
         (claude-code))
     (message "should set deepseek api-key")))
 
-
-(defun reset-claude-code-env()
+(defun reset-claude-code-env ()
+  "Remove the API settings from the environment."
   (interactive)
   (setenv "ANTHROPIC_BASE_URL" nil)
   (setenv "ANTHROPIC_MODEL" nil)
   (setenv "ANTHROPIC_AUTH_TOKEN" nil))
 
-(defun claude-code-origin()
+(defun claude-code-origin ()
+  "Start claude with the default API."
   (interactive)
   (reset-claude-code-env)
   (claude-code))
