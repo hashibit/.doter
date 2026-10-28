@@ -5,8 +5,7 @@
   ;; 非 nil 会完全绕过 common-lisp-indent-function 的对齐逻辑，
   ;; 强制所有行 = 外层括号列 + offset。所以要注释掉
   ;;;; (setq lisp-indent-offset 2)
-  (my-enable-symbol-overlay-highlight)
-  )
+  (my-enable-symbol-overlay-highlight))
 
 (add-hook 'emacs-lisp-mode-hook #'my-elisp-mode-hook)
 (add-hook 'lisp-mode-hook #'my-elisp-mode-hook)
@@ -46,7 +45,7 @@
   :config
   (setq symbol-overlay-idle-time 0.1)
   ;; Face configuration moved to custom-set-faces
-)
+  )
 
 
 (provide 'init-emacs-lispy)

@@ -16,9 +16,9 @@
 (defun my-change-cursor-type-when-isearch ()
   (interactive)
   (if (bound-and-true-p isearch-mode)
-    (progn
-      (setq cursor-type 'bar)
-      (set-cursor-color "yellow"))
+      (progn
+        (setq cursor-type 'bar)
+        (set-cursor-color "yellow"))
     (progn
       (setq cursor-type 'box)
       (set-cursor-color "red"))))

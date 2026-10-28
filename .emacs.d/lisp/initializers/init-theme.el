@@ -15,13 +15,13 @@
 
 ;; initial flattening
 (mapatoms
-  (lambda (atom)
-    (when (facep atom)
-      (theme-tweaks-flatten-underline+ atom))))
+ (lambda (atom)
+   (when (facep atom)
+     (theme-tweaks-flatten-underline+ atom))))
 
 ;; flatten on each face definition in the future
 (define-advice custom-declare-face
-  (:around (fun &rest args) flatten-face)
+    (:around (fun &rest args) flatten-face)
   (let ((face (apply fun args)))
     (theme-tweaks-flatten-underline+ face)
     face))
@@ -59,8 +59,8 @@
 ;; after load theme, clear the fringe color
 (defun my-clear-fringe-color ()
   (set-face-attribute 'fringe nil
-    :background (face-background 'default)
-    :foreground (face-foreground 'default)))
+                      :background (face-background 'default)
+                      :foreground (face-foreground 'default)))
 
 (my-clear-fringe-color)
 
@@ -81,9 +81,9 @@
 
 ;; Display dividers between windows
 (setq
-  window-divider-default-places t
-  window-divider-default-bottom-width 1
-  window-divider-default-right-width 6)
+ window-divider-default-places t
+ window-divider-default-bottom-width 1
+ window-divider-default-right-width 6)
 (add-hook 'window-setup-hook #'window-divider-mode)
 
 (set-face-background 'vertical-border (face-background 'default))

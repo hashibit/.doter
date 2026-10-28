@@ -4,23 +4,22 @@
 (defvar dired-dwim-target)
 
 (setq ibuffer-formats '((mark modified " "
-                         (name 24 24 :left :elide)
-                         " "
-                          filename)
-                         (mark modified read-only locked " "
-                           (name 18 18 :left :elide)
-                           " "
-                           (size 9 -1 :right)
-                           " "
-                           (mode 16 16 :left :elide)
-                           " "
-                           filename-and-process)
-                         ))
+                              (name 24 24 :left :elide)
+                              " "
+                              filename)
+                        (mark modified read-only locked " "
+                              (name 18 18 :left :elide)
+                              " "
+                              (size 9 -1 :right)
+                              " "
+                              (mode 16 16 :left :elide)
+                              " "
+                              filename-and-process)))
 
 (define-ibuffer-filter my-visiting-file
-  "Limit current view to buffers that are visiting a file."
+    "Limit current view to buffers that are visiting a file."
   (:description "visiting a file"
-    :reader nil)
+                :reader nil)
   (buffer-file-name buf))
 
 (defun my-side-ibuffer-revert (&rest _)
@@ -42,17 +41,17 @@
 (defun side-ibuffer ()
   (interactive)
   (let ((buffer
-          (save-window-excursion
-            (ibuffer nil "*side-ibuffer*" '((my-visiting-file . t)))
-            (setq-local buffer-stale-function #'always)
-            (setq-local revert-buffer-function #'my-side-ibuffer-revert)
-            (auto-revert-mode -1)
-            (setq-local display-buffer-base-action '(display-buffer-use-some-window))
-            (use-local-map my-side-ibuffer-map)
-            (current-buffer))))
+         (save-window-excursion
+           (ibuffer nil "*side-ibuffer*" '((my-visiting-file . t)))
+           (setq-local buffer-stale-function #'always)
+           (setq-local revert-buffer-function #'my-side-ibuffer-revert)
+           (auto-revert-mode -1)
+           (setq-local display-buffer-base-action '(display-buffer-use-some-window))
+           (use-local-map my-side-ibuffer-map)
+           (current-buffer))))
     (pop-to-buffer buffer
-      '(display-buffer-in-side-window
-         (side . right)))))
+                   '(display-buffer-in-side-window
+                     (side . right)))))
 
 ;; add another sorting method for ibuffer (allow the grouping of
 ;; filenames and dired buffers
@@ -60,18 +59,18 @@
   "Sort the buffers by their pathname."
   (:description "filenames plus dired")
   (string-lessp
-    (with-current-buffer (car a)
-      (or buffer-file-name
-        (if (eq major-mode 'dired-mode)
-          (expand-file-name dired-directory))
-        ;; so that all non pathnames are at the end
-        "~"))
-    (with-current-buffer (car b)
-      (or buffer-file-name
-        (if (eq major-mode 'dired-mode)
-          (expand-file-name dired-directory))
-        ;; so that all non pathnames are at the end
-        "~"))))
+   (with-current-buffer (car a)
+     (or buffer-file-name
+         (if (eq major-mode 'dired-mode)
+             (expand-file-name dired-directory))
+         ;; so that all non pathnames are at the end
+         "~"))
+   (with-current-buffer (car b)
+     (or buffer-file-name
+         (if (eq major-mode 'dired-mode)
+             (expand-file-name dired-directory))
+         ;; so that all non pathnames are at the end
+         "~"))))
 
 (keymap-set ibuffer-mode-map "s p" #'ibuffer-do-sort-by-filename-or-dired)
 

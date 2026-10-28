@@ -24,8 +24,7 @@
         company-tooltip-maximum-width 80
         company-tooltip-limit 12
         company-tooltip-align-annotations t
-        company-tooltip-flip-when-above t
-        )
+        company-tooltip-flip-when-above t)
 
   ;; Fill the gaps the theme leaves: only company-tooltip is themed.
   (let* ((bg (face-background 'company-tooltip nil t))
@@ -41,8 +40,7 @@
                      (company-tooltip-annotation-selection :foreground ,anno :slant normal :weight normal)
                      (company-tooltip-scrollbar-track      :background ,bg)
                      (company-tooltip-scrollbar-thumb      :background ,sel-bg)))
-      (face-spec-set face `((t ,@attrs)) 'face-override-spec)))
-  )
+      (face-spec-set face `((t ,@attrs)) 'face-override-spec))))
 
 (defvar company-candidates-length)
 

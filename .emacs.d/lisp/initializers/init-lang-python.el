@@ -4,8 +4,7 @@
 (defun my-python-mode-hook()
   "Hook for Python mode configuration."
   ;; Python-specific configuration can be added here
-  (setq tab-width 4)
-  )
+  (setq tab-width 4))
 
 (add-hook 'python-ts-mode-hook #'my-python-mode-hook)
 

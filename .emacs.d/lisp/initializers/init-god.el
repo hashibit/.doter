@@ -16,86 +16,85 @@
 ;; special-buffers are not affected by god-mode bindings, but affected by my-special-buffer-keys-minor-mode-map
 (defvar special-buffer-modes
   (list
-    "dired-mode"
-    "ibuffer-mode"
-    "special-mode"
-    "native-comp-limple-mode"
-    "ivy-occur-mode"
-    "image-mode"
-    "eww-mode"
-    ))
+   "dired-mode"
+   "ibuffer-mode"
+   "special-mode"
+   "native-comp-limple-mode"
+   "ivy-occur-mode"
+   "image-mode"
+   "eww-mode"))
 
 (defvar special-buffers (list
-                       "*Pos-Frame-Read*"
-                       "*Treemacs"
-                       "*Messages*"
-                       "*compilation*"
-                       "HELLO"
-                       "*Ibuffer*"
-                       "*deadgrep"
-                       "*rg*"
-                       "*xref"
-                       "*Buffer"
-                       "*Annotate"
-                       "*Completions*"
-                       "*vc-diff*"
-                       "*Packages"
-                       "*lsp-log*"
-                       "*Help*"
-                       "*Ivy"
-                       "*Occur*"
-                       "*info*"
-                       "*Warnings*"
-                       "helm-*"
-                       "*Helm Help*"
-                       "*Flymake"
-                       "*ansi-term*"
-                       "*fzf*"
-                       "*Ilist"
-                       "*NeoTree*"))
+                         "*Pos-Frame-Read*"
+                         "*Treemacs"
+                         "*Messages*"
+                         "*compilation*"
+                         "HELLO"
+                         "*Ibuffer*"
+                         "*deadgrep"
+                         "*rg*"
+                         "*xref"
+                         "*Buffer"
+                         "*Annotate"
+                         "*Completions*"
+                         "*vc-diff*"
+                         "*Packages"
+                         "*lsp-log*"
+                         "*Help*"
+                         "*Ivy"
+                         "*Occur*"
+                         "*info*"
+                         "*Warnings*"
+                         "helm-*"
+                         "*Helm Help*"
+                         "*Flymake"
+                         "*ansi-term*"
+                         "*fzf*"
+                         "*Ilist"
+                         "*NeoTree*"))
 
 
 ;; legendary-buffers are not affected by god-mode AND my-special-buffer-keys-minor-mode-map
 (defvar legendary-buffers (list
-                         "*this-buffer-is-left-alone-without-god-mode-at-all"
-                         "*Minibuf"
-                         "*Compile"
-                         "*EGLOT"
-                         "*terminal*"
-                         "*eat"
-                         "*claude"
-                         "*emacs"
-                         "*eshell*"
-                         "*blink-search"
-                         "*ripgrep-search*"
-                         "*blink search"
-                         "*shell*"
-                         "*dashboard*"
-                         "*slime"
-                         "*sldb"
-                         "*leetcode"
-                         "magit"
-                         "git-rebase-todo"
-                         "*Backtrace*"
-                         "menu"
-                         "*ielm*"
-                         "*Gofmt"
-                         "*slime-repl"
-                         "*Customize"))
+                           "*this-buffer-is-left-alone-without-god-mode-at-all"
+                           "*Minibuf"
+                           "*Compile"
+                           "*EGLOT"
+                           "*terminal*"
+                           "*eat"
+                           "*claude"
+                           "*emacs"
+                           "*eshell*"
+                           "*blink-search"
+                           "*ripgrep-search*"
+                           "*blink search"
+                           "*shell*"
+                           "*dashboard*"
+                           "*slime"
+                           "*sldb"
+                           "*leetcode"
+                           "magit"
+                           "git-rebase-todo"
+                           "*Backtrace*"
+                           "menu"
+                           "*ielm*"
+                           "*Gofmt"
+                           "*slime-repl"
+                           "*Customize"))
 
 (defvar legendary-modes (list
-                       "*this-buffer-is-left-alone-without-god-mode-at-all"
-                       "cfrs-input-mode"
-                       "help-mode"
-                       "xwidget-webkit-mode"
-                       "slime-mode"
-                       "cider-repl-mode"
-                       "minibuffer-mode"
-                       "eat-mode"
-                       "inferior-python-mode"
-                       "fundamental-mode"
-                       "cnfonts-ui-mode"
-                       "deadgrep-edit-mode"))
+                         "*this-buffer-is-left-alone-without-god-mode-at-all"
+                         "cfrs-input-mode"
+                         "help-mode"
+                         "xwidget-webkit-mode"
+                         "slime-mode"
+                         "cider-repl-mode"
+                         "minibuffer-mode"
+                         "eat-mode"
+                         "inferior-python-mode"
+                         "fundamental-mode"
+                         "cnfonts-ui-mode"
+                         "deadgrep-edit-mode"))
 
 
 (defun my-change-buffer-name-from-special-to-legendary(buffer-name)
@@ -113,7 +112,7 @@
 
 (defun my-remove-from-legendary-buffers(buffer-names)
   (dolist (element (if (listp buffer-names) buffer-names (list buffer-names)))
-  (setq legendary-buffers (remove element legendary-buffers))))
+    (setq legendary-buffers (remove element legendary-buffers))))
 
 (defun my-god--buffer-mode-name (bufname)
   "Return the major mode name of buffer BUFNAME as a string."
@@ -148,15 +147,15 @@
   (not (derived-mode-p 'vterm-mode)))
 
 (defvar should-not-display-dark-background-modes (list
-                                                 "dired-mode"
-                                                 "eat-mode"
-                                                 "eldoc-box-mode"
-                                                 "xwidget-webkit-mode"
-                                                 "minibuffer-mode"
-                                                 "dashboard-mode"))
+                                                  "dired-mode"
+                                                  "eat-mode"
+                                                  "eldoc-box-mode"
+                                                  "xwidget-webkit-mode"
+                                                  "minibuffer-mode"
+                                                  "dashboard-mode"))
 
 (defvar should-not-display-no-paddings-modes (list
-                                             "xwidget-webkit-mode"))
+                                              "xwidget-webkit-mode"))
 (defvar-local my-window-margins nil
   "Buffer-local (LEFT . RIGHT) margins overriding `my/set-margins-all-windows'.")
 
@@ -187,14 +186,14 @@
     (my-god--prefix-match-p should-not-display-dark-background-modes
                             (my-god--buffer-mode-name bufname)))))
 
-  ;; (let ((this-buffer-name (string-trim bufname))
-  ;;        (this-buffer-mode (symbol-name (buffer-mode bufname))))
-  ;;   (and
-  ;;     (eq buffer-read-only t)
-  ;;     (not (seq-filter
-  ;;            (lambda (n) (string-prefix-p n this-buffer-mode))
-  ;;            should-not-display-dark-background-modes))
-  ;;     (not (derived-mode-p 'prog-mode)))))
+;; (let ((this-buffer-name (string-trim bufname))
+;;        (this-buffer-mode (symbol-name (buffer-mode bufname))))
+;;   (and
+;;     (eq buffer-read-only t)
+;;     (not (seq-filter
+;;            (lambda (n) (string-prefix-p n this-buffer-mode))
+;;            should-not-display-dark-background-modes))
+;;     (not (derived-mode-p 'prog-mode)))))
 
 (defun my-god-this-buffer-window-no-padding (bufname)
   "Check if BUFNAME window shoudn't have padding."
@@ -383,14 +382,14 @@ When switching to an existing buffer, respect its prior god-mode state."
   "search for selected text"
   (interactive)
   (if (region-active-p)
-    (let ((isearch-forward-thing-at-point '(region))
-          (case-fold-search 'default))
-      (message "search the marked region")
-      (isearch-forward-thing-at-point)
-      ;; activate god-mode-isearch
-      (god-mode-isearch-activate)
-      ;; 跳到下一个匹配（跳过选区本身）
-      (isearch-repeat-forward))
+      (let ((isearch-forward-thing-at-point '(region))
+            (case-fold-search 'default))
+        (message "search the marked region")
+        (isearch-forward-thing-at-point)
+        ;; activate god-mode-isearch
+        (god-mode-isearch-activate)
+        ;; 跳到下一个匹配（跳过选区本身）
+        (isearch-repeat-forward))
     (progn
       (isearch-forward-symbol-at-point)
       (god-mode-isearch-activate))))
@@ -426,41 +425,40 @@ When switching to an existing buffer, respect its prior god-mode state."
   (set-cursor-color "red")
   (sp--maybe-init)
   (if (bound-and-true-p god-local-mode)
-    (progn
-      ;; (set-face-attribute 'hl-line nil :background (face-background 'default))
-      (set-face-background 'hl-line hl-line-bg-color)
-      ;; reset
-      (when (my-god-this-is-normal-editor-buffer (buffer-name))
-        (if (my-god-should-enable-hi-line-mode) (hl-line-mode 1) (hl-line-mode 0))
-        (when (my-god-should-enable-line-number-mode)
-          (display-line-numbers-mode 1)
-          ;; (set-face-foreground 'line-number-current-line "gray33")
+      (progn
+        ;; (set-face-attribute 'hl-line nil :background (face-background 'default))
+        (set-face-background 'hl-line hl-line-bg-color)
+        ;; reset
+        (when (my-god-this-is-normal-editor-buffer (buffer-name))
+          (if (my-god-should-enable-hi-line-mode) (hl-line-mode 1) (hl-line-mode 0))
+          (when (my-god-should-enable-line-number-mode)
+            (display-line-numbers-mode 1)
+            ;; (set-face-foreground 'line-number-current-line "gray33")
            ;;;;  (set-face-attribute 'line-number-current-line nil
            ;;;;    :foreground (or (face-foreground 'line-number) 'unspecified)
            ;;;;    :background (or (face-background 'line-number) 'unspecified))
-          )
-        )
-      ;; (when (display-graphic-p)
-      ;;  (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
-      ;;  (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
-      ;;  (set-face-attribute 'window-divider-first-pixel nil :foreground "green")
-      ;;  ;; (set-face-attribute 'mode-line nil          :background "#7AA2F7" :foreground "#262831" :overline "#374250"   :box nil) ;; draw a line above mode-line
-      ;;  ;; (set-face-attribute 'mode-line-inactive nil :background "#262831" :foreground "#7AA2F7" :overline "#374250"  :box nil)
-      ;;  ;; (set-face-attribute 'mode-line-buffer-id nil :distant-foreground "#262831" :foreground "#7AA2F7")
-      ;;)
-      ;; (unless (display-graphic-p)
-      ;;   (set-face-attribute 'mode-line          nil :foreground "black" :background "#00AFFF")
-      ;;   (set-face-attribute 'mode-line-inactive nil :foreground "#00AFFF" :background "black")
-      ;;   )
-      ;; (setq cursor-type 'bar)
-      ;; (set-cursor-color "red")
-      ;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "gray" ))
-      ;; (set-face-attribute 'mode-line nil :background "#38424B")
-      ;; (set-face-foreground 'vertical-border "#353535")
-      (my-god--set-tab-bar-tab-face 'god "#199DFF")
+            ))
+        ;; (when (display-graphic-p)
+        ;;  (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
+        ;;  (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
+        ;;  (set-face-attribute 'window-divider-first-pixel nil :foreground "green")
+        ;;  ;; (set-face-attribute 'mode-line nil          :background "#7AA2F7" :foreground "#262831" :overline "#374250"   :box nil) ;; draw a line above mode-line
+        ;;  ;; (set-face-attribute 'mode-line-inactive nil :background "#262831" :foreground "#7AA2F7" :overline "#374250"  :box nil)
+        ;;  ;; (set-face-attribute 'mode-line-buffer-id nil :distant-foreground "#262831" :foreground "#7AA2F7")
+        ;;)
+        ;; (unless (display-graphic-p)
+        ;;   (set-face-attribute 'mode-line          nil :foreground "black" :background "#00AFFF")
+        ;;   (set-face-attribute 'mode-line-inactive nil :foreground "#00AFFF" :background "black")
+        ;;   )
+        ;; (setq cursor-type 'bar)
+        ;; (set-cursor-color "red")
+        ;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "gray" ))
+        ;; (set-face-attribute 'mode-line nil :background "#38424B")
+        ;; (set-face-foreground 'vertical-border "#353535")
+        (my-god--set-tab-bar-tab-face 'god "#199DFF")
 
-      ;; (set-face-foreground 'vertical-border "#374250")
-      )
+        ;; (set-face-foreground 'vertical-border "#374250")
+        )
     (progn
       ;; (set-face-attribute 'hl-line nil :background (face-background 'default))
       ;; (set-face-background 'hl-line hl-line-bg-color)
@@ -472,8 +470,7 @@ When switching to an existing buffer, respect its prior god-mode state."
           (display-line-numbers-mode 1)
           ;; (set-face-foreground 'line-number-current-line "#7fdc59")
           ;;;;; (set-face-attribute 'line-number-current-line nil :foreground "black" :background "#7fdc59")
-          )
-        )
+          ))
       ;; (when (display-graphic-p)
       ;;   (set-face-attribute 'window-divider nil :foreground window-divider-right-color)
       ;;   (set-face-attribute 'window-divider-last-pixel nil :foreground window-divider-right-color)
@@ -491,8 +488,7 @@ When switching to an existing buffer, respect its prior god-mode state."
       ;; (set-face-attribute 'mode-line nil :box '(:line-width 1 :color "green" ))
       ;;(set-face-attribute 'mode-line nil :background "#38424B")
       ;; (set-face-foreground 'vertical-border window-divider-color)
-      )
-    ))
+      )))
 
 (add-hook 'god-mode-enabled-hook #'my-god-mode-update-cursor-type)
 (add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor-type)

@@ -79,7 +79,7 @@ Only runs clang-format when a .clang-format/_clang-format file dominates
                  (not (string-equal "Never" tabs-str)))
         (setq-local indent-tabs-mode t))
       (if (functionp 'indent-bars-reset)
-        (indent-bars-reset)))))
+          (indent-bars-reset)))))
 
 
 (defun my-c-indent-region-clang-format (start end &optional _quiet)

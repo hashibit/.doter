@@ -25,8 +25,8 @@
   (qml-mode . my-qml-mode-setup)
   (qml-mode . maybe-cmake-project-mode)
   :bind (:map qml-mode-map
-         ("C-c C-b" . compile)
-         ("s-b" . compile)))
+              ("C-c C-b" . compile)
+              ("s-b" . compile)))
 
 (provide 'init-lang-qml)
 

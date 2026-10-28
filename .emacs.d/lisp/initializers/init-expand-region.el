@@ -15,40 +15,33 @@
 (defun my-toggle-er/mark-defun (_arg)
   (interactive "p")
   (if (use-region-p)
-    (progn
-      (jump-to-register 'a)
-      (keyboard-quit))
+      (progn
+        (jump-to-register 'a)
+        (keyboard-quit))
     (point-to-register 'a)
     (er/mark-defun)))
 
 (defun my-toggle-er/mark-inside-paren (_arg)
   (interactive "p")
   (if (use-region-p)
-    (progn
-      (jump-to-register 'a)
-      (keyboard-quit)
-      )
+      (progn
+        (jump-to-register 'a)
+        (keyboard-quit))
     (point-to-register 'a)
     (cond
-      ((er--point-inside-string-p) (er/mark-inside-quotes))
-      ((er--point-inside-pairs-p) (er/mark-inside-pairs))
-      )
-    )
-  )
+     ((er--point-inside-string-p) (er/mark-inside-quotes))
+     ((er--point-inside-pairs-p) (er/mark-inside-pairs)))))
 
 (defun my-toggle-er/mark-outside-paren (_arg)
   (interactive "p")
   (if (use-region-p)
-    (progn
-      (jump-to-register 'a)
-      (keyboard-quit))
+      (progn
+        (jump-to-register 'a)
+        (keyboard-quit))
     (point-to-register 'a)
     (cond
-      ((er--point-inside-string-p) (er/mark-outside-quotes))
-      ((er--point-inside-pairs-p) (er/mark-outside-pairs))
-      )
-    )
-  )
+     ((er--point-inside-string-p) (er/mark-outside-quotes))
+     ((er--point-inside-pairs-p) (er/mark-outside-pairs)))))
 
 
 

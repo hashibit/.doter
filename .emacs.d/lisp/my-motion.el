@@ -27,28 +27,28 @@
             (forward-char 1)))
       ;; fallback: syntax-table based
       (cond ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
-        (t
-          (backward-char 1)
-          (cond ((looking-at "\\s\)")
-                  (forward-char 1) (backward-list 1))
             (t
-              (while (not (looking-at "\\s("))
-                (backward-char 1)
-                (cond ((looking-at "\\s\)")
-                        (forward-char 1)
-                        (backward-list 1)
-                        (backward-char 1))))))))))); ))
+             (backward-char 1)
+             (cond ((looking-at "\\s\)")
+                    (forward-char 1) (backward-list 1))
+                   (t
+                    (while (not (looking-at "\\s("))
+                      (backward-char 1)
+                      (cond ((looking-at "\\s\)")
+                             (forward-char 1)
+                             (backward-list 1)
+                             (backward-char 1))))))))))); ))
 (defun my-next-line-or-mc/mark-next-like-this (arg)
   (interactive "p")
   (if (use-region-p)
-    (my-mc/mark-next-like-this arg)
+      (my-mc/mark-next-like-this arg)
     (line-move 1)))
 
 (defun my-prev-line-or-mc/mark-next-like-this (arg)
   (interactive "p")
   (if (use-region-p)
-    (my-mc/mark-previous-like-this
-      arg)
+      (my-mc/mark-previous-like-this
+       arg)
     (line-move -1)))
 (defun my-is-beginning-of-line ()
   (interactive)
@@ -66,38 +66,38 @@
 (defun my-forward-to-word ()
   (interactive)
   (let* ((pos-before (point))
-          (pos-after (save-excursion
-                       (forward-to-word 1)
-                       (point)))
-          (sub-string (buffer-substring
-                        pos-before
-                        pos-after)))
+         (pos-after (save-excursion
+                      (forward-to-word 1)
+                      (point)))
+         (sub-string (buffer-substring
+                      pos-before
+                      pos-after)))
     ;; NOTE: the ] must be first char in the regex candicates. see https://www.gnu.org/software/emacs/manual/html_node/emacs/Regexps.html
     (if-let* ((distance (string-match-p "[])}([{&=\/\*\:\"\,\.\~\?\<\>]" sub-string)))
-      (progn
-        ;; if next char is special then find next regular char, because forward 0 distance is meaningless
-        (when (= distance 0)
-          (setq distance (string-match-p "[^])}([{&=\/\*\:\"\,\.\~\?\s\<\>]" sub-string)))
-        ;; if all chars are special chars, then just do forward-to-word.
-        (if distance
-          (forward-char distance)
-          (forward-to-word 1)))
+        (progn
+          ;; if next char is special then find next regular char, because forward 0 distance is meaningless
+          (when (= distance 0)
+            (setq distance (string-match-p "[^])}([{&=\/\*\:\"\,\.\~\?\s\<\>]" sub-string)))
+          ;; if all chars are special chars, then just do forward-to-word.
+          (if distance
+              (forward-char distance)
+            (forward-to-word 1)))
       (forward-to-word 1))))
 (defun my-next-line(_args)
   (interactive "p")
   (setq this-command 'next-line)
   (if my-visual-line-selection
-    (let ((curr-line (line-number-at-pos)))
-      (cond
-        ((< curr-line my-visual-line-start-num)
+      (let ((curr-line (line-number-at-pos)))
+        (cond
+         ((< curr-line my-visual-line-start-num)
           (end-of-line 2)
           (beginning-of-line))
-        ((= curr-line my-visual-line-start-num)
+         ((= curr-line my-visual-line-start-num)
           (goto-char (point-min))
           (forward-line (1- my-visual-line-start-num))
           (set-mark-command nil)
           (end-of-line 2))
-        (t
+         (t
           (end-of-line 2))))
     (line-move 1)))
 
@@ -105,25 +105,21 @@
   (interactive "p")
   (setq this-command 'previous-line)
   (if my-visual-line-selection
-    (let ((curr-line (line-number-at-pos)))
-      (cond
-        ((> curr-line my-visual-line-start-num)
+      (let ((curr-line (line-number-at-pos)))
+        (cond
+         ((> curr-line my-visual-line-start-num)
           (line-move -1)
-          (end-of-line)
-          )
-        ((= curr-line my-visual-line-start-num)
+          (end-of-line))
+         ((= curr-line my-visual-line-start-num)
           (goto-char (point-min))
           (forward-line (1- my-visual-line-start-num))
           (end-of-line)
           (set-mark-command nil)
           (line-move -1)
-          (beginning-of-line)
-          )
-        (t
+          (beginning-of-line))
+         (t
           (line-move -1)
-          (beginning-of-line)
-          )
-        ))
+          (beginning-of-line))))
     (line-move -1)))
 (defun my-backward-char-no-cross-line ()
   (interactive)
@@ -134,7 +130,7 @@
   (interactive (list (read-char "Find char: ")))
   (let ((pos (search-forward (char-to-string char) (line-end-position) t)))
     (if pos
-      (goto-char pos)
+        (goto-char pos)
       (message "Character `%c' not found in this line." char))))
 
 (defun my-find-char-backward (char)
@@ -142,7 +138,7 @@
   (interactive (list (read-char "Find char backwards: ")))
   (let ((pos (search-backward (char-to-string char) (line-beginning-position) t)))
     (if pos
-      (goto-char pos)
+        (goto-char pos)
       (message "Character `%c' not found in this line." char))))
 (defun my-scroll-cursor-down ()
   (interactive)

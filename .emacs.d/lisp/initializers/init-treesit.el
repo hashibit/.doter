@@ -4,18 +4,18 @@
   :custom
   (treesit-font-lock-level 4) ;; skittles highlighting
   :mode (
-          ;; ("\\.tsx\\'" . tsx-ts-mode)
-          ;; ("\\.js\\'"  . typescript-ts-mode)
-          ;; ("\\.mjs\\'" . typescript-ts-mode)
-          ;; ("\\.mts\\'" . typescript-ts-mode)
-          ;; ("\\.cjs\\'" . typescript-ts-mode)
-          ;; ("\\.ts\\'"  . typescript-ts-mode)
-          ;; ("\\.jsx\\'" . tsx-ts-mode)
-          ("\\.json\\'" .  json-ts-mode)
-          ("\\.clj\\'" . clojure-ts-mode)
-          ("\\.cljs\\'" . clojure-ts-mode)
-          ("\\.cljc\\'" . clojure-ts-mode)
-          ("\\.edn\\'" . clojure-ts-mode))
+         ;; ("\\.tsx\\'" . tsx-ts-mode)
+         ;; ("\\.js\\'"  . typescript-ts-mode)
+         ;; ("\\.mjs\\'" . typescript-ts-mode)
+         ;; ("\\.mts\\'" . typescript-ts-mode)
+         ;; ("\\.cjs\\'" . typescript-ts-mode)
+         ;; ("\\.ts\\'"  . typescript-ts-mode)
+         ;; ("\\.jsx\\'" . tsx-ts-mode)
+         ("\\.json\\'" .  json-ts-mode)
+         ("\\.clj\\'" . clojure-ts-mode)
+         ("\\.cljs\\'" . clojure-ts-mode)
+         ("\\.cljc\\'" . clojure-ts-mode)
+         ("\\.edn\\'" . clojure-ts-mode))
   :init
   (push '(css-mode . css-ts-mode) major-mode-remap-alist)
   (push '(clojure-mode . clojure-ts-mode) major-mode-remap-alist)
@@ -38,8 +38,7 @@
   ;;            '(mermaid "https://github.com/monaqa/tree-sitter-mermaid" "master"))
   :config
   (add-to-list 'treesit-language-source-alist
-    '(go "https://github.com/tree-sitter/tree-sitter-go" "v0.19.1"))
-  )
+               '(go "https://github.com/tree-sitter/tree-sitter-go" "v0.19.1")))
 
 
 ;; perf: treesit-auto--build-major-mode-remap-alist is called on every

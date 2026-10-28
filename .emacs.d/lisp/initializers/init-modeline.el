@@ -65,8 +65,8 @@ Example: \"project/src/main/java/File.java\" -> \"p/s/m/j/File.java\""
 (add-hook 'find-file-hook #'set-buffer-filename-with-git-directory-cached)
 
 (setq-default mode-line-buffer-identification
-  '(:eval (my-buffer-identification-cached
-           (or buffer-filename-with-git-directory ""))))
+              '(:eval (my-buffer-identification-cached
+                       (or buffer-filename-with-git-directory ""))))
 
 ;; Face configuration moved to custom-set-faces
 

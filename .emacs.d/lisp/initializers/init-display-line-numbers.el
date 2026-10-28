@@ -10,8 +10,7 @@
   (markdown-mode . display-line-numbers-mode)
   (nxml-mode . display-line-numbers-mode)
   (yaml-mode . display-line-numbers-mode)
-  (conf-mode . display-line-numbers-mode)
-  )
+  (conf-mode . display-line-numbers-mode))
 
 
 

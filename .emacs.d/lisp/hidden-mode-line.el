@@ -30,17 +30,17 @@ If ENABLE is non-nil, enable the mode; otherwise disable it."
     (with-current-buffer buf
       ;; 跳过特殊buffer（如minibuffer、echo area等）
       (if enable
-            (unless hidden-mode-line-mode
-              (hidden-mode-line-mode 1))
-          (when hidden-mode-line-mode
-            (hidden-mode-line-mode -1))))))
+          (unless hidden-mode-line-mode
+            (hidden-mode-line-mode 1))
+        (when hidden-mode-line-mode
+          (hidden-mode-line-mode -1))))))
 
 (defun my-hidden-mode-toggle-global (&optional arg)
   "Toggle Hidden Mode Line globally.
 With optional ARG, enable if ARG is positive, disable otherwise."
   (interactive "P")
   (let ((enable (if arg (> (prefix-numeric-value arg) 0)
-                 (not my-hidden-mode-enabled-p))))
+                  (not my-hidden-mode-enabled-p))))
     (if enable
         (progn
           ;; 启用：添加hooks并应用到现有buffers

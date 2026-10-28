@@ -11,8 +11,7 @@
 (use-package hl-todo
   :ensure t
   :config
-  (global-hl-todo-mode 1)
-  )
+  (global-hl-todo-mode 1))
 
 (provide 'init-hl-todo)
 

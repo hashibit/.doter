@@ -8,12 +8,12 @@
 
 
 (setq
-  scroll-margin 0
-  scroll-conservatively 99
-  scroll-up-aggressively 0.01
-  scroll-down-aggressively 0.01
-  scroll-preserve-screen-position nil
-  auto-window-vscroll nil)
+ scroll-margin 0
+ scroll-conservatively 99
+ scroll-up-aggressively 0.01
+ scroll-down-aggressively 0.01
+ scroll-preserve-screen-position nil
+ auto-window-vscroll nil)
 
 (defun scroll-full-page-down ()
   (interactive)

@@ -26,26 +26,25 @@ defines the functions WRAP-WITH-PAREN and WRAP-WITH-BRACKET,
 respectively."
   `(progn
      ,@ (cl-loop
-          for (key . val) in pairs collect
-          `(defun
-             ,(read (concat "my-wrap-region-with-" (prin1-to-string key) "s"))
-             (start stop)
-             (interactive "r")
-             (sp-wrap-with-pair ,val)
+         for (key . val) in pairs collect
+         `(defun
+              ,(read (concat "my-wrap-region-with-" (prin1-to-string key) "s"))
+              (start stop)
+            (interactive "r")
+            (sp-wrap-with-pair ,val)
 
-             (goto-char (+ 1 start))
-             (push-mark (+ 1 stop))
-             ;; (setq deactivate-mark nil)
-             ;; i prefer deactivate mark
-             (setq deactivate-mark t)
-             ))))
+            (goto-char (+ 1 start))
+            (push-mark (+ 1 stop))
+            ;; (setq deactivate-mark nil)
+            ;; i prefer deactivate mark
+            (setq deactivate-mark t)))))
 
 (def-region-pairs ((paren . "(")
-                    (bracket . "[")
-                    (brace . "{")
-                    (single-quote . "'")
-                    (double-quote . "\"")
-                    (back-quote . "`")))
+                   (bracket . "[")
+                   (brace . "{")
+                   (single-quote . "'")
+                   (double-quote . "\"")
+                   (back-quote . "`")))
 
 ;; "_" 不是 smartparens 的 pair，sp-wrap-with-pair 用不了，手动包裹
 (defun my-wrap-region-with-underscores (start stop)
@@ -60,13 +59,13 @@ respectively."
   (setq deactivate-mark t))
 
 (bind-keys :map smartparens-mode-map
-  ("C-c (" . my-wrap-region-with-parens)
-  ("C-c [" . my-wrap-region-with-brackets)
-  ("C-c {" . my-wrap-region-with-braces)
-  ("C-c C-'" . my-wrap-region-with-single-quotes)
-  ("C-c \"" . my-wrap-region-with-double-quotes)
-  ("C-c _" . my-wrap-region-with-underscores)
-  ("C-c `" . my-wrap-region-with-back-quotes))
+           ("C-c (" . my-wrap-region-with-parens)
+           ("C-c [" . my-wrap-region-with-brackets)
+           ("C-c {" . my-wrap-region-with-braces)
+           ("C-c C-'" . my-wrap-region-with-single-quotes)
+           ("C-c \"" . my-wrap-region-with-double-quotes)
+           ("C-c _" . my-wrap-region-with-underscores)
+           ("C-c `" . my-wrap-region-with-back-quotes))
 
 
 

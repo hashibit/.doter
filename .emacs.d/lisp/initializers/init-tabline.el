@@ -22,48 +22,47 @@
 
 (defun my/set-tab-theme ()
   (let ((bg (face-attribute 'mode-line :background))
-         (fg (face-attribute 'default :foreground))
-         (_hg (face-attribute 'default :background))
-         (hi-bg "#FFC44C")
-         (hl-bg "#FFDB93")
-         (modified-fg "red")
-         (base (face-attribute 'mode-line :background))
-         (box-width (/ (line-pixel-height) 4))
-         (family (or (bound-and-true-p default-font-family) 'unspecified)))
+        (fg (face-attribute 'default :foreground))
+        (_hg (face-attribute 'default :background))
+        (hi-bg "#FFC44C")
+        (hl-bg "#FFDB93")
+        (modified-fg "red")
+        (base (face-attribute 'mode-line :background))
+        (box-width (/ (line-pixel-height) 4))
+        (family (or (bound-and-true-p default-font-family) 'unspecified)))
     (set-face-attribute 'tab-line nil
-      :background 'unspecified :foreground 'unspecified
-      :family family
-      :height 0.8
-      :inherit 'default
-      :box nil ;; (list :line-width -1 :color base)
-      )
+                        :background 'unspecified :foreground 'unspecified
+                        :family family
+                        :height 0.8
+                        :inherit 'default
+                        :box nil ;; (list :line-width -1 :color base)
+                        )
     (set-face-attribute 'tab-line-tab-modified nil
-      :foreground modified-fg
-      )
+                        :foreground modified-fg)
     (set-face-attribute 'tab-line-tab nil
-      :foreground fg :background bg
-      :family family :height my-tab-line-face-height
-      :weight 'normal
-      :inherit nil
-      :box (list :line-width box-width :color bg))
+                        :foreground fg :background bg
+                        :family family :height my-tab-line-face-height
+                        :weight 'normal
+                        :inherit nil
+                        :box (list :line-width box-width :color bg))
     (set-face-attribute 'tab-line-tab-inactive nil
-      :foreground fg :background base
-      :family family :height my-tab-line-face-height
-      :weight 'normal
-      :inherit nil
-      :box (list :line-width box-width :color base))
+                        :foreground fg :background base
+                        :family family :height my-tab-line-face-height
+                        :weight 'normal
+                        :inherit nil
+                        :box (list :line-width box-width :color base))
     (set-face-attribute 'tab-line-highlight nil
-      :foreground "black" :background hl-bg
-      :family family :height my-tab-line-face-height
-      :weight 'normal
-      :inherit nil
-      :box (list :line-width box-width :color hl-bg))
+                        :foreground "black" :background hl-bg
+                        :family family :height my-tab-line-face-height
+                        :weight 'normal
+                        :inherit nil
+                        :box (list :line-width box-width :color hl-bg))
     (set-face-attribute 'tab-line-tab-current nil
-      :foreground "black" :background hi-bg
-      :family family :height my-tab-line-face-height
-      :weight 'normal
-      :inherit nil
-      :box (list :line-width box-width :color hi-bg))))
+                        :foreground "black" :background hi-bg
+                        :family family :height my-tab-line-face-height
+                        :weight 'normal
+                        :inherit nil
+                        :box (list :line-width box-width :color hi-bg))))
 
 (defun my/tab-line-name-buffer (buffer &rest _buffers)
   "Create name for tab with padding and truncation.
@@ -105,10 +104,10 @@ function."
          (buffer (if (bufferp tab) tab (cdr (assq 'buffer tab))))
          (tab-list (tab-line-tabs-window-buffers))
          (buffer-list (flatten-list
-                        (mapcar (lambda (w)
-                                  (with-selected-window w
-                                    (tab-line-tabs-window-buffers)))
-                          (window-list)))))
+                       (mapcar (lambda (w)
+                                 (with-selected-window w
+                                   (tab-line-tabs-window-buffers)))
+                               (window-list)))))
     (if (> (seq-count (lambda (b) (eq b buffer)) buffer-list) 1)
         (progn
           (if (eq buffer (current-buffer))
@@ -131,22 +130,22 @@ function."
   ("s-w" . kill-current-buffer)
   :config
   (setq tab-line-close-button-show t
-    tab-line-close-tab-function #'my/tab-line-close-tab
-    tab-line-new-button-show nil
-    tab-line-separator ""
-    tab-line-tab-name-function #'my/tab-line-name-buffer
-    tab-line-right-button (propertize (if (char-displayable-p ?▶) " ▶ " " > ")
-                            'keymap tab-line-right-map
-                            'mouse-face 'tab-line-highlight
-                            'help-echo "Click to scroll right")
-    tab-line-left-button (propertize (if (char-displayable-p ?◀) " ◀ " " < ")
-                           'keymap tab-line-left-map
-                           'mouse-face 'tab-line-highlight
-                           'help-echo "Click to scroll left")
-    tab-line-close-button (propertize (if (char-displayable-p ?×) " × " " x ")
-                            'keymap tab-line-tab-close-map
-                            'mouse-face 'tab-line-close-highlight
-                            'help-echo "Click to close tab"))
+        tab-line-close-tab-function #'my/tab-line-close-tab
+        tab-line-new-button-show nil
+        tab-line-separator ""
+        tab-line-tab-name-function #'my/tab-line-name-buffer
+        tab-line-right-button (propertize (if (char-displayable-p ?▶) " ▶ " " > ")
+                                          'keymap tab-line-right-map
+                                          'mouse-face 'tab-line-highlight
+                                          'help-echo "Click to scroll right")
+        tab-line-left-button (propertize (if (char-displayable-p ?◀) " ◀ " " < ")
+                                         'keymap tab-line-left-map
+                                         'mouse-face 'tab-line-highlight
+                                         'help-echo "Click to scroll left")
+        tab-line-close-button (propertize (if (char-displayable-p ?×) " × " " x ")
+                                          'keymap tab-line-tab-close-map
+                                          'mouse-face 'tab-line-close-highlight
+                                          'help-echo "Click to close tab"))
 
   (my/set-tab-theme)
 
@@ -163,8 +162,7 @@ function."
 
   (setq tab-line-tabs-buffer-group-function #'my-editor-group)
   (setq tab-line-tabs-buffer-group-sort-function #'buffer-comp-less-p)
-  (setq tab-line-tabs-function #'tab-line-tabs-buffer-groups)
-  )
+  (setq tab-line-tabs-function #'tab-line-tabs-buffer-groups))
 
 
 ;; sort tabs

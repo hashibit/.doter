@@ -36,11 +36,10 @@
                    (string-match-p
                     "\\<\\(zsh\\|bash\\|sh\\|fish\\|nu\\|elvish\\|ksh\\)\\>"
                     cmd))
-        (user-error "Refusing to clear scrollback: %s" (or cmd "no process"))
-        ))
+        (user-error "Refusing to clear scrollback: %s" (or cmd "no process"))))
     (let ((inhibit-read-only t)
-           (inhibit-modification-hooks t)
-           (buffer-undo-list t))
+          (inhibit-modification-hooks t)
+          (buffer-undo-list t))
       (eat-term-process-output eat-terminal "\e[3J")
       (eat-term-redisplay eat-terminal))
     (eat-term-send-string eat-terminal "\C-l"))
@@ -64,12 +63,12 @@
   (defun my-eat-kill-window-on-buffer-kill ()
     (let ((window (get-buffer-window (current-buffer))))
       (if (and window
-              (window-parent window)
-              (seq-find (lambda (w)
-                          (and (not (eq w window))
-                            (not (window-parameter w 'window-side))))
-                (window-list (window-frame window) 'no-mini)))
-        (delete-window window)
+               (window-parent window)
+               (seq-find (lambda (w)
+                           (and (not (eq w window))
+                                (not (window-parameter w 'window-side))))
+                         (window-list (window-frame window) 'no-mini)))
+          (delete-window window)
         ;; Only window in frame: kill-buffer-hook runs before
         ;; replace-buffer-in-windows, so switch away first to prevent
         ;; switch-to-prev-buffer from guessing a buffer.  *scratch* is
@@ -104,8 +103,8 @@
 
   ;; f1~f9
   (cl-loop for num from 1 to 9
-    for key-str = (format "<f%d>" num)
-    do (keymap-set eat-semi-char-mode-map key-str #'eat-self-input))
+           for key-str = (format "<f%d>" num)
+           do (keymap-set eat-semi-char-mode-map key-str #'eat-self-input))
 
   (dolist (key '("M-h" "M-l" "M-o"))
     (keymap-set eat-semi-char-mode-map key #'eat-self-input))
@@ -154,25 +153,23 @@
   ;; Override eat ANSI colors to match ansi-color-names-vector (dark theme readable)
   ;; 用 custom-set-faces 而非 :custom-face：后者设置的是 defface spec，会被主题 (kaolin) 覆盖
   (custom-set-faces
-      '(eat-term-color-0  ((t (:foreground "black"))))
-      '(eat-term-color-1  ((t (:foreground "tomato"))))
-      '(eat-term-color-2  ((t (:foreground "PaleGreen2"))))
-      '(eat-term-color-3  ((t (:foreground "gold1"))))
-      '(eat-term-color-4  ((t (:foreground "DeepSkyBlue1"))))
-      '(eat-term-color-5  ((t (:foreground "MediumOrchid1"))))
-      '(eat-term-color-6  ((t (:foreground "cyan"))))
-      '(eat-term-color-7  ((t (:foreground "white"))))
-      ;; Bright variants (8-15)
-      '(eat-term-color-8  ((t (:foreground "gray50"))))
-      '(eat-term-color-9  ((t (:foreground "tomato"))))
-      '(eat-term-color-10 ((t (:foreground "PaleGreen2"))))
-      '(eat-term-color-11 ((t (:foreground "gold1"))))
-      '(eat-term-color-12 ((t (:foreground "DeepSkyBlue1"))))
-      '(eat-term-color-13 ((t (:foreground "MediumOrchid1"))))
-      '(eat-term-color-14 ((t (:foreground "cyan"))))
-      '(eat-term-color-15 ((t (:foreground "white")))))
-
-  )
+   '(eat-term-color-0  ((t (:foreground "black"))))
+   '(eat-term-color-1  ((t (:foreground "tomato"))))
+   '(eat-term-color-2  ((t (:foreground "PaleGreen2"))))
+   '(eat-term-color-3  ((t (:foreground "gold1"))))
+   '(eat-term-color-4  ((t (:foreground "DeepSkyBlue1"))))
+   '(eat-term-color-5  ((t (:foreground "MediumOrchid1"))))
+   '(eat-term-color-6  ((t (:foreground "cyan"))))
+   '(eat-term-color-7  ((t (:foreground "white"))))
+   ;; Bright variants (8-15)
+   '(eat-term-color-8  ((t (:foreground "gray50"))))
+   '(eat-term-color-9  ((t (:foreground "tomato"))))
+   '(eat-term-color-10 ((t (:foreground "PaleGreen2"))))
+   '(eat-term-color-11 ((t (:foreground "gold1"))))
+   '(eat-term-color-12 ((t (:foreground "DeepSkyBlue1"))))
+   '(eat-term-color-13 ((t (:foreground "MediumOrchid1"))))
+   '(eat-term-color-14 ((t (:foreground "cyan"))))
+   '(eat-term-color-15 ((t (:foreground "white"))))))
 
 
 (provide 'init-eat)

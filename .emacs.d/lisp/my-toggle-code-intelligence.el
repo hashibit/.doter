@@ -29,7 +29,7 @@
 
 (with-eval-after-load 'eglot
   (set-face-attribute 'eglot-highlight-symbol-face nil
-    :inherit my-eglot-highlight-symbol-face-saved))
+                      :inherit my-eglot-highlight-symbol-face-saved))
 
 
 (defvar-local my-run-later--timers nil
@@ -46,11 +46,11 @@
   (my-cancel-later fn)
   (let* ((buf (current-buffer))
          (timer (run-with-timer my-disable-timeout nil
-                  (lambda ()
-                    (when (buffer-live-p buf)
-                      (with-current-buffer buf
-                        (setq my-run-later--timers (assq-delete-all fn my-run-later--timers))
-                        (ignore-errors (funcall fn))))))))
+                                (lambda ()
+                                  (when (buffer-live-p buf)
+                                    (with-current-buffer buf
+                                      (setq my-run-later--timers (assq-delete-all fn my-run-later--timers))
+                                      (ignore-errors (funcall fn))))))))
     (push (cons fn timer) my-run-later--timers)))
 
 
@@ -72,7 +72,7 @@
   (ignore-errors
     (when (boundp 'eglot-ignored-server-capabilities)
       (setq eglot-ignored-server-capabilities
-        (delq :documentHighlightProvider eglot-ignored-server-capabilities)))
+            (delq :documentHighlightProvider eglot-ignored-server-capabilities)))
     (when my-eglot-highlight-disabled
       (face-remap-reset-base 'eglot-highlight-symbol-face)
       (setq my-eglot-highlight-disabled nil))))

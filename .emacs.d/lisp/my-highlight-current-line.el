@@ -15,12 +15,12 @@
 (defun dehighlight-current-line ()
   (interactive)
   (remove-overlays (line-beginning-position)
-    (+ 1 (line-end-position)) 'my-marker-name-for-line-highlight-overlay t))
+                   (+ 1 (line-end-position)) 'my-marker-name-for-line-highlight-overlay t))
 
 (defun highlight-or-dehighlight-line ()
   (interactive)
   (if (find-overlays-specifying 'my-marker-name-for-line-highlight-overlay (line-beginning-position))
-    (dehighlight-current-line)
+      (dehighlight-current-line)
     (highlight-current-line)))
 
 (defun remove-all-highlight ()

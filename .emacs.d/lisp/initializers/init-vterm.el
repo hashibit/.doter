@@ -16,7 +16,7 @@
   (defun my-vterm-copy-region (&optional _arg)
     (interactive "p")
     (if (use-region-p)
-      (kill-ring-save (region-beginning) (region-end))
+        (kill-ring-save (region-beginning) (region-end))
       (save-excursion
         (copy-region-as-kill (line-beginning-position) (line-end-position)))))
 
@@ -30,8 +30,8 @@
     (vterm-send-key "c" nil nil t))
 
   (setq vterm-timer-delay 0.001
-    vterm-max-scrollback 10000
-    vterm-kill-buffer-on-exit t)
+        vterm-max-scrollback 10000
+        vterm-kill-buffer-on-exit t)
 
   (defun my-vterm-delete-window-on-kill ()
     (let ((window (get-buffer-window (current-buffer))))
@@ -72,7 +72,7 @@
 
   (defun my-toggle-legendary-buffer-for-vterm(&optional _arg)
     (if (bound-and-true-p vterm-copy-mode)
-      (my-remove-from-legendary-buffers '("*vterm" "*claude"))
+        (my-remove-from-legendary-buffers '("*vterm" "*claude"))
       (my-add-to-legendary-buffers '("*vterm" "*claude")))
     (refresh-current-mode))
 
@@ -93,26 +93,24 @@
     ;; Apply ASCII replacements for vterm specifically
     (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
       (dolist (pair
-                '((#x273B . ?*) ; ✻ TEARDROP-SPOKED ASTERISK
-                   (#x273D . ?*) ; ✽ HEAVY TEARDROP-SPOKED ASTERISK
-                   (#x2722 . ?+) ; ✢ FOUR TEARDROP-SPOKED ASTERISK
-                   (#x2736 . ?+) ; ✶ SIX-POINTED BLACK STAR
-                   (#x2733 . ?*) ; ✳ EIGHT SPOKED ASTERISK
-                   (#x23FA . ?*) ; ⏺ RECORD BUTTON
-                   ))
+               '((#x273B . ?*) ; ✻ TEARDROP-SPOKED ASTERISK
+                 (#x273D . ?*) ; ✽ HEAVY TEARDROP-SPOKED ASTERISK
+                 (#x2722 . ?+) ; ✢ FOUR TEARDROP-SPOKED ASTERISK
+                 (#x2736 . ?+) ; ✶ SIX-POINTED BLACK STAR
+                 (#x2733 . ?*) ; ✳ EIGHT SPOKED ASTERISK
+                 (#x23FA . ?*) ; ⏺ RECORD BUTTON
+                 ))
         (aset tbl (car pair) (vector (cdr pair))))))
 
   (add-hook 'vterm-mode-hook #'diego--vterm-font-setup)
   (defun my-vterm-nobreak-space-setup ()
     (face-remap-add-relative 'nobreak-space :underline nil))
-  (add-hook 'vterm-mode-hook #'my-vterm-nobreak-space-setup)
-  )
+  (add-hook 'vterm-mode-hook #'my-vterm-nobreak-space-setup))
 
 (use-package multi-vterm
   :ensure t
   :config
-  (setq multi-vterm-dedicated-window-height-percent 90)
-  )
+  (setq multi-vterm-dedicated-window-height-percent 90))
 
 
 (defvar vterm-copy-mode)
@@ -122,15 +120,15 @@
 (defun me/vterm-toggle-scroll (&rest event)
   (when (eq major-mode 'vterm-mode)
     (let ((scroll-up (if (display-graphic-p) 'triple-wheel-up 'wheel-up))
-           (scroll-down (if (display-graphic-p) 'triple-wheel-down 'wheel-down))
-           (event-type (car-safe (car-safe event))))
+          (scroll-down (if (display-graphic-p) 'triple-wheel-down 'wheel-down))
+          (event-type (car-safe (car-safe event))))
       ;; (message "event-type: %s" event-type)
       (cond
-        ((eq event-type scroll-up)
-          (unless vterm-copy-mode (vterm-copy-mode 1)))
-        ((eq event-type scroll-down)
-          (when (and vterm-copy-mode (> (window-end) (buffer-size)))
-            (vterm-copy-mode-done nil)))))))
+       ((eq event-type scroll-up)
+        (unless vterm-copy-mode (vterm-copy-mode 1)))
+       ((eq event-type scroll-down)
+        (when (and vterm-copy-mode (> (window-end) (buffer-size)))
+          (vterm-copy-mode-done nil)))))))
 
 
 

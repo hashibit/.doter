@@ -63,15 +63,15 @@
   (let (orig-point orig-buffer new-point new-buffer)
     (with-ivy-window
       (setq
-        orig-point (point)
-        orig-buffer (current-buffer)))
+       orig-point (point)
+       orig-buffer (current-buffer)))
 
     (ivy-call)
 
     (with-ivy-window
       (setq
-        new-point (point)
-        new-buffer (current-buffer)))
+       new-point (point)
+       new-buffer (current-buffer)))
 
     (when (and (eq new-point orig-point) (eq new-buffer orig-buffer))
       (ivy-done))))
@@ -137,14 +137,14 @@
         (goto-char (point-min))
         (forward-line (- win-start-line beg-line))))
     (posframe-show display-buf
-      :poshandler #'my-xref-peek--poshandler
-      :width peek-width
-      :height (+ my-xref-peek--context 2)
-      :border-width 1
-      :border-color "#4a5a7a"
-      :background-color "#181818"
-      :internal-border-width 3
-      :accept-focus nil)
+                   :poshandler #'my-xref-peek--poshandler
+                   :width peek-width
+                   :height (+ my-xref-peek--context 2)
+                   :border-width 1
+                   :border-color "#4a5a7a"
+                   :background-color "#181818"
+                   :internal-border-width 3
+                   :accept-focus nil)
     (let ((win (get-buffer-window display-buf t)))
       (when win
         (with-current-buffer display-buf
@@ -154,11 +154,11 @@
   "Called by ivy-update-fns-alist on candidate change."
   (when my-xref-peek--enabled
     (let* ((current (ivy-state-current ivy-last))
-            (candidate (assoc current (ivy-state-collection ivy-last))))
+           (candidate (assoc current (ivy-state-collection ivy-last))))
       (when (consp candidate)
         (let* ((loc (cdr candidate))
-                (file (xref-location-group loc))
-                (line (xref-file-location-line loc)))
+               (file (xref-location-group loc))
+               (line (xref-file-location-line loc)))
           (when (and file line (file-readable-p file))
             (my-xref-peek--show file line)))))))
 
@@ -208,8 +208,8 @@
   (setq xref-show-xrefs-function #'my-xref-show-xrefs-function)
   :bind
   (:map
-    ivy-minibuffer-map
-    ("M-l" . ivy-call-and-recenter))
+   ivy-minibuffer-map
+   ("M-l" . ivy-call-and-recenter))
   :config
   (keymap-set ivy-minibuffer-map "C-l" #'my-xref-peek-toggle))
 

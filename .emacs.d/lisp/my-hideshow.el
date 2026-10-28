@@ -34,17 +34,17 @@
   (interactive)
   (hs-minor-mode 1)
   (if (derived-mode-p 'c++-mode 'c++-ts-mode)
-    ;; Fold one level inside the top-level namespace instead of the
-    ;; namespace itself.
-    (let ((starting-ov-count (length (overlays-in (point-min) (point-max)))))
-      (save-excursion
-        (goto-char (point-min))
-        (when (re-search-forward "namespace.*?{" nil t)
-          (forward-line 1))
-        (hs-hide-level 1))
-      (when (= (length (overlays-in (point-min) (point-max))) starting-ov-count)
-        (hs-show-all)
-        (recenter)))
+      ;; Fold one level inside the top-level namespace instead of the
+      ;; namespace itself.
+      (let ((starting-ov-count (length (overlays-in (point-min) (point-max)))))
+        (save-excursion
+          (goto-char (point-min))
+          (when (re-search-forward "namespace.*?{" nil t)
+            (forward-line 1))
+          (hs-hide-level 1))
+        (when (= (length (overlays-in (point-min) (point-max))) starting-ov-count)
+          (hs-show-all)
+          (recenter)))
     (hs-toggle-all)))
 
 (defun my-hs-toggle-hiding ()

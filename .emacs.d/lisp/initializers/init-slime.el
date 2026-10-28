@@ -14,7 +14,7 @@
   (when-let* (((slime-connected-p))
               (sym (slime-symbol-at-point)))
     (slime-eval-async `(swank:documentation-symbol ,sym)
-      (lambda (doc) (funcall callback doc :echo 'skip)))
+                      (lambda (doc) (funcall callback doc :echo 'skip)))
     t))
 
 (defun my-slime-eldoc-setup ()
@@ -47,8 +47,7 @@
   (keymap-set slime-mode-map "<remap> <xref-find-references>" #'slime-who-calls)
   ;; 高亮 who calls 列表项
   (advice-add 'slime-goto-location-position :after #'my-slime-pulse-line)
-  (add-hook 'slime-mode-hook #'my-slime-eldoc-setup)
-  )
+  (add-hook 'slime-mode-hook #'my-slime-eldoc-setup))
 
 ;; 使用 quicklisp 安装的本地 HyperSpec
 ;; Load it with slime, not at startup.
@@ -58,19 +57,18 @@
 ;; C-c C-d h 打开的本地 HyperSpec 用 eww 显示，其他链接仍走默认浏览器
 (with-eval-after-load 'browse-url
   (add-to-list 'browse-url-handlers
-    '("\\`file://.*/HyperSpec/" . eww-browse-url)))
+               '("\\`file://.*/HyperSpec/" . eww-browse-url)))
 
 (use-package slime-company
   :after slime
   :bind ((:map slime-repl-mode-map
-           ("C-n" . company-select-next)
-           ("C-p" . company-select-previous)
-           ("M-." . company-show-location)
-           ))
+               ("C-n" . company-select-next)
+               ("C-p" . company-select-previous)
+               ("M-." . company-show-location)))
   :config
   (setq
-    slime-company-completion 'fuzzy
-    slime-company-after-completion 'slime-company-just-one-space))
+   slime-company-completion 'fuzzy
+   slime-company-after-completion 'slime-company-just-one-space))
 
 
 (provide 'init-slime)

@@ -28,11 +28,11 @@
     (dolist (window (window-list))
       (with-selected-window window
         (push (make-enhanced-window-info
-                :buffer (current-buffer)
-                :point (point)
-                :window-start (window-start)
-                :window-end (window-end))
-          details)))
+               :buffer (current-buffer)
+               :point (point)
+               :window-start (window-start)
+               :window-end (window-end))
+              details)))
     (nreverse details)))
 
 (defun enhanced-winner--save-configuration ()
@@ -44,15 +44,15 @@
 (defun enhanced-winner--restore-window-details (details)
   "恢复窗口的详细位置信息。"
   (let ((windows (window-list))
-         (detail-index 0))
+        (detail-index 0))
     (dolist (window windows)
       (when (< detail-index (length details))
         (let ((detail (nth detail-index details)))
           (with-selected-window window
             ;; 检查缓冲区是否匹配
             (when (and detail
-                    (buffer-live-p (enhanced-window-info-buffer detail))
-                    (eq (current-buffer) (enhanced-window-info-buffer detail)))
+                       (buffer-live-p (enhanced-window-info-buffer detail))
+                       (eq (current-buffer) (enhanced-window-info-buffer detail)))
               ;; 恢复光标位置
               (goto-char (enhanced-window-info-point detail))
               ;; 恢复滚动位置
@@ -92,7 +92,7 @@
 (defun enhanced-winner--auto-save ()
   "自动保存窗口配置的钩子函数。"
   (unless (or (memq this-command '(enhanced-winner-undo enhanced-winner-redo))
-            (minibufferp))
+              (minibufferp))
     (enhanced-winner--save-configuration)))
 
 ;; 在窗口配置改变时自动保存
@@ -111,8 +111,8 @@
   "显示增强 winner 模式的当前状态信息。"
   (interactive)
   (message "Enhanced Winner: %d/%d configurations stored"
-    (1+ enhanced-winner-current-index)
-    (ring-length enhanced-winner-window-details-ring)))
+           (1+ enhanced-winner-current-index)
+           (ring-length enhanced-winner-window-details-ring)))
 
 ;; 清理历史的函数
 (defun enhanced-winner-clear-history ()
@@ -132,7 +132,7 @@
   (when enhanced-winner-save-timer
     (cancel-timer enhanced-winner-save-timer))
   (setq enhanced-winner-save-timer
-    (run-with-idle-timer 2 t #'enhanced-winner--auto-save)))
+        (run-with-idle-timer 2 t #'enhanced-winner--auto-save)))
 
 (defun enhanced-winner-stop-periodic-save ()
   "停止定期保存。"

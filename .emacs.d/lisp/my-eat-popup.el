@@ -43,27 +43,27 @@ Each project gets its own buffer. The shell starts in the project root."
                    (my-popup-eat-buffer-name-for-root root)
                  my-popup-eat-buffer-name)))
     (or (get-buffer name)
-      (let ((buf (get-buffer-create name)))
-        (with-current-buffer buf
-          ;; eat-exec starts the process in default-directory.
-          (when root
-            (setq default-directory root))
-          (unless (eq major-mode 'eat-mode)
-            (eat-mode))
-          (unless (and (bound-and-true-p eat-terminal)
-                       (eat-term-parameter eat-terminal 'eat--process))
-            (eat-exec buf (buffer-name) "/usr/bin/env" nil
-                      (list "sh" "-c" (or explicit-shell-file-name
-                                          (getenv "ESHELL")
-                                          shell-file-name)))))
-        buf))))
+        (let ((buf (get-buffer-create name)))
+          (with-current-buffer buf
+            ;; eat-exec starts the process in default-directory.
+            (when root
+              (setq default-directory root))
+            (unless (eq major-mode 'eat-mode)
+              (eat-mode))
+            (unless (and (bound-and-true-p eat-terminal)
+                         (eat-term-parameter eat-terminal 'eat--process))
+              (eat-exec buf (buffer-name) "/usr/bin/env" nil
+                        (list "sh" "-c" (or explicit-shell-file-name
+                                            (getenv "ESHELL")
+                                            shell-file-name)))))
+          buf))))
 
 (defun my-toggle-vterm ()
   (interactive)
   (if (derived-mode-p 'eat-mode)
-    (cond
-      ((bound-and-true-p popper-mode) (popper-close-latest))
-      (t (delete-window)))
+      (cond
+       ((bound-and-true-p popper-mode) (popper-close-latest))
+       (t (delete-window)))
     (display-buffer (my-get-or-create-popup-eat-buffer))))
 
 

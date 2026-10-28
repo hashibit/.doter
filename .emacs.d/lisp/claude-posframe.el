@@ -55,8 +55,8 @@
   "Check if required dependencies are available."
   (unless claude-posframe--dependencies-available
     (setq claude-posframe--dependencies-available
-      (and (require 'posframe nil t)
-        (require 'eat nil t))))
+          (and (require 'posframe nil t)
+               (require 'eat nil t))))
   claude-posframe--dependencies-available)
 
 ;;; Customization
@@ -94,10 +94,10 @@
 (defcustom claude-posframe-position 'center
   "Position of the posframe."
   :type '(choice (const :tag "Center" center)
-           (const :tag "Top" top)
-           (const :tag "Bottom" bottom)
-           (const :tag "Left" left)
-           (const :tag "Right" right))
+                 (const :tag "Top" top)
+                 (const :tag "Bottom" bottom)
+                 (const :tag "Left" left)
+                 (const :tag "Right" right))
   :group 'claude-posframe)
 
 (defcustom claude-posframe-min-width 80
@@ -121,7 +121,7 @@ If nil, automatically detect project directory using projectile,
 project.el, or vc.
 Falls back to current directory if no project is detected."
   :type '(choice (const :tag "Auto-detect project directory" nil)
-           (directory :tag "Custom directory"))
+                 (directory :tag "Custom directory"))
   :group 'claude-posframe)
 
 (defcustom claude-posframe-fix-unicode t
@@ -143,9 +143,9 @@ Falls back to current directory if no project is detected."
   "Get project-specific buffer name."
   (let ((project-dir (claude-posframe--get-project-directory)))
     (if project-dir
-      (let ((dir (expand-file-name (directory-file-name project-dir))))
-        (format "*claude-posframe:%s-%s*"
-          (file-name-nondirectory dir) (substring (sha1 dir) 0 8)))
+        (let ((dir (expand-file-name (directory-file-name project-dir))))
+          (format "*claude-posframe:%s-%s*"
+                  (file-name-nondirectory dir) (substring (sha1 dir) 0 8)))
       claude-posframe-buffer-base-name)))
 
 ;;; Hooks
@@ -172,24 +172,24 @@ Falls back to current directory if no project is detected."
 (defun claude-posframe--get-project-directory ()
   "Get the project root directory, trying multiple methods."
   (or
-    (when (and (bound-and-true-p projectile-mode)
-            (fboundp 'projectile-project-root))
-      (ignore-errors (projectile-project-root)))
-    (when (fboundp 'project-current)
-      (when-let* ((project (project-current)))
-        (project-root project)))
-    (when (fboundp 'vc-root-dir)
-      (ignore-errors (vc-root-dir)))
-    default-directory))
+   (when (and (bound-and-true-p projectile-mode)
+              (fboundp 'projectile-project-root))
+     (ignore-errors (projectile-project-root)))
+   (when (fboundp 'project-current)
+     (when-let* ((project (project-current)))
+       (project-root project)))
+   (when (fboundp 'vc-root-dir)
+     (ignore-errors (vc-root-dir)))
+   default-directory))
 
 ;;; Core Functions
 
 (defun claude-posframe--calculate-dimensions ()
   "Calculate posframe dimensions with minimum constraints."
   (let ((width (max claude-posframe-min-width
-                 (round (* (frame-width) claude-posframe-width-ratio))))
-         (height (max claude-posframe-min-height
-                   (round (* (frame-height) claude-posframe-height-ratio)))))
+                    (round (* (frame-width) claude-posframe-width-ratio))))
+        (height (max claude-posframe-min-height
+                     (round (* (frame-height) claude-posframe-height-ratio)))))
     (list width height)))
 
 ;;;###autoload
@@ -199,20 +199,20 @@ Falls back to current directory if no project is detected."
   (unless (claude-posframe--check-dependencies)
     (user-error "Required dependencies (posframe, eat) are not available"))
   (let* ((buffer (claude-posframe--get-buffer switches))
-          (dimensions (claude-posframe--calculate-dimensions))
-          (width (car dimensions))
-          (height (cadr dimensions)))
+         (dimensions (claude-posframe--calculate-dimensions))
+         (width (car dimensions))
+         (height (cadr dimensions)))
     (setq claude-posframe--parent-frame (selected-frame))
     (posframe-show buffer
-      :position (point)
-      :width width
-      :height height
-      :window-point (when claude-posframe-auto-scroll
-                      (with-current-buffer buffer (point-max)))
-      :border-width claude-posframe-border-width
-      :border-color claude-posframe-border-color
-      :poshandler (claude-posframe--get-position-handler)
-      :accept-focus t)
+                   :position (point)
+                   :width width
+                   :height height
+                   :window-point (when claude-posframe-auto-scroll
+                                   (with-current-buffer buffer (point-max)))
+                   :border-width claude-posframe-border-width
+                   :border-color claude-posframe-border-color
+                   :poshandler (claude-posframe--get-position-handler)
+                   :accept-focus t)
     (when claude-posframe-auto-scroll
       (claude-posframe--ensure-scroll))
     (run-hooks 'claude-posframe-show-hook)))
@@ -240,7 +240,7 @@ Falls back to current directory if no project is detected."
     (when (and buffer (buffer-live-p buffer))
       (posframe-hide buffer)
       (when (and claude-posframe--parent-frame
-              (frame-live-p claude-posframe--parent-frame))
+                 (frame-live-p claude-posframe--parent-frame))
         (select-frame-set-input-focus claude-posframe--parent-frame))
       (run-hooks 'claude-posframe-hide-hook))))
 
@@ -249,14 +249,14 @@ Falls back to current directory if no project is detected."
   "Check if the claude posframe is visible."
   (let ((buffer (get-buffer (claude-posframe--get-buffer-name))))
     (and buffer
-      (buffer-live-p buffer)
-      (let ((window (get-buffer-window buffer t)))
-        (and window
-          (window-live-p window)
-          (let ((frame (window-frame window)))
-            (and frame
-              (frame-live-p frame)
-              (frame-visible-p frame))))))))
+         (buffer-live-p buffer)
+         (let ((window (get-buffer-window buffer t)))
+           (and window
+                (window-live-p window)
+                (let ((frame (window-frame window)))
+                  (and frame
+                       (frame-live-p frame)
+                       (frame-visible-p frame))))))))
 
 ;;;###autoload
 (defun claude-posframe-toggle (&optional arg)
@@ -266,7 +266,7 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
   (let ((switches (when (equal arg '(4))
                     '("--permission-mode" "bypassPermissions"))))
     (if (claude-posframe-visible-p)
-      (claude-posframe-hide)
+        (claude-posframe-hide)
       (claude-posframe-show switches))))
 
 ;;;###autoload
@@ -305,7 +305,7 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
   :keymap claude-posframe-mode-map
   :group 'claude-posframe
   (if claude-posframe-mode
-    (message "Claude posframe mode enabled")
+      (message "Claude posframe mode enabled")
     (message "Claude posframe mode disabled")))
 
 (defun claude-posframe--turn-on ()
@@ -332,10 +332,10 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
     (user-error "Required dependencies (posframe, eat) are not available"))
 
   (let* ((buffer-name (claude-posframe--get-buffer-name))
-          (buffer (get-buffer buffer-name))
-          (current-dir (or claude-posframe-working-directory
-                         (claude-posframe--get-project-directory)
-                         (expand-file-name "~"))))
+         (buffer (get-buffer buffer-name))
+         (current-dir (or claude-posframe-working-directory
+                          (claude-posframe--get-project-directory)
+                          (expand-file-name "~"))))
 
     ;; Kill buffer if process is dead
     (when (and buffer (buffer-live-p buffer)
@@ -346,15 +346,15 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
     (unless buffer
       (let ((default-directory current-dir))
         (condition-case err
-          (progn
-            (setq buffer (apply #'eat-make buffer-name claude-posframe-shell nil switches))
-            (with-current-buffer buffer
-              (when claude-posframe-fix-unicode
-                (claude-posframe--setup-unicode-fixes))
-              (claude-posframe--setup-eat-keybindings)
-              (when (get-buffer-process buffer)
-                (set-process-sentinel (get-buffer-process buffer)
-                  #'claude-posframe--process-sentinel))))
+            (progn
+              (setq buffer (apply #'eat-make buffer-name claude-posframe-shell nil switches))
+              (with-current-buffer buffer
+                (when claude-posframe-fix-unicode
+                  (claude-posframe--setup-unicode-fixes))
+                (claude-posframe--setup-eat-keybindings)
+                (when (get-buffer-process buffer)
+                  (set-process-sentinel (get-buffer-process buffer)
+                                        #'claude-posframe--process-sentinel))))
           (error
            (when (get-buffer buffer-name) (kill-buffer buffer-name))
            (signal (car err) (cdr err))))))
@@ -364,8 +364,8 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
   "Configure Unicode character replacements for Claude Code compatibility."
   (let ((tbl (or buffer-display-table (setq buffer-display-table (make-display-table)))))
     (dolist (pair
-              '((#x273B . ?*) (#x273D . ?*) (#x2722 . ?+) (#x2736 . ?+) (#x2733 . ?*)
-                (#x2699 . ?*) (#x1F4DD . ?*) (#x1F916 . ?*) (#x00A0 . ? )))
+             '((#x273B . ?*) (#x273D . ?*) (#x2722 . ?+) (#x2736 . ?+) (#x2733 . ?*)
+               (#x2699 . ?*) (#x1F4DD . ?*) (#x1F916 . ?*) (#x00A0 . ? )))
       (aset tbl (car pair) (vector (cdr pair))))))
 
 ;;; eat Integration
@@ -394,10 +394,10 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
         (posframe-hide buffer)
         (message "Claude process exited in buffer %s" (buffer-name buffer))
         (run-with-timer 0.1 nil
-          (lambda (buf)
-            (when (buffer-live-p buf)
-              (kill-buffer buf)))
-          buffer)))))
+                        (lambda (buf)
+                          (when (buffer-live-p buf)
+                            (kill-buffer buf)))
+                        buffer)))))
 
 ;;; Send Commands to Claude
 
@@ -412,9 +412,9 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
   "Send the selected region to claude posframe."
   (interactive "r")
   (let ((file-name (claude-posframe--get-buffer-file-name))
-         (selection (buffer-substring-no-properties beg end)))
+        (selection (buffer-substring-no-properties beg end)))
     (if file-name
-      (claude-posframe-do-send-command (format "@%s:%d-%d\n" file-name (line-number-at-pos beg) (line-number-at-pos end)))
+        (claude-posframe-do-send-command (format "@%s:%d-%d\n" file-name (line-number-at-pos beg) (line-number-at-pos end)))
       (claude-posframe-do-send-command (format "%s\n" selection)))))
 
 
@@ -428,7 +428,7 @@ With prefix argument ARG (C-u), start Claude with bypassed permissions."
   (interactive)
   (let ((filename (claude-posframe--get-buffer-file-name)))
     (if filename
-      (claude-posframe-do-send-command (format "@%s " filename))
+        (claude-posframe-do-send-command (format "@%s " filename))
       (message "Current buffer is not visiting a file"))))
 
 ;;; Cleanup and Initialization

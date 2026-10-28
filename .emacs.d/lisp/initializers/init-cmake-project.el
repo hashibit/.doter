@@ -35,8 +35,8 @@
   :ensure nil  ; Built-in with Emacs 29+
   :hook (cmake-ts-mode . my-cmake-ts-mode-hook)
   :bind (:map cmake-ts-mode-map
-         ("C-c C-b" . compile)
-         ("s-b" . compile)))
+              ("C-c C-b" . compile)
+              ("s-b" . compile)))
 
 (provide 'init-cmake-project)
 

@@ -143,17 +143,17 @@ Around advice for ORIG-FUN (`eglot-ensure') with ARGS."
 Eglot calls this with `default-directory' bound to the project root."
   (let ((venv-python (expand-file-name ".venv/bin/python")))
     `(:gopls (:usePlaceholders t)
-      :rust-analyzer
-      ( :checkOnSave (:enable :json-false)
-        :procMacro (:enable t)
-        :cargo ( :buildScripts (:enable t)
-                 :features "all")
-        :diagnostics (:experimental (:enable :json-false))
-        :completion (:autoimport (:enable t))
-        :files (:watcher "server"))
-      ,@(when (file-executable-p venv-python)
-          `(:python (:pythonPath ,venv-python)
-            :python.analysis (:logLevel "trace"))))))
+             :rust-analyzer
+             ( :checkOnSave (:enable :json-false)
+               :procMacro (:enable t)
+               :cargo ( :buildScripts (:enable t)
+                        :features "all")
+               :diagnostics (:experimental (:enable :json-false))
+               :completion (:autoimport (:enable t))
+               :files (:watcher "server"))
+             ,@(when (file-executable-p venv-python)
+                 `(:python (:pythonPath ,venv-python)
+                           :python.analysis (:logLevel "trace"))))))
 
 
 ;;; Markdown preview (mpls)
@@ -191,14 +191,14 @@ Eglot calls this with `default-directory' bound to the project root."
   :hook
   ;; Start at once
   ((c-ts-mode c++-ts-mode
-    go-mode go-ts-mode
-    rust-mode rust-ts-mode
-    zig-mode
-    clojure-ts-mode
-    markdown-mode) . eglot-ensure)
+              go-mode go-ts-mode
+              rust-mode rust-ts-mode
+              zig-mode
+              clojure-ts-mode
+              markdown-mode) . eglot-ensure)
   ;; Start when Emacs is idle (slow servers)
   ((js-ts-mode typescript-ts-mode tsx-ts-mode
-    jtsx-jsx-mode jtsx-typescript-mode jtsx-tsx-mode) . my-eglot-ensure-deferred)
+               jtsx-jsx-mode jtsx-typescript-mode jtsx-tsx-mode) . my-eglot-ensure-deferred)
   ;; Start with a language-specific check first
   ;; (python-ts-mode . eglot-ensure)
   (python-ts-mode . my-python-eglot-ensure)

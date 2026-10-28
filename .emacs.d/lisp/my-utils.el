@@ -63,7 +63,7 @@
   "Give a message of which minor modes are enabled in the current buffer."
   (interactive)
   (message "Active modes are %s"
-    (append local-minor-modes global-minor-modes)))
+           (append local-minor-modes global-minor-modes)))
 
 
 
@@ -88,7 +88,7 @@
   "Show the current buffer's file name."
   (interactive)
   (if-let* ((file (buffer-file-name)))
-    (message "%s" file)
+      (message "%s" file)
     (message "Buffer %s is not visiting a file" (buffer-name))))
 
 
@@ -104,9 +104,9 @@
   "Returns the major mode associated with a buffer.
 If buffer-or-name is nil return current buffer's mode."
   (buffer-local-value 'major-mode
-    (if buffer-or-name
-      (get-buffer buffer-or-name)
-      (current-buffer))))
+                      (if buffer-or-name
+                          (get-buffer buffer-or-name)
+                        (current-buffer))))
 
 
 
@@ -127,21 +127,21 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-occur ()
   (interactive)
   (if (region-active-p)
-    (let* ((start (region-beginning))
-            (end (region-end))
-            (input (buffer-substring-no-properties start end)))
-      (deactivate-mark)
-      (counsel-grep input))
+      (let* ((start (region-beginning))
+             (end (region-end))
+             (input (buffer-substring-no-properties start end)))
+        (deactivate-mark)
+        (counsel-grep input))
     (counsel-grep)))
 
 (defun my-rg-at-point ()
   (interactive)
   (if (region-active-p)
-    (let* ((start (region-beginning))
-            (end (region-end))
-            (input (buffer-substring-no-properties start end)))
-      (deactivate-mark)
-      (counsel-rg (concat input " ")))
+      (let* ((start (region-beginning))
+             (end (region-end))
+             (input (buffer-substring-no-properties start end)))
+        (deactivate-mark)
+        (counsel-rg (concat input " ")))
     (counsel-rg)))
 
 (defun my-find-files ()
@@ -165,21 +165,21 @@ If buffer-or-name is nil return current buffer's mode."
 (defun bury-compile-buffer-if-successful (buffer string)
   "Bury a compilation buffer if succeeded without warnings "
   (when (and
-          (buffer-live-p buffer)
-          (string-match-p "compilation" (buffer-name buffer))
-          (string-match-p "finished" string)
-          ;; (not
-          ;;   (with-current-buffer buffer
-          ;;     (goto-char (point-min))
-          ;;     (search-forward "warning" nil t)))
-          )
+         (buffer-live-p buffer)
+         (string-match-p "compilation" (buffer-name buffer))
+         (string-match-p "finished" string)
+         ;; (not
+         ;;   (with-current-buffer buffer
+         ;;     (goto-char (point-min))
+         ;;     (search-forward "warning" nil t)))
+         )
     (run-with-timer 1 nil
-      (lambda (buf)
-        (delete-windows-on buf)
-        (bury-buffer buf)
-        ;; (switch-to-prev-buffer (get-buffer-window buf) 'kill)
-        )
-      buffer)))
+                    (lambda (buf)
+                      (delete-windows-on buf)
+                      (bury-buffer buf)
+                      ;; (switch-to-prev-buffer (get-buffer-window buf) 'kill)
+                      )
+                    buffer)))
 
 
 
@@ -223,8 +223,8 @@ If buffer-or-name is nil return current buffer's mode."
   get to the toplevel directory and still can't find it, return
   nil. Start at startdir or . if startdir not given"
   (when-let* ((dir (locate-dominating-file
-                     (expand-file-name (or startdir "."))
-                     filename)))
+                    (expand-file-name (or startdir "."))
+                    filename)))
     (directory-file-name (expand-file-name dir))))
 
 
@@ -237,10 +237,10 @@ If buffer-or-name is nil return current buffer's mode."
 (defun toggle-continuation-fringe-indicator ()
   (interactive)
   (setq-default
-    fringe-indicator-alist
-    (if (assq 'continuation fringe-indicator-alist)
-      (delq (assq 'continuation fringe-indicator-alist) fringe-indicator-alist)
-      (cons '(continuation right-curly-arrow left-curly-arrow) fringe-indicator-alist))))
+   fringe-indicator-alist
+   (if (assq 'continuation fringe-indicator-alist)
+       (delq (assq 'continuation fringe-indicator-alist) fringe-indicator-alist)
+     (cons '(continuation right-curly-arrow left-curly-arrow) fringe-indicator-alist))))
 
 (defun my-toggle-truncate-lines-and-word-wrap()
   (interactive)
@@ -250,7 +250,7 @@ If buffer-or-name is nil return current buffer's mode."
 (defun compileandrun()
   (interactive)
   (let* ((src (file-name-nondirectory (buffer-file-name)))
-          (exe (file-name-sans-extension src)))
+         (exe (file-name-sans-extension src)))
     (compile (concat "g++ " src " -std=c++20 " " -o " exe " && ./" exe))))
 
 
@@ -258,19 +258,19 @@ If buffer-or-name is nil return current buffer's mode."
   "Save current buffer without running any before/after save hooks."
   (interactive)
   (let ((before-save-hook nil)
-         (after-save-hook nil))
+        (after-save-hook nil))
     (save-buffer)))
 
 
 (defun my-set-buffer-use-tabs ()
   (interactive)
   (setq-local indent-tabs-mode t
-    tab-width 4))
+              tab-width 4))
 
 (defun my-set-buffer-use-space ()
   (interactive)
   (setq-local indent-tabs-mode nil
-    tab-width 4))
+              tab-width 4))
 
 (defun my-untabify-buffer ()
   "将当前缓冲区中的所有 Tab 替换为 4 个空格。"
@@ -288,14 +288,12 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-hide-title-bar ()
   (interactive)
   (modify-frame-parameters nil '((undecorated . t)))
-  (my-M-x)
-  )
+  (my-M-x))
 
 (defun my-show-title-bar ()
   (interactive)
   (modify-frame-parameters nil '((undecorated . nil)))
-  (my-M-x)
-  )
+  (my-M-x))
 
 (defun my-set-proxy (&optional ip port)
   "Set HTTP/HTTPS proxy environment variables.
@@ -303,8 +301,8 @@ If called interactively, prompt for IP and port.
 Default port is 9910 if not provided."
   ;; 如果是交互式调用（M-x），提示用户输入
   (interactive
-    (list (read-string "Proxy IP (e.g. 127.0.0.1): " "127.0.0.1")
-      (read-number "Proxy Port (e.g. 9910): " 9910)))
+   (list (read-string "Proxy IP (e.g. 127.0.0.1): " "127.0.0.1")
+         (read-number "Proxy Port (e.g. 9910): " 9910)))
 
   ;; 确保 port 是整数
   (unless (integerp port)
@@ -332,7 +330,7 @@ Default port is 9910 if not provided."
 (defun my-unset-proxy()
   (interactive)
   (dolist (var '("http_proxy" "https_proxy" "HTTP_PROXY" "HTTPS_PROXY"
-                  "no_proxy" "NO_PROXY"))
+                 "no_proxy" "NO_PROXY"))
     (setenv var nil)))
 
 
@@ -345,7 +343,7 @@ Return trimmed stdout if success, nil otherwise."
     ;; 不用 process-lines：它会把 stderr 混进输出
     (with-temp-buffer
       (when (eql 0 (condition-case nil
-                     (apply #'call-process cmd nil '(t nil) nil args)
+                       (apply #'call-process cmd nil '(t nil) nil args)
                      (file-missing nil)))
         (string-trim (buffer-string))))))
 
@@ -354,12 +352,12 @@ Return trimmed stdout if success, nil otherwise."
 (defun cmake-download-cpm()
   (interactive)
   (let* ((cmake-dir (file-name-concat (cmake-project-find-root-directory) "cmake"))
-          (cpm-file-path (file-name-concat cmake-dir "CPM.cmake")))
+         (cpm-file-path (file-name-concat cmake-dir "CPM.cmake")))
     (unless (file-exists-p cpm-file-path)
       (make-directory cmake-dir t)
       (url-copy-file
-        "https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.42.0/CPM.cmake"
-        cpm-file-path t))
+       "https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.42.0/CPM.cmake"
+       cpm-file-path t))
     (message "saved to %s" cpm-file-path)))
 
 

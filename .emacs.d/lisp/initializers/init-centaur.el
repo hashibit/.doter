@@ -7,13 +7,13 @@
 (defun my-centaur-select-tab (n)
   (interactive "p")
   (let* ((tabs-view (centaur-tabs-view (centaur-tabs-current-tabset t)))
-          (tabs-count (length tabs-view))
-          (n
-            (if (> tabs-count n)
+         (tabs-count (length tabs-view))
+         (n
+          (if (> tabs-count n)
               n
-              tabs-count))
-          (n (- n 1))
-          (tab (nth n tabs-view)))
+            tabs-count))
+         (n (- n 1))
+         (tab (nth n tabs-view)))
     (centaur-tabs-buffer-select-tab tab)
     ;; (message "n %d, tabs-view:%s, tab: %s" n tabs-view tab)
     ))
@@ -41,17 +41,17 @@
   :init (setq centaur-tabs-enable-key-bindings t)
   :config
   (setq
-    ;; centaur-tabs-gray-out-icons 'buffer
-    centaur-tabs-set-icons nil
-    ;; centaur-tabs-icon-scale-factor 0.8
-    centaur-tabs-set-modified-marker t
-    centaur-tabs-modified-marker "*"
-    centaur-tabs-set-close-button nil
-    centaur-tabs-left-edge-margin " "
-    centaur-tabs-right-edge-margin " "
-    centaur-tabs-set-bar 'under
-    x-underline-at-descent-line t
-    centaur-tabs-show-jump-identifier nil)
+   ;; centaur-tabs-gray-out-icons 'buffer
+   centaur-tabs-set-icons nil
+   ;; centaur-tabs-icon-scale-factor 0.8
+   centaur-tabs-set-modified-marker t
+   centaur-tabs-modified-marker "*"
+   centaur-tabs-set-close-button nil
+   centaur-tabs-left-edge-margin " "
+   centaur-tabs-right-edge-margin " "
+   centaur-tabs-set-bar 'under
+   x-underline-at-descent-line t
+   centaur-tabs-show-jump-identifier nil)
   (centaur-tabs-headline-match)
   (centaur-tabs-mode t)
   (push "*scratch" centaur-tabs-excluded-prefixes)
@@ -109,22 +109,21 @@
 
 (with-eval-after-load 'centaur-tabs
   (dolist (face '(centaur-tabs-default
-                   centaur-tabs-unselected
-                   centaur-tabs-selected
-                   centaur-tabs-unselected-modified
-                   centaur-tabs-selected-modified
-                   centaur-tabs-close-unselected
-                   centaur-tabs-close-selected
-                   centaur-tabs-name-mouse-face
-                   centaur-tabs-close-mouse-face
-                   centaur-tabs-modified-marker-selected
-                   centaur-tabs-modified-marker-unselected
-                   centaur-tabs-active-bar-face
-                   centaur-tabs-jump-identifier-selected
-                   centaur-tabs-jump-identifier-unselected
-                   centaur-tabs-dim-buffer-face))
-    (set-face-attribute face nil :weight 'normal :family "IBM Plex Mono" :height 140)
-    )
+                  centaur-tabs-unselected
+                  centaur-tabs-selected
+                  centaur-tabs-unselected-modified
+                  centaur-tabs-selected-modified
+                  centaur-tabs-close-unselected
+                  centaur-tabs-close-selected
+                  centaur-tabs-name-mouse-face
+                  centaur-tabs-close-mouse-face
+                  centaur-tabs-modified-marker-selected
+                  centaur-tabs-modified-marker-unselected
+                  centaur-tabs-active-bar-face
+                  centaur-tabs-jump-identifier-selected
+                  centaur-tabs-jump-identifier-unselected
+                  centaur-tabs-dim-buffer-face))
+    (set-face-attribute face nil :weight 'normal :family "IBM Plex Mono" :height 140))
 
   (set-face-attribute 'centaur-tabs-selected nil :inherit 'default :foreground "black" :background "#FFC44C" :weight 'normal)
   (set-face-attribute 'centaur-tabs-selected-modified        nil :inherit 'default :foreground "black" :background "#FCE094" :weight 'normal)

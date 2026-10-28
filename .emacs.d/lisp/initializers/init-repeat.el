@@ -31,8 +31,7 @@
     recenter-top-bottom
     scroll-half-page-down
     scroll-half-page-up
-    my-save-buffer
-    )
+    my-save-buffer)
   "List of commands for my/last-repeatable-command to ignore.")
 
 (defun my/repeat (repeat-arg)

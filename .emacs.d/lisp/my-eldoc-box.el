@@ -15,27 +15,26 @@
   ;;   (show-eldoc-popup-at-point))
 
   (if (display-graphic-p)
-    ;; graphic, use eldoc-box
-    (if (and (bound-and-true-p eldoc-box--frame)
-          (frame-live-p eldoc-box--frame)
-          (frame-visible-p eldoc-box--frame))
-      (eldoc-box-quit-frame)
-      (eldoc-box-help-at-point))
+      ;; graphic, use eldoc-box
+      (if (and (bound-and-true-p eldoc-box--frame)
+               (frame-live-p eldoc-box--frame)
+               (frame-visible-p eldoc-box--frame))
+          (eldoc-box-quit-frame)
+        (eldoc-box-help-at-point))
     ;; terminal tui, use my-term-popup
     (if my-term-popup-show-p
-      (my-term-popup-close)
-      (show-eldoc-popup-at-point)))
-  )
+        (my-term-popup-close)
+      (show-eldoc-popup-at-point))))
 (defun my/eldoc-box-position-at-mouse (width _height)
   "Position eldoc-box childframe near the mouse cursor."
   (let* ((edges (window-pixel-edges))
-          (right (nth 2 edges))
-          (top (nth 1 edges))
-          (offset-right (nth 1 eldoc-box-offset))
-          (offset-top (nth 2 eldoc-box-offset))
-          (extra-left-padding 80)) ; <--- 在这里设置你想要再往左移动的像素值
+         (right (nth 2 edges))
+         (top (nth 1 edges))
+         (offset-right (nth 1 eldoc-box-offset))
+         (offset-top (nth 2 eldoc-box-offset))
+         (extra-left-padding 80)) ; <--- 在这里设置你想要再往左移动的像素值
     (cons (- right width offset-right extra-left-padding) ; <--- 减去这个值就会往左移
-      (+ top offset-top))))
+          (+ top offset-top))))
 
 (defun my/eldoc-box-show-type-definition ()
   "Toggle eldoc-box display of the full type definition at point.

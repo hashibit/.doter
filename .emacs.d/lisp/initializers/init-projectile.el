@@ -56,38 +56,37 @@
           ".claude"
           ".understand-anything"))
 
-    (setq-default
-      projectile-cache-file (locate-user-emacs-file ".local/projectile.cache")
-      projectile-known-projects-file (locate-user-emacs-file ".local/projectile-bookmarks.eld")
-      projectile-enable-caching t
-      projectile-indexing-method 'native
-      projectile-track-known-projects-automatically t
-      projectile-ignored-project-function 'ignored-projectile-project)
+  (setq-default
+   projectile-cache-file (locate-user-emacs-file ".local/projectile.cache")
+   projectile-known-projects-file (locate-user-emacs-file ".local/projectile-bookmarks.eld")
+   projectile-enable-caching t
+   projectile-indexing-method 'native
+   projectile-track-known-projects-automatically t
+   projectile-ignored-project-function 'ignored-projectile-project)
 
 
-    (setq projectile-project-root-files
-       '("pyproject.toml"     ; Python (uv, poetry, etc.)
-         "Cargo.toml"         ; Rust
-         "package.json"       ; Node.js/JavaScript
-         "go.mod"             ; Go
-         "pom.xml"            ; Java Maven
-         "build.gradle"       ; Java Gradle
-         "composer.json"      ; PHP
-         "Gemfile"            ; Ruby
-         "mix.exs"            ; Elixir
-         "Project.toml"       ; Julia
-         "dune-project"       ; OCaml
-         "stack.yaml"         ; Haskell Stack
-         "cabal.project"))    ; Haskell Cabal
+  (setq projectile-project-root-files
+        '("pyproject.toml"     ; Python (uv, poetry, etc.)
+          "Cargo.toml"         ; Rust
+          "package.json"       ; Node.js/JavaScript
+          "go.mod"             ; Go
+          "pom.xml"            ; Java Maven
+          "build.gradle"       ; Java Gradle
+          "composer.json"      ; PHP
+          "Gemfile"            ; Ruby
+          "mix.exs"            ; Elixir
+          "Project.toml"       ; Julia
+          "dune-project"       ; OCaml
+          "stack.yaml"         ; Haskell Stack
+          "cabal.project"))    ; Haskell Cabal
 
-    (setq projectile-project-root-files-bottom-up
-       '(".git"
-         ".hg"
-         ".bzr"
-         ".svn"))
+  (setq projectile-project-root-files-bottom-up
+        '(".git"
+          ".hg"
+          ".bzr"
+          ".svn"))
 
-    (projectile-mode +1)
-)
+  (projectile-mode +1))
 
 (setq projectile-completion-system 'ivy)
 

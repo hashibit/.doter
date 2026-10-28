@@ -10,8 +10,7 @@
 
 (use-package systemd
   :ensure t
-  :defer t
-  )
+  :defer t)
 
 (provide 'init-systemd)
 

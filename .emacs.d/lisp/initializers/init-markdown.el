@@ -44,44 +44,44 @@
         markdown-gfm-uppercase-checkbox t
         markdown-fontify-code-blocks-natively t
 
-;;         markdown-content-type "application/xhtml+xml"
-;;         markdown-css-paths '("https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"
-;;                              "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/github.min.css")
-;;         markdown-xhtml-header-content "
-;; <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
-;; <style>
-;; body {
-;;   box-sizing: border-box;
-;;   max-width: 100%;
-;;   width: 100%;
-;;   margin: 40px auto;
-;;   padding: 0 10px;
-;; }
-;; </style>
-;;
-;; <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/default.min.css'>
-;; <script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script>
-;; <script>
-;; document.addEventListener('DOMContentLoaded', () => {
-;;   document.body.classList.add('markdown-body');
-;;   document.querySelectorAll('pre code').forEach((code) => {
-;;     if (code.className != 'mermaid') {
-;;       hljs.highlightBlock(code);
-;;     }
-;;   });
-;; });
-;; </script>
-;;
-;; <script src='https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js'></script>
-;; <script>
-;; mermaid.initialize({
-;;   theme: 'default',  // default, forest, dark, neutral
-;;   startOnLoad: true
-;; });
-;; </script>
-;; "
-;;         markdown-gfm-additional-languages "Mermaid"
-  )
+        ;;         markdown-content-type "application/xhtml+xml"
+        ;;         markdown-css-paths '("https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"
+        ;;                              "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/github.min.css")
+        ;;         markdown-xhtml-header-content "
+        ;; <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+        ;; <style>
+        ;; body {
+        ;;   box-sizing: border-box;
+        ;;   max-width: 100%;
+        ;;   width: 100%;
+        ;;   margin: 40px auto;
+        ;;   padding: 0 10px;
+        ;; }
+        ;; </style>
+        ;;
+        ;; <link rel='stylesheet' href='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/default.min.css'>
+        ;; <script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script>
+        ;; <script>
+        ;; document.addEventListener('DOMContentLoaded', () => {
+        ;;   document.body.classList.add('markdown-body');
+        ;;   document.querySelectorAll('pre code').forEach((code) => {
+        ;;     if (code.className != 'mermaid') {
+        ;;       hljs.highlightBlock(code);
+        ;;     }
+        ;;   });
+        ;; });
+        ;; </script>
+        ;;
+        ;; <script src='https://unpkg.com/mermaid@8.4.8/dist/mermaid.min.js'></script>
+        ;; <script>
+        ;; mermaid.initialize({
+        ;;   theme: 'default',  // default, forest, dark, neutral
+        ;;   startOnLoad: true
+        ;; });
+        ;; </script>
+        ;; "
+        ;;         markdown-gfm-additional-languages "Mermaid"
+        )
 
   ;; Use pandoc for GFM support (tables, task lists, etc.)
   ;; Falls back to multimarkdown, then default
@@ -109,7 +109,7 @@
   ;;             (xwidget-webkit-browse-url (concat "file://" (markdown-export)) t)
   ;;           (funcall fn)))
   ;;   (advice-add #'markdown-export-and-preview :around #'my-markdown-export-and-preview))
-)
+  )
 
 ;; Table of contents
 ;; (use-package markdown-toc

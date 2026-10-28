@@ -4,8 +4,8 @@
 (defvar personal/fast-keyseq-timeout 1)
 (defun personal/-tty-ESC-filter (map)
   (if (and (equal (this-single-command-keys) [?\e])
-        (sit-for (/ personal/fast-keyseq-timeout 1000.0)))
-    [escape]
+           (sit-for (/ personal/fast-keyseq-timeout 1000.0)))
+      [escape]
     map))
 (defun personal/-lookup-key (map key)
   (lookup-key map (vector key)))
@@ -17,7 +17,7 @@
       (unless (and (eq (car-safe esc-binding) 'menu-item)
                    (memq #'personal/-tty-ESC-filter esc-binding))
         (keymap-set input-decode-map "ESC"
-          `(menu-item "" ,esc-binding :filter personal/-tty-ESC-filter))))))
+                    `(menu-item "" ,esc-binding :filter personal/-tty-ESC-filter))))))
 ;; emacsclient -t 新建的 tty frame 也需要
 (add-hook 'tty-setup-hook #'personal/catch-tty-ESC)
 (personal/catch-tty-ESC)

@@ -36,22 +36,21 @@
   :ensure t
   :commands selected-minor-mode
   :bind ((:map
-           selected-keymap
-           ("C-c i" . clang-format-region)
-           ("C-c f" . clang-format-buffer)
-           ("(" . my-wrap-region-with-parens)
-           ("[" . my-wrap-region-with-brackets)
-           ("{" . my-wrap-region-with-braces)
-           ("M-'" . my-wrap-region-with-single-quotes)
-           ("\"" . my-wrap-region-with-double-quotes)
-           ("_" . my-wrap-region-with-underscores)
-           ("`" . my-wrap-region-with-back-quotes)
-           ("d" . my-kill-region-and-insert-d-in-selected)
-           ("s" . my-kill-region-and-insert-s-in-selected)
-           ("C-d" . kill-region)
-           ("e" . my-select-to-eol)
-           ("a" . my-select-to-bol)
-           )))
+          selected-keymap
+          ("C-c i" . clang-format-region)
+          ("C-c f" . clang-format-buffer)
+          ("(" . my-wrap-region-with-parens)
+          ("[" . my-wrap-region-with-brackets)
+          ("{" . my-wrap-region-with-braces)
+          ("M-'" . my-wrap-region-with-single-quotes)
+          ("\"" . my-wrap-region-with-double-quotes)
+          ("_" . my-wrap-region-with-underscores)
+          ("`" . my-wrap-region-with-back-quotes)
+          ("d" . my-kill-region-and-insert-d-in-selected)
+          ("s" . my-kill-region-and-insert-s-in-selected)
+          ("C-d" . kill-region)
+          ("e" . my-select-to-eol)
+          ("a" . my-select-to-bol))))
 
 (selected-global-mode 1)
 

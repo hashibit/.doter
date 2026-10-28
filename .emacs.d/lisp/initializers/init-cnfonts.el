@@ -20,9 +20,9 @@
 ;; Emoji 字体调小一点
 (when (member "Apple Color Emoji" (font-family-list))
   (set-fontset-font "fontset-default"
-    'unicode
-    (font-spec :family "Apple Color Emoji" :size 12)
-    nil 'append))
+                    'unicode
+                    (font-spec :family "Apple Color Emoji" :size 12)
+                    nil 'append))
 
 (provide 'init-cnfonts)
 

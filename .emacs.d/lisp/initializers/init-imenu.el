@@ -88,7 +88,7 @@
 (defun my-imenu-peek--poshandler (info)
   "Position posframe so its right edge aligns with the sidebar's left edge."
   (cons (- (plist-get info :parent-window-left)
-            (plist-get info :posframe-width))
+           (plist-get info :posframe-width))
         (plist-get info :parent-window-top)))
 
 (defun my-imenu-peek--hide ()
@@ -190,7 +190,7 @@
 (defun my-imenu-method-group-p (group-name src-buffer)
   "Return non-nil if GROUP-NAME represents a method-bearing group in SRC-BUFFER."
   (when-let* ((pattern (alist-get (buffer-local-value 'major-mode src-buffer)
-                                 my-imenu-method-group-patterns)))
+                                  my-imenu-method-group-patterns)))
     (string-match-p pattern group-name)))
 
 (defun my-imenu-filter-struct (struct-name)
@@ -224,8 +224,8 @@ If region is active, use the selected text as input."
                 (insert "  " (car method) "\n")
                 (add-text-properties start (1- (point))
                                      `(face ,item-face
-                                       mouse-face my-imenu-method-hover-face
-                                       my-imenu-pos (,src ,(cdr method)))))))))
+                                            mouse-face my-imenu-method-hover-face
+                                            my-imenu-pos (,src ,(cdr method)))))))))
       (my-imenu--finalize-sidebar buf))))
 
 ;;; Eglot cross-file struct method finder
@@ -293,8 +293,8 @@ Fall back to the current file of SRC-BUF when nothing matches."
                   (insert "  " (car method) "\n")
                   (add-text-properties item-start (1- (point))
                                        `(face ,item-face
-                                         mouse-face my-imenu-method-hover-face
-                                         my-imenu-pos (,src ,(cdr method))))))))))
+                                              mouse-face my-imenu-method-hover-face
+                                              my-imenu-pos (,src ,(cdr method))))))))))
       (my-imenu--finalize-sidebar buf))))
 
 (defun my-imenu-filter-struct-eglot (struct-name)
@@ -336,8 +336,8 @@ Falls back to `my-imenu-filter-struct' if eglot is unavailable."
                   server
                   :textDocument/references
                   `(:textDocument (:uri ,uri)
-                    :position (:line ,line :character ,char)
-                    :context (:includeDeclaration t))
+                                  :position (:line ,line :character ,char)
+                                  :context (:includeDeclaration t))
                   :timeout 10
                   :success-fn
                   (lambda (refs)
@@ -373,7 +373,7 @@ Returns t only when the boundary is `program' or `class_body'."
        (condition-case nil
            (let ((node (treesit-node-at (if (markerp pos) (marker-position pos) pos))))
              (while (and node (not (member (treesit-node-type node)
-                                          my-imenu-js--scope-boundaries)))
+                                           my-imenu-js--scope-boundaries)))
                (setq node (treesit-node-parent node)))
              (member (treesit-node-type node) '("program" "class_body")))
          (error nil))))
@@ -473,7 +473,7 @@ Idempotent: safe to call multiple times."
   "Re-install `my-imenu-js--create-index' once eglot manages a JS/TS buffer."
   (when (and (bound-and-true-p eglot--managed-mode)
              (memq major-mode '(js-ts-mode jtsx-typescript-mode
-                                jtsx-tsx-mode jtsx-jsx-mode)))
+                                           jtsx-tsx-mode jtsx-jsx-mode)))
     (my-imenu-js-setup)))
 
 (add-hook 'eglot-managed-mode-hook #'my-imenu-js-reapply-after-eglot)

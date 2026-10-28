@@ -36,13 +36,13 @@
   :hook (neotree-mode . my-special-buffer-keys-minor-mode)
   :bind
   (:map
-    neotree-mode-map
-    ("L" . my-neotree-window-enlarge)
-    ("H" . my-neotree-window-narrow)
-    ("u" . neotree-select-up-node)
-    ("f" . neotree-hidden-file-toggle)
-    ("c n" . neotree-create-node)
-    ("a" . neotree-create-node)))
+   neotree-mode-map
+   ("L" . my-neotree-window-enlarge)
+   ("H" . my-neotree-window-narrow)
+   ("u" . neotree-select-up-node)
+   ("f" . neotree-hidden-file-toggle)
+   ("c n" . neotree-create-node)
+   ("a" . neotree-create-node)))
 
 
 
@@ -50,22 +50,22 @@
   "Open NeoTree using the git root."
   (interactive)
   (let
-    (
-      (project-dir (projectile-project-root))
-      (file-name (buffer-file-name)))
+      (
+       (project-dir (projectile-project-root))
+       (file-name (buffer-file-name)))
     (neotree-toggle)
     (if project-dir
-      (when (neo-global--window-exists-p)
-        (neotree-dir project-dir)
-        (neotree-find file-name))
+        (when (neo-global--window-exists-p)
+          (neotree-dir project-dir)
+          (neotree-find file-name))
       (message "Could not find git project root."))))
 
 (defun my-neotree-toggle ()
   (interactive)
   (if
-    (and (fboundp 'neo-global--window-exists-p)
-      (neo-global--window-exists-p))
-    (my-neotree-project-dir)
+      (and (fboundp 'neo-global--window-exists-p)
+           (neo-global--window-exists-p))
+      (my-neotree-project-dir)
     (neotree-show)))
 
 (defun my-neotree-find ()

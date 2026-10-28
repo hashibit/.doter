@@ -42,7 +42,7 @@
   ;; eglot-ensure 由 init-eglot 的 :hook 负责
   :hook (go-ts-mode . my-go-ts-mode-setup)
   :bind (:map go-ts-mode-map
-         ("s-<return>" . my-go-mode-split-string))
+              ("s-<return>" . my-go-mode-split-string))
   :config
   (setq go-ts-indent-offset 4)
   (defun my-go-mode-split-string(arg)
@@ -51,8 +51,7 @@
     (sp-split-sexp arg)
     (insert-char 43) ; insert char +
     (newline)
-    (forward-char)
-    )
+    (forward-char))
 
   (with-eval-after-load 'exec-path-from-shell
     (exec-path-from-shell-copy-envs '("GOPATH" "GO111MODULE" "GOPROXY")))

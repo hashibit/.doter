@@ -10,8 +10,8 @@
   "Return the most recent normal buffer."
   (interactive)
   (let ((bufs (seq-filter
-                (lambda(elt) (my-god-this-is-normal-editor-buffer (buffer-name elt)))
-                (buffer-list))))
+               (lambda(elt) (my-god-this-is-normal-editor-buffer (buffer-name elt)))
+               (buffer-list))))
     (when (length> bufs 1)
       (nth 1 bufs))))
 
@@ -20,7 +20,7 @@
   "Flip to the last-visited buffer in this window."
   (interactive)
   (let ((recent (if include-special-buffer
-                  (nth 1 (buffer-list))
+                    (nth 1 (buffer-list))
                   (my-most-recent-normal-buffer))))
     (switch-to-buffer (or recent (other-buffer (current-buffer))))))
 
@@ -44,10 +44,10 @@
   (let ((orig-eglot-active (bound-and-true-p eglot--managed-mode)))
     (ignore-errors (eglot-shutdown-all))
     (mapc 'kill-buffer (delq
-                         (current-buffer)
-                         (seq-filter #'buffer-file-name (buffer-list)))) ;; this keep * buffers alive
+                        (current-buffer)
+                        (seq-filter #'buffer-file-name (buffer-list)))) ;; this keep * buffers alive
     (if (bound-and-true-p centaur-tabs-mode)
-      (centaur-tabs-kill-other-buffers-in-current-group))
+        (centaur-tabs-kill-other-buffers-in-current-group))
     (if orig-eglot-active (eglot-ensure))))
 
 ;; delete other file/dired buffers in current project, only keep current one.
@@ -55,14 +55,14 @@
   "Kill other file-visiting and dired buffers in the current project."
   (interactive)
   (if-let* ((proj (project-current)))
-    (let ((killed 0))
-      (dolist (buf (project-buffers proj))
-        (when (and (not (eq buf (current-buffer)))
-                (or (buffer-file-name buf)
-                  (eq (buffer-local-value 'major-mode buf) 'dired-mode)))
-          (when (kill-buffer buf)
-            (setq killed (1+ killed)))))
-      (message "Killed %d buffer(s) in project %s" killed (project-name proj)))
+      (let ((killed 0))
+        (dolist (buf (project-buffers proj))
+          (when (and (not (eq buf (current-buffer)))
+                     (or (buffer-file-name buf)
+                         (eq (buffer-local-value 'major-mode buf) 'dired-mode)))
+            (when (kill-buffer buf)
+              (setq killed (1+ killed)))))
+        (message "Killed %d buffer(s) in project %s" killed (project-name proj)))
     (user-error "Not in a project")))
 
 ;; delete all other buffers, only keep current one.
@@ -72,37 +72,36 @@
   ;; this destroy * buffers too, but keep internal " *..." buffers
   (dolist (buf (buffer-list))
     (unless (or (eq buf (current-buffer))
-              (string-prefix-p " " (buffer-name buf)))
+                (string-prefix-p " " (buffer-name buf)))
       (kill-buffer buf)))
   (if (bound-and-true-p centaur-tabs-mode)
-    (centaur-tabs-kill-other-buffers-in-current-group))
+      (centaur-tabs-kill-other-buffers-in-current-group))
   (if (bound-and-true-p global-eldoc-mode)
-    (eldoc-box-reset-frame))
-  (treemacs-find-file)
-  )
+      (eldoc-box-reset-frame))
+  (treemacs-find-file))
 (defun my-enlarge-half-height ()
   "Expand current window to use half of the other window's lines."
   (interactive)
   (enlarge-window
-    (/ (window-body-height) 4)))
+   (/ (window-body-height) 4)))
 
 (defun my-enlarge-half-width ()
   "Expand current window to use half of the other window's lines."
   (interactive)
   (enlarge-window-horizontally
-    (/ (window-body-width) 4)))
+   (/ (window-body-width) 4)))
 
 (defun my-shrink-half-height ()
   "Expand current window to use half of the other window's lines."
   (interactive)
   (shrink-window
-    (/ (window-body-height) 4)))
+   (/ (window-body-height) 4)))
 
 (defun my-shrink-half-width ()
   "Expand current window to use half of the other window's lines."
   (interactive)
   (shrink-window-horizontally
-    (/ (window-body-width) 4)))
+   (/ (window-body-width) 4)))
 
 (defun my-enarge-window-height()
   (interactive)
@@ -126,19 +125,17 @@
   (interactive)
   (popper-toggle)
   (run-with-timer 0.05 nil
-    (lambda ()
-      (when popper-open-popup-alist
-        (other-window -1))
-      )))
+                  (lambda ()
+                    (when popper-open-popup-alist
+                      (other-window -1)))))
 
 (defun popper-cycle-but-other-window()
   (interactive)
   (popper-cycle 0)
   (run-with-timer 0.05 nil
-    (lambda ()
-      (when popper-open-popup-alist
-        (other-window -1))
-      )))
+                  (lambda ()
+                    (when popper-open-popup-alist
+                      (other-window -1)))))
 (defun my-project-switch-to-buffer ()
   "Switch to a buffer, or open a recent file.
 Show the current project buffers first. When the input matches none of
@@ -151,8 +148,8 @@ are not open now, then the ignored buffers."
          (all-names (mapcar #'buffer-name (buffer-list)))
          (project-bufs (when (project-current)
                          (seq-filter (lambda (n) (not (funcall ignored-p n)))
-                           (mapcar #'buffer-name
-                                   (project-buffers (project-current))))))
+                                     (mapcar #'buffer-name
+                                             (project-buffers (project-current))))))
          (normal-bufs (seq-filter (lambda (n)
                                     (and (not (funcall ignored-p n))
                                          (not (member n project-bufs))))

@@ -13,7 +13,7 @@
   :demand t
   :hook (python-ts-mode . tabby-mode)
   :bind (:map tabby-completion-map
-         ("M-<tab>" . tabby-accept-completion)))
+              ("M-<tab>" . tabby-accept-completion)))
 
 (provide 'init-tabby)
 

@@ -74,16 +74,16 @@
 (defun my-treemacs-duplicate-current-file ()
   (interactive)
   (let* ((source (treemacs--prop-at-point :path))
-          (destination (treemacs--parent-dir source))
-          (target-name (treemacs--filename source))
-          (target (->>
-                    target-name
-                    (treemacs-join-path
-                      destination)
-                    (my-treemacs--find-repeated-file-name)))
-          (copy-fn (if (file-directory-p source)
-                     #'copy-directory
-                     #'copy-file)))
+         (destination (treemacs--parent-dir source))
+         (target-name (treemacs--filename source))
+         (target (->>
+                  target-name
+                  (treemacs-join-path
+                   destination)
+                  (my-treemacs--find-repeated-file-name)))
+         (copy-fn (if (file-directory-p source)
+                      #'copy-directory
+                    #'copy-file)))
     (funcall copy-fn source target)
     (treemacs-refresh)))
 
@@ -91,7 +91,7 @@
   (interactive)
   (cl-letf (((symbol-function 'yes-or-no-p) #'always))
     (if (bound-and-true-p treemacs--marked-paths)
-      (treemacs-delete-marked-paths)
+        (treemacs-delete-marked-paths)
       (treemacs-delete-file)))
   (treemacs-refresh))
 
@@ -99,7 +99,7 @@
 (defun my-treemacs-copy-marked-files-without-confirm()
   (interactive)
   (if (null treemacs--marked-paths)
-    (message "no marked files.")
+      (message "no marked files.")
     (cl-letf (((symbol-function 'read-directory-name)
                (lambda (&rest _) default-directory)))
       (treemacs-copy-marked-files))
@@ -109,7 +109,7 @@
 (defun display-treemacs-widow-in-ace-window-selection ()
   (with-eval-after-load 'ace-window
     (setq aw-ignored-buffers
-      (delete 'treemacs-mode aw-ignored-buffers))))
+          (delete 'treemacs-mode aw-ignored-buffers))))
 
 ;;;; custom highlight for treemacs current line
 (defface my-treemacs-custom-line-highlight
@@ -131,12 +131,12 @@
 Returns a name in the /file/name_Copy1.ext.  If that also already
 exists it returns /file/name_Copy2.ext etc."
   (let* ((n 0)
-          (dir (treemacs--parent-dir path))
-          (filename (treemacs--filename path))
-          (filename-no-ext (file-name-sans-extension path))
-          (ext (--when-let (file-name-extension filename) (concat "." it)))
-          (template "_Copy%d")
-          (new-path path))
+         (dir (treemacs--parent-dir path))
+         (filename (treemacs--filename path))
+         (filename-no-ext (file-name-sans-extension path))
+         (ext (--when-let (file-name-extension filename) (concat "." it)))
+         (template "_Copy%d")
+         (new-path path))
     (while (file-exists-p new-path)
       (cl-incf n)
       (setf new-path (treemacs-join-path dir (concat filename-no-ext (format template n) ext))))
@@ -148,13 +148,13 @@ exists it returns /file/name_Copy2.ext etc."
 (defun my/treemacs-ignore-pycache-and-egg-info (file-name _abs-path)
   "Ignore __pycache__ directories and *.egg-info directories."
   (or
-    ;; 忽略名为 __pycache__ 的目录
-    (string= file-name "__pycache__")
-    ;; 忽略以 .egg-info 结尾的目录
-    (string-suffix-p ".egg-info" file-name)
-    ;; 可选：忽略 .pyc 文件（如果你也想隐藏单个 .pyc）
-    ;; (string-suffix-p ".pyc" file-name)
-    ))
+   ;; 忽略名为 __pycache__ 的目录
+   (string= file-name "__pycache__")
+   ;; 忽略以 .egg-info 结尾的目录
+   (string-suffix-p ".egg-info" file-name)
+   ;; 可选：忽略 .pyc 文件（如果你也想隐藏单个 .pyc）
+   ;; (string-suffix-p ".pyc" file-name)
+   ))
 
 
 ;; 鼠标放上去的效果，加了下划线和 hl line 的背景色
@@ -175,7 +175,7 @@ exists it returns /file/name_Copy2.ext etc."
   (setq treemacs-indentation 2)
   (setq treemacs-persist-file (locate-user-emacs-file ".local/treemacs-persist"))
   (setq treemacs-last-error-persist-file
-    (locate-user-emacs-file ".local/treemacs-persist-at-last-error"))
+        (locate-user-emacs-file ".local/treemacs-persist-at-last-error"))
   (setq treemacs-expand-after-init nil)
   (setq treemacs-width-is-initially-locked nil)
   (treemacs-follow-mode 0)
@@ -203,26 +203,25 @@ exists it returns /file/name_Copy2.ext etc."
   ;; (add-hook 'treemacs-mode-hook #'my-set-large-line-height)
   :bind
   (:map
-    treemacs-mode-map
-    ("=" . my-reset-treemacs-width)
-    ("F" . my-projectile-find-file-in-treemacs)
-    ("M" . my-treemacs-mark-or-unmark-path-at-point)
-    ("U" . treemacs-reset-marks)
-    ("H" . my-decrease-treemacs-width)
-    ("L" . my-increase-treemacs-width)
-    ("C" . treemacs-copy-file)
-    ("D" . my-treemacs-duplicate-current-file)
-    ("P" . my-treemacs-copy-marked-files-without-confirm)
-    ("C-d" . my-treemacs-delete-marked-or-current-file-without-confirm)
-    ("a" . treemacs-create-file)
-    ("n" . my-isearch-forward)
-    ("N" . my-isearch-backward)
-    ("A" . treemacs-create-dir)
-    ("s-F" . deadgrep)
-    ;; add-hook no work????
-    ;; ("<mouse-1>" . treemacs-single-click-expand-action)
-    ("<double-mouse-1>" . treemacs-RET-action)
-    ))
+   treemacs-mode-map
+   ("=" . my-reset-treemacs-width)
+   ("F" . my-projectile-find-file-in-treemacs)
+   ("M" . my-treemacs-mark-or-unmark-path-at-point)
+   ("U" . treemacs-reset-marks)
+   ("H" . my-decrease-treemacs-width)
+   ("L" . my-increase-treemacs-width)
+   ("C" . treemacs-copy-file)
+   ("D" . my-treemacs-duplicate-current-file)
+   ("P" . my-treemacs-copy-marked-files-without-confirm)
+   ("C-d" . my-treemacs-delete-marked-or-current-file-without-confirm)
+   ("a" . treemacs-create-file)
+   ("n" . my-isearch-forward)
+   ("N" . my-isearch-backward)
+   ("A" . treemacs-create-dir)
+   ("s-F" . deadgrep)
+   ;; add-hook no work????
+   ;; ("<mouse-1>" . treemacs-single-click-expand-action)
+   ("<double-mouse-1>" . treemacs-RET-action)))
 
 
 ;; treemacs-tab-bar 用 tab 的 name 做 scope key，但 tab-bar-tab-name-current
@@ -235,9 +234,9 @@ exists it returns /file/name_Copy2.ext etc."
   "Return the stable treemacs id of TAB (default: current tab), assigning one if needed."
   (let ((tab (or tab (tab-bar--current-tab-find))))
     (or (alist-get 'my-treemacs-id (cdr tab))
-      (let ((id (number-to-string (cl-incf my-treemacs-tab-id-counter))))
-        (setcdr tab (cons (cons 'my-treemacs-id id) (cdr tab)))
-        id))))
+        (let ((id (number-to-string (cl-incf my-treemacs-tab-id-counter))))
+          (setcdr tab (cons (cons 'my-treemacs-id id) (cdr tab)))
+          id))))
 
 (use-package treemacs-tab-bar ;;treemacs-tab-bar if you use tab-bar-mode
   :after (treemacs)
@@ -253,31 +252,30 @@ exists it returns /file/name_Copy2.ext etc."
 
 (with-eval-after-load 'treemacs
 
-  ; (treemacs-create-theme "simple"
-  ;   :config
-  ;   (progn
-  ;     (treemacs-create-icon :icon (format "%s\t" (all-the-icons-octicon "repo" :height 1.2 :v-adjust -0.1 :face 'font-lock-string-face))
-  ;                           :extensions (root-closed root-open)
-  ;                           :fallback 'same-as-icon)
-  ;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "expand_more" :height 1.2 :v-adjust -0.2 :face 'default)
-  ;                                         (propertize " " 'display '(space . (:width (0)))))
-  ;                           :extensions (dir-open)
-  ;                           :fallback 'same-as-icon)
-  ;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "chevron_right" :height 1.2 :v-adjust -0.2 :face 'default)
-  ;                                         (propertize " " 'display '(space . (:width (0)))))
-  ;                           :extensions (dir-closed)
-  ;                           :fallback 'same-as-icon)
-  ;     (treemacs-create-icon :icon (propertize " " 'display '(space . (:width (18))))
-  ;                           :extensions (fallback)
-  ;                           :fallback 'same-as-icon)))
+                                        ; (treemacs-create-theme "simple"
+                                        ;   :config
+                                        ;   (progn
+                                        ;     (treemacs-create-icon :icon (format "%s\t" (all-the-icons-octicon "repo" :height 1.2 :v-adjust -0.1 :face 'font-lock-string-face))
+                                        ;                           :extensions (root-closed root-open)
+                                        ;                           :fallback 'same-as-icon)
+                                        ;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "expand_more" :height 1.2 :v-adjust -0.2 :face 'default)
+                                        ;                                         (propertize " " 'display '(space . (:width (0)))))
+                                        ;                           :extensions (dir-open)
+                                        ;                           :fallback 'same-as-icon)
+                                        ;     (treemacs-create-icon :icon (format "%s%s" (all-the-icons-material "chevron_right" :height 1.2 :v-adjust -0.2 :face 'default)
+                                        ;                                         (propertize " " 'display '(space . (:width (0)))))
+                                        ;                           :extensions (dir-closed)
+                                        ;                           :fallback 'same-as-icon)
+                                        ;     (treemacs-create-icon :icon (propertize " " 'display '(space . (:width (18))))
+                                        ;                           :extensions (fallback)
+                                        ;                           :fallback 'same-as-icon)))
 
   ;; terminal mode use simple theme
   (if (display-graphic-p)
-    (progn
-      (require 'treemacs-all-the-icons)
-      (treemacs-load-theme "all-the-icons"))
-    (treemacs-load-theme "Default")
-    )
+      (progn
+        (require 'treemacs-all-the-icons)
+        (treemacs-load-theme "all-the-icons"))
+    (treemacs-load-theme "Default"))
   ;;
   )
 
@@ -288,21 +286,20 @@ exists it returns /file/name_Copy2.ext etc."
 ;; 只设置 :height，其他属性由 custom-set-faces 提供
 (with-eval-after-load 'treemacs
   (dolist (face '(
-                   tab-bar
-                   treemacs-directory-collapsed-face
-                   treemacs-directory-face
-                   treemacs-file-face
-                   treemacs-git-added-face
-                   treemacs-git-conflict-face
-                   treemacs-git-ignored-face
-                   treemacs-git-modified-face
-                   treemacs-git-renamed-face
-                   treemacs-git-unmodified-face
-                   treemacs-git-untracked-face
-                   treemacs-root-face
-                   treemacs-tags-face))
-    (set-face-attribute face nil :height 0.9))
-  )
+                  tab-bar
+                  treemacs-directory-collapsed-face
+                  treemacs-directory-face
+                  treemacs-file-face
+                  treemacs-git-added-face
+                  treemacs-git-conflict-face
+                  treemacs-git-ignored-face
+                  treemacs-git-modified-face
+                  treemacs-git-renamed-face
+                  treemacs-git-unmodified-face
+                  treemacs-git-untracked-face
+                  treemacs-root-face
+                  treemacs-tags-face))
+    (set-face-attribute face nil :height 0.9)))
 
 
 ;; CFRS face configuration moved to custom-set-faces

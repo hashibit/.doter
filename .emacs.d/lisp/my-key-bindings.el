@@ -84,8 +84,7 @@
 ;; note in terminal emacs, C-/ is translated to C-_, which is undo
 (when (display-graphic-p)
   (bind-key* "C--" #'nice-jumper/backward)
-  (bind-key* "C-_" #'nice-jumper/forward)
-  )
+  (bind-key* "C-_" #'nice-jumper/forward))
 
 
 (bind-key "C-c \\" #'my-toggle-eldoc-box-help-at-point)
@@ -385,10 +384,10 @@
   "j" #'next-line
   "l" #'my-forward-char-no-cross-line
   "h" #'my-backward-char-no-cross-line
-  ; "L" #'mwim-end-of-code-or-line
-  ; "H" #'mwim-beginning-of-code-or-line
+                                        ; "L" #'mwim-end-of-code-or-line
+                                        ; "H" #'mwim-beginning-of-code-or-line
   "v" #'my-set-mark-command-or-deactivate-mark
-  ; "V" #'my-select-current-line-and-forward-line
+                                        ; "V" #'my-select-current-line-and-forward-line
 
   "f" #'avy-goto-word-0
   "M-x" #'my-M-x)
@@ -400,31 +399,30 @@
 
 
 (bind-keys* :prefix-map my-ctrl-w-window-operations-map
-  :prefix "C-w"
-  ("o" . ace-window)
-  ("l" . windmove-right)
-  ("h" . windmove-left)
-  ("k" . windmove-up)
-  ("j" . windmove-down)
-  ("Q" . delete-window)
-  ("d" . delete-other-windows)
-  ("v" . my-split-window-right)
-  ("s" . split-window-below)
-  ("t" . transpose-frame)
-  ("w" . other-window)
+            :prefix "C-w"
+            ("o" . ace-window)
+            ("l" . windmove-right)
+            ("h" . windmove-left)
+            ("k" . windmove-up)
+            ("j" . windmove-down)
+            ("Q" . delete-window)
+            ("d" . delete-other-windows)
+            ("v" . my-split-window-right)
+            ("s" . split-window-below)
+            ("t" . transpose-frame)
+            ("w" . other-window)
 
-  ("]" . my-enlarge-half-width)
-  ("[" . my-shrink-half-width)
-  ("=" . my-enlarge-half-height)
-  ("-" . my-shrink-half-height)
+            ("]" . my-enlarge-half-width)
+            ("[" . my-shrink-half-width)
+            ("=" . my-enlarge-half-height)
+            ("-" . my-shrink-half-height)
 
-  ("C-l" . windmove-right)
-  ("C-h" . windmove-left)
-  ("C-k" . windmove-up)
-  ("C-j" . windmove-down)
-  ("C-n" . treemacs-next-workspace)
-  ("`" . my-enarge-window-height)
-  )
+            ("C-l" . windmove-right)
+            ("C-h" . windmove-left)
+            ("C-k" . windmove-up)
+            ("C-j" . windmove-down)
+            ("C-n" . treemacs-next-workspace)
+            ("`" . my-enarge-window-height))
 
 
 
@@ -432,9 +430,7 @@
   (with-eval-after-load 'centaur-tabs
     (keymap-set my-special-buffer-keys-minor-mode-map "C-s h" #'centaur-tabs-backward)
     (keymap-set my-special-buffer-keys-minor-mode-map "C-s l" #'centaur-tabs-forward)
-    (keymap-set my-special-buffer-keys-minor-mode-map "C-s n" #'centaur-tabs--create-new-tab)
-    )
-  )
+    (keymap-set my-special-buffer-keys-minor-mode-map "C-s n" #'centaur-tabs--create-new-tab)))
 
 
 (provide 'my-key-bindings)

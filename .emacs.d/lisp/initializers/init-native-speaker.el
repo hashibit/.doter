@@ -153,10 +153,10 @@ alive the call fails immediately via the PID check."
     (let ((buf (current-buffer)))
       (setq ns/debounce-timer
             (run-with-timer 0.08 nil
-              (lambda ()
-                (when (buffer-live-p buf)
-                  (with-current-buffer buf
-                    (ns/eat-flush)))))))))
+                            (lambda ()
+                              (when (buffer-live-p buf)
+                                (with-current-buffer buf
+                                  (ns/eat-flush)))))))))
 
 (defun ns/on-post-prompt (&rest _)
   "Record input-start and clear HUD when a new shell prompt appears."

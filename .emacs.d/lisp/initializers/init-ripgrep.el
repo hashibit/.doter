@@ -24,8 +24,7 @@
   :ensure nil
   :bind
   (
-    ("C-c g" . rg)
-    )
+   ("C-c g" . rg))
   :config
   (setq rg-command-line-flags '("--context" "2"))
   (setq rg-show-header nil)
@@ -49,17 +48,17 @@
 
 
 
-; (use-package ripgrep
-;   :ensure t
-;   :config
-;   ;; Face configuration moved to custom-set-faces
-;   :bind
-;   (:map ripgrep-search-mode-map
-;         (";" . scroll-up-command)
-;         ("'" . scroll-down-command)
-;         ("k" . previous-line)
-;         ("j" . next-line)
-;         ("x" . my-ripgrep-kill-buffer)))
+                                        ; (use-package ripgrep
+                                        ;   :ensure t
+                                        ;   :config
+                                        ;   ;; Face configuration moved to custom-set-faces
+                                        ;   :bind
+                                        ;   (:map ripgrep-search-mode-map
+                                        ;         (";" . scroll-up-command)
+                                        ;         ("'" . scroll-down-command)
+                                        ;         ("k" . previous-line)
+                                        ;         ("j" . next-line)
+                                        ;         ("x" . my-ripgrep-kill-buffer)))
 
 (provide 'init-ripgrep)
 
