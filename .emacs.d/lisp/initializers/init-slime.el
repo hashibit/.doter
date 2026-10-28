@@ -62,6 +62,14 @@
   (add-to-list 'browse-url-handlers
                '("\\`file://.*/HyperSpec/" . eww-browse-url)))
 
+;; eww 打开 HyperSpec 页面时，如果 ~/.cache/hyperspec 里有白话版就改开白话版；
+;; 页面里按 o 在白话版和原文之间切换
+(require 'my-hyperspec)
+(advice-add 'eww :around #'my-hyperspec-eww-advice)
+(defvar eww-mode-map)
+(with-eval-after-load 'eww
+  (keymap-set eww-mode-map "o" #'my-hyperspec-toggle))
+
 (use-package slime-company
   :after slime
   :bind ((:map slime-repl-mode-map
