@@ -115,9 +115,9 @@ alive the call fails immediately via the PID check."
   "Send the active region (or current line) to NativeSpeaker."
   (interactive "r")
   (my-ns-send (string-trim
-            (if (use-region-p)
-                (buffer-substring-no-properties beg end)
-              (thing-at-point 'line t)))))
+               (if (use-region-p)
+                   (buffer-substring-no-properties beg end)
+                 (thing-at-point 'line t)))))
 
 ;;; ── eat integration ───────────────────────────────────────────────────────────
 

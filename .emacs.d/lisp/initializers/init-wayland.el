@@ -14,10 +14,10 @@
 (defun my-wl-copy (text)
   "Copy TEXT to Wayland clipboard using wl-copy."
   (setq my-wl-copy-process (make-process :name "wl-copy"
-                                      :buffer nil
-                                      :command '("wl-copy" "-f" "-n")
-                                      :connection-type 'pipe
-                                      :noquery t))
+                                         :buffer nil
+                                         :command '("wl-copy" "-f" "-n")
+                                         :connection-type 'pipe
+                                         :noquery t))
   (process-send-string my-wl-copy-process text)
   (process-send-eof my-wl-copy-process))
 

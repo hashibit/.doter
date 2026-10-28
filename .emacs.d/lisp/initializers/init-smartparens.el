@@ -44,11 +44,11 @@ respectively."
             (setq deactivate-mark t)))))
 
 (my-def-region-pairs ((paren . "(")
-                   (bracket . "[")
-                   (brace . "{")
-                   (single-quote . "'")
-                   (double-quote . "\"")
-                   (back-quote . "`")))
+                      (bracket . "[")
+                      (brace . "{")
+                      (single-quote . "'")
+                      (double-quote . "\"")
+                      (back-quote . "`")))
 
 ;; "_" 不是 smartparens 的 pair，sp-wrap-with-pair 用不了，手动包裹
 (defun my-wrap-region-with-underscores (start stop)
