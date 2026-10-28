@@ -8,7 +8,7 @@
 
 ;;; Code:
 
-(defun maybe-cmake-project-mode ()
+(defun my-maybe-cmake-project-mode ()
   "Enable `cmake-project-mode' inside a directory tree with CMakeLists.txt."
   (when (locate-dominating-file default-directory "CMakeLists.txt")
     (cmake-project-mode)))

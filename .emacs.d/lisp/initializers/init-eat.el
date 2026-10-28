@@ -111,7 +111,7 @@
   "Mark eat and claude buffers as legendary."
   (when (derived-mode-p 'eat-mode)
     (my-add-to-legendary-buffers '("*eat" "*claude"))
-    (refresh-current-mode)))
+    (my-refresh-current-mode)))
 
 ;; Font/display setup for Claude Code flickering fix
 (defun my-eat-font-setup ()

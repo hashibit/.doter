@@ -52,33 +52,33 @@
       (overlay-put ov 'before-string nil))))
 
 
-(defvar should-i-enable-flymake t)
-(defun please-enable-flymake() (defvar should-i-enable-flymake t))
-(defun please-disable-flymake() (setq should-i-enable-flymake nil))
-(defun i-should-enable-flymake() (eq should-i-enable-flymake t))
+(defvar my-enable-flymake-p t)
+(defun my-enable-flymake() (defvar my-enable-flymake-p t))
+(defun my-disable-flymake() (setq my-enable-flymake-p nil))
+(defun my-should-enable-flymake-p() (eq my-enable-flymake-p t))
 
-(defvar backup-eglot--current-flymake-report-fn nil)
+(defvar my-eglot--saved-flymake-report-fn nil)
 (defvar eglot--current-flymake-report-fn)
 
 
 
-(defun try-stop-flymake (&rest _)
-  (please-disable-flymake)
+(defun my-try-stop-flymake (&rest _)
+  (my-disable-flymake)
   (flymake-mode 1)
   (when (boundp 'eglot--current-flymake-report-fn)
-    (setq backup-eglot--current-flymake-report-fn eglot--current-flymake-report-fn)
+    (setq my-eglot--saved-flymake-report-fn eglot--current-flymake-report-fn)
     (setq eglot--current-flymake-report-fn nil)))
 
-(defun try-start-flymake (&rest _)
-  (please-enable-flymake)
+(defun my-try-start-flymake (&rest _)
+  (my-enable-flymake)
   (run-with-timer 0.3 nil #'my--try-start-flymake-in-buffer (current-buffer)))
 
 (defun my--try-start-flymake-in-buffer (buffer)
-  (when (and (i-should-enable-flymake) (buffer-live-p buffer))
+  (when (and (my-should-enable-flymake-p) (buffer-live-p buffer))
     (with-current-buffer buffer
-      (when backup-eglot--current-flymake-report-fn
-        (setq eglot--current-flymake-report-fn backup-eglot--current-flymake-report-fn)
-        (setq backup-eglot--current-flymake-report-fn nil))
+      (when my-eglot--saved-flymake-report-fn
+        (setq eglot--current-flymake-report-fn my-eglot--saved-flymake-report-fn)
+        (setq my-eglot--saved-flymake-report-fn nil))
       (flymake-mode 1)
       (flymake-start))))
 

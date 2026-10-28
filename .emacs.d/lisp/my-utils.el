@@ -25,7 +25,7 @@
       (emacs-lisp-mode)
       ;; (rename-buffer "tmp.el" t)
       ;; (set-auto-mode)
-      ;; (message "%s" (buffer-mode))
+      ;; (message "%s" (my-buffer-mode))
       (insert file-content)
       (font-lock-ensure)
       (buffer-string))))
@@ -61,7 +61,7 @@
 
 
 
-(defun which-active-modes ()
+(defun my-which-active-modes ()
   "Give a message of which minor modes are enabled in the current buffer."
   (interactive)
   (message "Active modes are %s"
@@ -102,7 +102,7 @@
 
 
 
-(defun buffer-mode (&optional buffer-or-name)
+(defun my-buffer-mode (&optional buffer-or-name)
   "Returns the major mode associated with a buffer.
 If buffer-or-name is nil return current buffer's mode."
   (buffer-local-value 'major-mode
@@ -117,14 +117,14 @@ If buffer-or-name is nil return current buffer's mode."
   "Revert buffer without confirmation."
   (interactive)
   (revert-buffer :ignore-auto :noconfirm)
-  (refresh-current-mode))
+  (my-refresh-current-mode))
 
 
 
 (defun my-M-x ()
   "Refresh the buffer modes, then run `counsel-M-x'."
   (interactive)
-  (refresh-current-mode)
+  (my-refresh-current-mode)
   (counsel-M-x))
 
 (defun my-occur ()
@@ -169,7 +169,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 
-(defun bury-compile-buffer-if-successful (buffer string)
+(defun my-bury-compile-buffer-if-successful (buffer string)
   "Bury a compilation buffer if succeeded without warnings "
   (when (and
          (buffer-live-p buffer)
@@ -201,7 +201,7 @@ If buffer-or-name is nil return current buffer's mode."
 (defun my-save-buffer-without-hooks ()
   "delete current word, goto insert mode"
   (interactive)
-  (save-buffer-without-hooks)
+  (my-save-buffer-skip-hooks)
   (my-init-god-mode-for-new-buffer)
   ;; (my-quit-mc-mode-if-need)
   )
@@ -216,7 +216,7 @@ If buffer-or-name is nil return current buffer's mode."
   (blink-search))
 
 
-(defun advise-once (symbol where function &optional props)
+(defun my-advise-once (symbol where function &optional props)
   "Add FUNCTION as WHERE advice to SYMBOL, removed after the first call."
   (letrec ((remover (lambda (&rest _)
                       (advice-remove symbol function)
@@ -226,7 +226,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 
-(defun upward-find-file (filename &optional startdir)
+(defun my-upward-find-file (filename &optional startdir)
   "Move up directories until we find a certain filename. If we
   manage to find it, return the containing directory. Else if we
   get to the toplevel directory and still can't find it, return
@@ -238,13 +238,13 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 
-(defun start-zsh-term()
+(defun my-start-zsh-term()
   "Start a vterm terminal."
   (interactive)
   (vterm))
 
 
-(defun toggle-continuation-fringe-indicator ()
+(defun my-toggle-continuation-fringe-indicator ()
   "Toggle the fringe arrows for continued lines."
   (interactive)
   (setq-default
@@ -259,7 +259,7 @@ If buffer-or-name is nil return current buffer's mode."
   (toggle-truncate-lines)
   (toggle-word-wrap))
 
-(defun compileandrun()
+(defun my-compileandrun()
   "Compile the current C++ file with g++ and run it."
   (interactive)
   (let* ((src (file-name-nondirectory (buffer-file-name)))
@@ -267,7 +267,7 @@ If buffer-or-name is nil return current buffer's mode."
     (compile (concat "g++ " src " -std=c++20 " " -o " exe " && ./" exe))))
 
 
-(defun save-buffer-without-hooks ()
+(defun my-save-buffer-skip-hooks ()
   "Save current buffer without running any before/after save hooks."
   (interactive)
   (let ((before-save-hook nil)
@@ -353,7 +353,7 @@ Default port is 9910 if not provided."
 
 
 
-(defun run-command-in-directory (dir cmd &rest args)
+(defun my-run-command-in-directory (dir cmd &rest args)
   "Run a command in the specified directory.
 If DIR is nil, use `default-directory'.
 Return trimmed stdout if success, nil otherwise."
@@ -367,7 +367,7 @@ Return trimmed stdout if success, nil otherwise."
 
 
 
-(defun cmake-download-cpm()
+(defun my-cmake-download-cpm()
   "Download CPM.cmake into the cmake folder of the project."
   (interactive)
   (let* ((cmake-dir (file-name-concat (cmake-project-find-root-directory) "cmake"))
@@ -380,6 +380,14 @@ Return trimmed stdout if success, nil otherwise."
     (message "saved to %s" cpm-file-path)))
 
 
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'cmake-download-cpm #'my-cmake-download-cpm "2026-10-27")
+(define-obsolete-function-alias 'compileandrun #'my-compileandrun "2026-10-27")
+(define-obsolete-function-alias 'save-buffer-without-hooks #'my-save-buffer-skip-hooks "2026-10-27")
+(define-obsolete-function-alias 'start-zsh-term #'my-start-zsh-term "2026-10-27")
+(define-obsolete-function-alias 'toggle-continuation-fringe-indicator #'my-toggle-continuation-fringe-indicator "2026-10-27")
+(define-obsolete-function-alias 'which-active-modes #'my-which-active-modes "2026-10-27")
 
 (provide 'my-utils)
 

@@ -6,6 +6,9 @@
 
 ;;; Code:
 
+;; Package variables, declared for the byte compiler.
+(defvar eww-mode-map)
+
 (use-package shr
   :ensure nil
   :defer t
@@ -17,7 +20,7 @@
   (set-face-attribute 'shr-h1 nil :height 1.0))
 
 ;; eww buffer 不是 find-file 打开的，find-file-hook 不会触发，这里补上；
-;; eww-mode 在 special-buffer-modes 里，所以会关掉 god mode、开启 special buffer keys
+;; eww-mode 在 my-special-buffer-modes 里，所以会关掉 god mode、开启 special buffer keys
 (add-hook 'eww-mode-hook #'my-init-god-mode-for-new-buffer)
 
 (with-eval-after-load 'eww

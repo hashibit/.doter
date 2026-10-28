@@ -21,7 +21,7 @@
       (nth 1 bufs))))
 
 
-(defun flip-buffer-to-window (&optional include-special-buffer)
+(defun my-flip-buffer-to-window (&optional include-special-buffer)
   "Flip to the last-visited buffer in this window."
   (interactive)
   (let ((recent (if include-special-buffer
@@ -131,7 +131,7 @@
   (interactive)
   (unless (one-window-p)
     (quit-window nil (next-window))))
-(defun popper-toggle-but-other-window()
+(defun my-popper-toggle-but-other-window()
   "Toggle the latest popup, then select the other window."
   (interactive)
   (popper-toggle)
@@ -140,7 +140,7 @@
                     (when popper-open-popup-alist
                       (other-window -1)))))
 
-(defun popper-cycle-but-other-window()
+(defun my-popper-cycle-but-other-window()
   "Show the next popup, then select the other window."
   (interactive)
   (popper-cycle 0)
@@ -185,6 +185,11 @@ are not open now, then the ignored buffers."
                           (find-file choice)))
               :caller 'my-project-switch-to-buffer)))
 
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'flip-buffer-to-window #'my-flip-buffer-to-window "2026-10-27")
+(define-obsolete-function-alias 'popper-cycle-but-other-window #'my-popper-cycle-but-other-window "2026-10-27")
+(define-obsolete-function-alias 'popper-toggle-but-other-window #'my-popper-toggle-but-other-window "2026-10-27")
 
 (provide 'my-window-buffer)
 

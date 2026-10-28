@@ -62,12 +62,12 @@
 (selected-global-mode 1)
 
 
-(defvar selected-active-timer nil)
-(defvar unselected-active-timer nil)
+(defvar my-selected-active-timer nil)
+(defvar my-unselected-active-timer nil)
 
 (defun my-selected--disable-highlights ()
   (when (region-active-p)
-    (remove-all-highlight)
+    (my-remove-all-line-highlights)
     (my-disable-symbol-overlay-highlight)
     (my-disable-paren-highlight)
     (my-disable-eglot-highlight)))
@@ -85,11 +85,11 @@
   (if (bound-and-true-p selected-region-active-mode)
       ;; only non-special buffer and vterm buffer need this timer.
       (when (my-god-this-is-normal-editor-buffer (buffer-name))
-        (when (timerp selected-active-timer) (cancel-timer selected-active-timer))
-        (setq selected-active-timer
+        (when (timerp my-selected-active-timer) (cancel-timer my-selected-active-timer))
+        (setq my-selected-active-timer
               (run-with-timer 0.05 nil #'my-selected--disable-highlights)))
-    (when (timerp unselected-active-timer) (cancel-timer unselected-active-timer))
-    (setq unselected-active-timer
+    (when (timerp my-unselected-active-timer) (cancel-timer my-unselected-active-timer))
+    (setq my-unselected-active-timer
           (run-with-timer 0.05 nil #'my-selected--enable-highlights))))
 
 (add-hook 'selected-region-active-mode-hook #'my-toggle-selected-keybinding)

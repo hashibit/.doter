@@ -8,6 +8,9 @@
 
 ;;; Code:
 
+;; Package variables, declared for the byte compiler.
+(defvar tabby-completion-map)
+
 (use-package tabby
   :ensure nil
   :demand t

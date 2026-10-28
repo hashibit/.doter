@@ -21,20 +21,25 @@
                   :noquery t
                   :connection-type 'pipe)))
 
-(defun xcode-build()
+(defun my-xcode-build()
   "Build current Xcode project."
   (interactive)
   (my-xcode--osascript "build"))
 
-(defun xcode-run()
+(defun my-xcode-run()
   "Run current Xcode project."
   (interactive)
   (my-xcode--osascript "run"))
 
-(defun xcode-test()
+(defun my-xcode-test()
   "Test current Xcode project."
   (interactive)
   (my-xcode--osascript "test"))
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'xcode-build #'my-xcode-build "2026-10-27")
+(define-obsolete-function-alias 'xcode-run #'my-xcode-run "2026-10-27")
+(define-obsolete-function-alias 'xcode-test #'my-xcode-test "2026-10-27")
 
 (provide 'init-lang-swift)
 

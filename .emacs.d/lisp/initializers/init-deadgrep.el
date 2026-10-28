@@ -10,14 +10,14 @@
   "Prepare a deadgrep buffer for editing."
   (interactive)
   (my-disable-code-intelligence)
-  (refresh-current-mode))
+  (my-refresh-current-mode))
 
 
 (defun my-deadgrep-edit-exit ()
   "Stop editing a deadgrep buffer."
   (interactive)
   (my-enable-code-intelligence)
-  (refresh-current-mode)
+  (my-refresh-current-mode)
   (deadgrep-mode))
 
 (defun my-deadgrep-visit-result-other-window-and-select ()

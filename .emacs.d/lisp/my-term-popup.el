@@ -29,7 +29,7 @@
   '(next-line previous-line forward-char backward-char
               scroll-up-command scroll-down-command
               gcm-scroll-down gcm-scroll-up
-              scroll-half-page-up scroll-half-page-down
+              my-scroll-half-page-up my-scroll-half-page-down
               xref-go-back xref-go-forward keyboard-quit)
   "Commands that close the popup.")
 
@@ -54,7 +54,7 @@
 
 
 
-(defun show-eldoc-popup-at-point ()
+(defun my-show-eldoc-popup-at-point ()
   "Show the eldoc documentation in a popup at point."
   (interactive)
   (when-let* ((doc-buffer (bound-and-true-p eldoc--doc-buffer))
@@ -92,12 +92,12 @@
 
     (if (eq my-term-popup-engine 'popon)
         ;; implemented using popon
-        (show-popup-with-popon lines display-width)
+        (my-show-popup-with-popon lines display-width)
       ;; implemented using corfu-terminal, I think it's more stable
-      (show-popup-with-corfu-terminal lines display-width))
+      (my-show-popup-with-corfu-terminal lines display-width))
     (my-term-popup--opened)))
 
-(defun show-popup-with-popon(lines _display-width)
+(defun my-show-popup-with-popon(lines _display-width)
   (popon-create
    (string-join lines "\n")
    (cons 0
@@ -105,7 +105,7 @@
    (get-buffer-window)
    (current-buffer)))
 
-(defun show-popup-with-corfu-terminal(lines display-width)
+(defun my-show-popup-with-corfu-terminal(lines display-width)
   (progn
     (setq lines (cl-loop for line in lines
                          collect (cond
@@ -129,6 +129,9 @@
 (keymap-global-set "C-c C-j" #'my-show-popup-test)
 
 
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'show-eldoc-popup-at-point #'my-show-eldoc-popup-at-point "2026-10-27")
 
 (provide 'my-term-popup)
 

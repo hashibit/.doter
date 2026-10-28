@@ -14,7 +14,7 @@
 (require 'seq)
 
 (defvar my-tab-line-face-height 140)
-(defvar default-font-family)
+(defvar my-default-font-family)
 (declare-function my-god-this-is-normal-editor-buffer "init-god")
 (declare-function tab-line-tabs-window-buffers "tab-line")
 (declare-function tab-line-tabs-buffer-groups "tab-line")
@@ -42,7 +42,7 @@
         (modified-fg "red")
         (base (face-attribute 'mode-line :background))
         (box-width (/ (line-pixel-height) 4))
-        (family (or (bound-and-true-p default-font-family) 'unspecified)))
+        (family (or (bound-and-true-p my-default-font-family) 'unspecified)))
     (set-face-attribute 'tab-line nil
                         :background 'unspecified :foreground 'unspecified
                         :family family

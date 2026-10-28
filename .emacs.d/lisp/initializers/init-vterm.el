@@ -9,6 +9,14 @@
 
 ;;; Code:
 
+;; Package variables, declared for the byte compiler.
+(defvar vterm-timer-delay)
+(defvar vterm-max-scrollback)
+(defvar vterm-kill-buffer-on-exit)
+(defvar vterm-mode-map)
+(defvar vterm-copy-mode-map)
+(defvar multi-vterm-dedicated-window-height-percent)
+
 (defvar vterm-copy-mode)
 (declare-function vterm-copy-mode "vterm")
 (declare-function vterm-copy-mode-done "vterm")
@@ -54,7 +62,7 @@
   (if (bound-and-true-p vterm-copy-mode)
       (my-remove-from-legendary-buffers '("*vterm" "*claude"))
     (my-add-to-legendary-buffers '("*vterm" "*claude")))
-  (refresh-current-mode))
+  (my-refresh-current-mode))
 
 ;; fix claude code line flickering
 ;; https://github.com/anthropics/claude-code/issues/247#issuecomment-3058405139

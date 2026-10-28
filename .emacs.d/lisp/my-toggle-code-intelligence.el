@@ -28,7 +28,7 @@
 (defvar eglot-ignored-server-capabilities)
 (defvar symbol-overlay-mode)
 (declare-function symbol-overlay-mode "symbol-overlay")
-(declare-function remove-all-highlight "my-highlight-current-line")
+(declare-function my-remove-all-line-highlights "my-highlight-current-line")
 
 
 (with-eval-after-load 'eglot
@@ -166,7 +166,7 @@
 (defun my-remove-all-highlight ()
   "Remove line, paren and eglot highlights."
   (interactive)
-  (remove-all-highlight)
+  (my-remove-all-line-highlights)
   (my-disable-paren-highlight)
   (my-disable-eglot-highlight))
 

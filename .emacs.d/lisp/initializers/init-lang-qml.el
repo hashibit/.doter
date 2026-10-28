@@ -23,7 +23,7 @@
   :mode "\\.qml\\'"
   :hook
   (qml-mode . my-qml-mode-setup)
-  (qml-mode . maybe-cmake-project-mode)
+  (qml-mode . my-maybe-cmake-project-mode)
   :bind (:map qml-mode-map
               ("C-c C-b" . compile)
               ("s-b" . compile)))

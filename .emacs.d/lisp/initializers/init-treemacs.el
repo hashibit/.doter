@@ -16,7 +16,7 @@
 (require 'fringe)
 (eval-when-compile (require 'dash))
 
-(defvar darker-window-bg-color)
+(defvar my-darker-window-bg-color)
 (defvar my-window-margins)
 (defvar aw-ignored-buffers)
 (defvar hl-line-overlay)
@@ -149,7 +149,7 @@
 (defun my-treemacs-dim-window-background ()
   "Give the treemacs window the darker background."
   (set-face-attribute 'treemacs-window-background-face nil
-                      :background darker-window-bg-color))
+                      :background my-darker-window-bg-color))
 
 (defun my-treemacs-show-in-ace-window ()
   "Let ace-window select the treemacs window too."
@@ -327,7 +327,8 @@ exists it returns /file/name_Copy2.ext etc."
 (defvar my-treemacs-tab-id-counter 0)
 
 (defun my-treemacs-tab-id (&optional tab)
-  "Return the stable treemacs id of TAB (default: current tab), assigning one if needed."
+  "Return the stable treemacs id of TAB (default: current tab).
+Assign a new id when the tab has none."
   (let ((tab (or tab (tab-bar--current-tab-find))))
     (or (alist-get 'my-treemacs-id (cdr tab))
         (let ((id (number-to-string (cl-incf my-treemacs-tab-id-counter))))

@@ -43,7 +43,7 @@
   "<mouse-1>" #'ibuffer-visit-buffer-other-window
   "RET" #'my-side-ibuffer-visit-and-quit-other)
 
-(defun side-ibuffer ()
+(defun my-side-ibuffer ()
   "Show the file buffers in an ibuffer side window."
   (interactive)
   (let ((buffer
@@ -88,6 +88,9 @@
 
 (with-eval-after-load 'dired
   (setq dired-dwim-target t))
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'side-ibuffer #'my-side-ibuffer "2026-10-27")
 
 (provide 'init-dired-ibuffer)
 

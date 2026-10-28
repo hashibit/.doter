@@ -38,7 +38,7 @@
     (push remains result-lines)
     (reverse result-lines)))
 
-(defun bf-pretty-print-xml-region (begin end)
+(defun my-bf-pretty-print-xml-region (begin end)
   "Pretty format XML markup in region. You need to have nxml-mode
     http://www.emacswiki.org/cgi-bin/wiki/NxmlMode installed to do
     this.  The function inserts linebreaks to separate tags that have
@@ -55,7 +55,7 @@
     (indent-region begin end))
   (message "Ah, much better!"))
 
-(defun json-to-single-line (beg end)
+(defun my-json-to-single-line (beg end)
   "Collapse prettified json in region between BEG and END to a single line"
   (interactive "r")
   (if (use-region-p)
@@ -181,6 +181,10 @@
 (define-obsolete-function-alias 'my/wrap-in-line-box #'my-wrap-in-line-box "2026-10-27")
 (define-obsolete-function-alias 'my/wrap-in-bg-gray-box #'my-wrap-in-bg-gray-box "2026-10-27")
 (define-obsolete-function-alias 'my/wrap-in-ascii-box #'my-wrap-in-ascii-box "2026-10-27")
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'bf-pretty-print-xml-region #'my-bf-pretty-print-xml-region "2026-10-27")
+(define-obsolete-function-alias 'json-to-single-line #'my-json-to-single-line "2026-10-27")
 
 (provide 'my-text-boxes)
 

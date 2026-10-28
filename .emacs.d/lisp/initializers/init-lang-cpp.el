@@ -13,7 +13,7 @@
 
 (require 'init-cmake-project)
 
-(defun get-clang-format-option (config-str field is-num)
+(defun my-get-clang-format-option (config-str field is-num)
   "Retrieve a config option from a clang-format config.
 
 CONFIG-STR is a string containing the entire clang-format config.
@@ -61,11 +61,11 @@ Only runs clang-format when a .clang-format/_clang-format file dominates
   "Set indentation and tab settings based on .clang-format configuration."
   (interactive)
   (when-let* ((clang-format-config (my-clang-format-config)))
-    (let ((c-offset (get-clang-format-option clang-format-config "IndentWidth" t))
-          (tabs-str (get-clang-format-option clang-format-config "UseTab" nil))
+    (let ((c-offset (my-get-clang-format-option clang-format-config "IndentWidth" t))
+          (tabs-str (my-get-clang-format-option clang-format-config "UseTab" nil))
           ;; -dump-config 会展开 BasedOnStyle，IndentWidth 总是存在，下面的分支只作兜底
           (base-style
-           (get-clang-format-option clang-format-config "BasedOnStyle" nil)))
+           (my-get-clang-format-option clang-format-config "BasedOnStyle" nil)))
       (message "in .clang-format c-offset: %s" c-offset)
       (if (> c-offset 0)
           (setq-local c-ts-indent-offset c-offset)
@@ -116,13 +116,13 @@ Only runs clang-format when a .clang-format/_clang-format file dominates
 
 
 
-;; (add-hook 'c-mode-hook 'maybe-cmake-project-mode)
-;; (add-hook 'c++-mode-hook 'maybe-cmake-project-mode)
-;; (add-hook 'cmake-mode-hook 'maybe-cmake-project-mode)
+;; (add-hook 'c-mode-hook 'my-maybe-cmake-project-mode)
+;; (add-hook 'c++-mode-hook 'my-maybe-cmake-project-mode)
+;; (add-hook 'cmake-mode-hook 'my-maybe-cmake-project-mode)
 
-(add-hook 'c-ts-mode-hook #'maybe-cmake-project-mode)
-(add-hook 'c++-ts-mode-hook #'maybe-cmake-project-mode)
-(add-hook 'cmake-ts-mode-hook #'maybe-cmake-project-mode)
+(add-hook 'c-ts-mode-hook #'my-maybe-cmake-project-mode)
+(add-hook 'c++-ts-mode-hook #'my-maybe-cmake-project-mode)
+(add-hook 'cmake-ts-mode-hook #'my-maybe-cmake-project-mode)
 
 
 

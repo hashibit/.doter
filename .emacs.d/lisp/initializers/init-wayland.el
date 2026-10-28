@@ -9,28 +9,28 @@
 (setq select-enable-primary t)
 
 ;; Wayland 支持
-(defvar wl-copy-process nil)
+(defvar my-wl-copy-process nil)
 
-(defun wl-copy (text)
+(defun my-wl-copy (text)
   "Copy TEXT to Wayland clipboard using wl-copy."
-  (setq wl-copy-process (make-process :name "wl-copy"
+  (setq my-wl-copy-process (make-process :name "wl-copy"
                                       :buffer nil
                                       :command '("wl-copy" "-f" "-n")
                                       :connection-type 'pipe
                                       :noquery t))
-  (process-send-string wl-copy-process text)
-  (process-send-eof wl-copy-process))
+  (process-send-string my-wl-copy-process text)
+  (process-send-eof my-wl-copy-process))
 
-(defun wl-paste ()
+(defun my-wl-paste ()
   "Paste from Wayland clipboard using wl-paste."
-  (if (and wl-copy-process (process-live-p wl-copy-process))
+  (if (and my-wl-copy-process (process-live-p my-wl-copy-process))
       nil
     (shell-command-to-string "wl-paste -n | tr -d \r")))
 
 ;; 如果是 Wayland，使用 wl-clipboard
 (when (getenv "WAYLAND_DISPLAY")
-  (setq interprogram-cut-function 'wl-copy)
-  (setq interprogram-paste-function 'wl-paste))
+  (setq interprogram-cut-function 'my-wl-copy)
+  (setq interprogram-paste-function 'my-wl-paste))
 
 (provide 'init-wayland)
 

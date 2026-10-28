@@ -15,7 +15,7 @@
   ;; always use my-term-popup
   ;; (if my-term-popup-show-p
   ;;     (my-term-popup-close)
-  ;;   (show-eldoc-popup-at-point))
+  ;;   (my-show-eldoc-popup-at-point))
 
   (if (display-graphic-p)
       ;; graphic, use eldoc-box
@@ -27,7 +27,7 @@
     ;; terminal tui, use my-term-popup
     (if my-term-popup-show-p
         (my-term-popup-close)
-      (show-eldoc-popup-at-point))))
+      (my-show-eldoc-popup-at-point))))
 (defun my-eldoc-box-position-at-mouse (width _height)
   "Position eldoc-box childframe near the mouse cursor."
   (let* ((edges (window-pixel-edges))

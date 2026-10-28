@@ -13,7 +13,7 @@
 ;;
 ;; Only the references are typed, never file contents — claude reads
 ;; the file itself.  The terminal must already be running `claude' (or
-;; `claude-code-ds'/`claude-code-bailian' style env), started manually
+;; `my-claude-code-ds'/`my-claude-code-bailian' style env), started manually
 ;; with `eat-floating-toggle'.
 
 ;;; Code:

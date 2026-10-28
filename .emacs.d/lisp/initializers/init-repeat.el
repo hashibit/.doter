@@ -33,8 +33,8 @@
     scroll-up-command
     scroll-down-command
     recenter-top-bottom
-    scroll-half-page-down
-    scroll-half-page-up
+    my-scroll-half-page-down
+    my-scroll-half-page-up
     my-save-buffer)
   "List of commands for my-last-repeatable-command to ignore.")
 

@@ -3,6 +3,13 @@
 
 ;;; Code:
 
+;; Package variables, declared for the byte compiler.
+(defvar markdown-xwidget-command)
+(defvar markdown-xwidget-github-theme)
+(defvar markdown-xwidget-mermaid-theme)
+(defvar markdown-xwidget-code-block-theme)
+(defvar markdown-mode-command-map)
+
 (use-package markdown-xwidget
   :after markdown-ts-mode
   :config

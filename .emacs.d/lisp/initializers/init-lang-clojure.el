@@ -5,6 +5,21 @@
 
 ;;; Code:
 
+;; Package variables, declared for the byte compiler.
+(defvar cider-auto-select-error-buffer)
+(defvar cider-auto-select-test-report-buffer)
+(defvar cider-save-file-on-load)
+(defvar cider-font-lock-dynamically)
+(defvar cider-test-show-report-on-success)
+(defvar cider-repl-mode-map)
+(defvar cider-repl-display-help-banner)
+(defvar cider-repl-pop-to-buffer-on-connect)
+(defvar cider-repl-use-pretty-printing)
+(defvar cider-repl-result-prefix)
+(defvar cider-repl-history-size)
+(defvar cider-repl-history-file)
+(defvar cider-mode-map)
+
 ;; =============================================================================
 ;; Clojure Mode (使用 treesit)
 ;; =============================================================================

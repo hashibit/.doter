@@ -18,7 +18,7 @@
 ;;
 ;; borrow from https://github.com/lujun9972/emacs-document/blob/master/emacs-common/Smartparens%E7%94%A8%E6%B3%95%E8%AF%A6%E8%A7%A3.org#key
 ;;
-(defmacro def-region-pairs (pairs)
+(defmacro my-def-region-pairs (pairs)
   "Define functions for pairing. PAIRS is an alist of (NAME . STRING)
 conses, where NAME is the function name that will be created and
 STRING is a single-character string that marks the opening character.
@@ -43,7 +43,7 @@ respectively."
             ;; i prefer deactivate mark
             (setq deactivate-mark t)))))
 
-(def-region-pairs ((paren . "(")
+(my-def-region-pairs ((paren . "(")
                    (bracket . "[")
                    (brace . "{")
                    (single-quote . "'")

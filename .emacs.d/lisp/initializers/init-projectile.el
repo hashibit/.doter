@@ -3,11 +3,11 @@
 
 ;;; Code:
 
-(defvar ignored-projectile-projects (list "/opt/homebrew/" "Xcode.app" "node_modules"))
+(defvar my-ignored-projectile-projects (list "/opt/homebrew/" "Xcode.app" "node_modules"))
 
-(defun ignored-projectile-project (project-root)
+(defun my-ignored-projectile-project (project-root)
   (seq-some (lambda (candidate) (string-search candidate project-root))
-            ignored-projectile-projects))
+            my-ignored-projectile-projects))
 
 (use-package projectile
   :ensure t
@@ -16,7 +16,7 @@
   ;; matches at any depth, slash anchors at project root), NOT regexps.
   ;; Anchored regexes like "^\\.git$" silently stop matching -- keep this
   ;; list in gitignore style.  /opt/homebrew is handled by
-  ;; ignored-projectile-project below instead.
+  ;; my-ignored-projectile-project below instead.
   (setq projectile-globally-ignored-directories
         '("node_modules"
           ".venv"
@@ -65,7 +65,7 @@
    projectile-enable-caching t
    projectile-indexing-method 'native
    projectile-track-known-projects-automatically t
-   projectile-ignored-project-function 'ignored-projectile-project)
+   projectile-ignored-project-function 'my-ignored-projectile-project)
 
 
   (setq projectile-project-root-files
@@ -137,32 +137,32 @@
 ;; Projectile scoped xref
 ;; https://magnus.therning.org/2023-03-03-per-project-xref-history-in-emacs.html
 
-(defun projectile-param-xref-history (&optional new-value)
+(defun my-projectile-param-xref-history (&optional new-value)
   "Return project-local xref history for the current projectile.
 
 Override existing value with NEW-VALUE if it's set."
   (if new-value
-      (projectile-param-set-parameter 'xref--history new-value)
-    (or (projectile-param-get-parameter 'xref--history)
-        (projectile-param-set-parameter 'xref--history (xref--make-xref-history)))))
+      (my-projectile-param-set-parameter 'xref--history new-value)
+    (or (my-projectile-param-get-parameter 'xref--history)
+        (my-projectile-param-set-parameter 'xref--history (xref--make-xref-history)))))
 
-(defvar projectile-params--store (make-hash-table :test 'equal)
+(defvar my-projectile-params--store (make-hash-table :test 'equal)
   "The store of project parameters.")
 
-(defun projectile-param-get-parameter (param)
+(defun my-projectile-param-get-parameter (param)
   "Return project parameter PARAM, or nil if unset."
   (let ((key (cons (projectile-project-name) param)))
-    (gethash key projectile-params--store nil)))
+    (gethash key my-projectile-params--store nil)))
 
-(defun projectile-param-set-parameter (param value)
+(defun my-projectile-param-set-parameter (param value)
   "Set the project parameter PARAM to VALUE."
   (let ((key (cons (projectile-project-name) param)))
-    (puthash key value projectile-params--store))
+    (puthash key value my-projectile-params--store))
   value)
 
 
 (with-eval-after-load 'xref
-  (setq xref-history-storage #'projectile-param-xref-history))
+  (setq xref-history-storage #'my-projectile-param-xref-history))
 
 
 (provide 'init-projectile)

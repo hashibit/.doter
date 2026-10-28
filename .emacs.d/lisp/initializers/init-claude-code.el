@@ -98,7 +98,7 @@ With prefix ARG, switch to Claude buffer after sending."
 (defvar my-bailian-api-key nil
   "Aliyun Bailian API key, entered at runtime (never stored in this file).")
 
-(defun claude-code-bailian (&optional api-key)
+(defun my-claude-code-bailian (&optional api-key)
   "Start claude with the Aliyun Bailian API. Ask for API-KEY when interactive."
   (interactive)
   (when (called-interactively-p 'interactive)
@@ -120,7 +120,7 @@ With prefix ARG, switch to Claude buffer after sending."
 (defvar my-ds-api-key nil
   "DeepSeek API key, entered at runtime (never stored in this file).")
 
-(defun claude-code-ds (&optional api-key)
+(defun my-claude-code-ds (&optional api-key)
   "Start claude with the DeepSeek API. Ask for API-KEY when interactive."
   (interactive)
   (when (called-interactively-p 'interactive)
@@ -144,22 +144,28 @@ With prefix ARG, switch to Claude buffer after sending."
         (claude-code))
     (message "should set deepseek api-key")))
 
-(defun reset-claude-code-env ()
+(defun my-reset-claude-code-env ()
   "Remove the API settings from the environment."
   (interactive)
   (setenv "ANTHROPIC_BASE_URL" nil)
   (setenv "ANTHROPIC_MODEL" nil)
   (setenv "ANTHROPIC_AUTH_TOKEN" nil))
 
-(defun claude-code-origin ()
+(defun my-claude-code-origin ()
   "Start claude with the default API."
   (interactive)
-  (reset-claude-code-env)
+  (my-reset-claude-code-env)
   (claude-code))
 
 ;; (use-package claudemacs
 ;;   :vc (:fetcher github :repo "cpoile/claudemacs"))
 
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'claude-code-bailian #'my-claude-code-bailian "2026-10-27")
+(define-obsolete-function-alias 'claude-code-ds #'my-claude-code-ds "2026-10-27")
+(define-obsolete-function-alias 'claude-code-origin #'my-claude-code-origin "2026-10-27")
+(define-obsolete-function-alias 'reset-claude-code-env #'my-reset-claude-code-env "2026-10-27")
 
 (provide 'init-claude-code)
 

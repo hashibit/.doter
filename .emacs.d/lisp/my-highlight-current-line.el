@@ -5,10 +5,10 @@
 
 (require 'seq)
 
-(defun find-overlays-specifying (prop pos)
+(defun my-find-overlays-specifying (prop pos)
   (seq-filter (lambda (ov) (overlay-get ov prop)) (overlays-at pos)))
 
-(defun highlight-current-line ()
+(defun my-highlight-line ()
   "Highlight the current line."
   (interactive)
   (let ((overlay-highlight (make-overlay (line-beginning-position) (+ 1 (line-end-position)))))
@@ -17,20 +17,20 @@
     ;; (overlay-put overlay-highlight 'face '(:background "#1b5aa1"))
     (overlay-put overlay-highlight 'my-marker-name-for-line-highlight-overlay t)))
 
-(defun dehighlight-current-line ()
+(defun my-dehighlight-current-line ()
   "Remove the highlight from the current line."
   (interactive)
   (remove-overlays (line-beginning-position)
                    (+ 1 (line-end-position)) 'my-marker-name-for-line-highlight-overlay t))
 
-(defun highlight-or-dehighlight-line ()
+(defun my-highlight-or-dehighlight-line ()
   "Toggle the highlight of the current line."
   (interactive)
-  (if (find-overlays-specifying 'my-marker-name-for-line-highlight-overlay (line-beginning-position))
-      (dehighlight-current-line)
-    (highlight-current-line)))
+  (if (my-find-overlays-specifying 'my-marker-name-for-line-highlight-overlay (line-beginning-position))
+      (my-dehighlight-current-line)
+    (my-highlight-line)))
 
-(defun remove-all-highlight ()
+(defun my-remove-all-line-highlights ()
   "Remove all line highlights in the buffer."
   (interactive)
   (remove-overlays (point-min) (point-max) 'my-marker-name-for-line-highlight-overlay t)
@@ -41,9 +41,9 @@
 
 
 
-(keymap-global-set "<f8>" #'highlight-or-dehighlight-line)
+(keymap-global-set "<f8>" #'my-highlight-or-dehighlight-line)
 
-(keymap-global-set "<f9>" #'remove-all-highlight)
+(keymap-global-set "<f9>" #'my-remove-all-line-highlights)
 
 
 ;; (setq unhighlight-timer nil)
@@ -51,14 +51,20 @@
 ;;   (interactive)
 ;;   ;; (recenter)
 ;;   (xref-pulse-momentarily)
-;;   ;; (remove-all-highlight)
+;;   ;; (my-remove-all-line-highlights)
 ;;   ;; (my-disable-eglot-highlight)
-;;   ;; (highlight-current-line)
+;;   ;; (my-highlight-line)
 ;;   ;; (when (bound-and-true-p unhighlight-timer)
 ;;   ;;     (cancel-timer unhighlight-timer))
-;;   ;; (setq unhighlight-timer (run-with-timer 0.3 nil #'(lambda() (remove-all-highlight) (my-enable-eglot-highlight))))
+;;   ;; (setq unhighlight-timer (run-with-timer 0.3 nil #'(lambda() (my-remove-all-line-highlights) (my-enable-eglot-highlight))))
 ;; )
 
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'dehighlight-current-line #'my-dehighlight-current-line "2026-10-27")
+(define-obsolete-function-alias 'highlight-current-line #'my-highlight-line "2026-10-27")
+(define-obsolete-function-alias 'highlight-or-dehighlight-line #'my-highlight-or-dehighlight-line "2026-10-27")
+(define-obsolete-function-alias 'remove-all-highlight #'my-remove-all-line-highlights "2026-10-27")
 
 (provide 'my-highlight-current-line)
 

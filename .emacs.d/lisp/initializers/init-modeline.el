@@ -5,10 +5,10 @@
 
 ;;; Code:
 
-(defvar-local buffer-filename-with-git-directory nil
+(defvar-local my-buffer-filename-with-git-directory nil
   "Parent directory of the current directory.
 This variable is nil if the current buffer isn't visiting a file.")
-(put 'buffer-filename-with-git-directory 'permanent-local t)
+(put 'my-buffer-filename-with-git-directory 'permanent-local t)
 
 ;; 存储完整路径用于 tooltip
 (defvar-local my-buffer-full-path nil
@@ -46,7 +46,7 @@ Example: \"project/src/main/java/File.java\" -> \"p/s/m/j/File.java\""
                'mouse-face 'mode-line-highlight
                'local-map mode-line-buffer-identification-keymap)))
 
-(defun set-buffer-filename-with-git-directory-cached ()
+(defun my-set-buffer-filename-with-git-directory-cached ()
   "Set buffer filename with git directory."
   (when (and buffer-file-name buffer-file-truename)
     (let ((full-path
@@ -58,20 +58,20 @@ Example: \"project/src/main/java/File.java\" -> \"p/s/m/j/File.java\""
               (concat rel-dir (file-name-nondirectory buffer-file-truename)))
             buffer-file-name)))
       (setq my-buffer-full-path full-path
-            buffer-filename-with-git-directory
+            my-buffer-filename-with-git-directory
             (if (< (length full-path) 80)
                 full-path
               (my-abbreviate-file-path full-path))))))
 
 (defun my-clear-modeline-cache ()
   "Recompute the mode line file name of the current buffer."
-  (set-buffer-filename-with-git-directory-cached))
+  (my-set-buffer-filename-with-git-directory-cached))
 
-(add-hook 'find-file-hook #'set-buffer-filename-with-git-directory-cached)
+(add-hook 'find-file-hook #'my-set-buffer-filename-with-git-directory-cached)
 
 (setq-default mode-line-buffer-identification
               '(:eval (my-buffer-identification-cached
-                       (or buffer-filename-with-git-directory ""))))
+                       (or my-buffer-filename-with-git-directory ""))))
 
 ;; Face configuration moved to custom-set-faces
 

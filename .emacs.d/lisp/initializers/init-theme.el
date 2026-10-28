@@ -10,7 +10,7 @@
 
 ;;; Code:
 
-(defun theme-tweaks-flatten-underline+ (face)
+(defun my-theme-flatten-underline (face)
   "Change underline style of FACE from wave to straight line."
   (let ((underline (face-attribute face :underline)))
     (when (and (consp underline) (eq (plist-get underline :style) 'wave))
@@ -21,13 +21,13 @@
 (mapatoms
  (lambda (atom)
    (when (facep atom)
-     (theme-tweaks-flatten-underline+ atom))))
+     (my-theme-flatten-underline atom))))
 
 ;; flatten on each face definition in the future
 (define-advice custom-declare-face
     (:around (fun &rest args) flatten-face)
   (let ((face (apply fun args)))
-    (theme-tweaks-flatten-underline+ face)
+    (my-theme-flatten-underline face)
     face))
 
 

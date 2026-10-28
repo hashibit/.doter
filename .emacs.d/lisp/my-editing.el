@@ -7,7 +7,7 @@
 (require 'my-motion)
 
 
-(defun un-indent-by-removing-4-spaces ()
+(defun my-un-indent-by-removing-4-spaces ()
   "remove 4 spaces from beginning of of line"
   (interactive)
   (save-excursion
@@ -18,7 +18,7 @@
         (untabify (match-beginning 0) (match-end 0)))
       (when (looking-at "^    ")
         (replace-match "")))))
-(defun increment-number-at-point ()
+(defun my-increment-number-at-point ()
   "Add 1 to the number at point."
   (interactive)
   (skip-chars-backward "0-9")
@@ -74,9 +74,9 @@
           ;; 末尾有一个换行，光标要往回走一下
           (backward-char 1))
       (yank arg))))
-(defun upcase-p(str) (string= str (upcase str)))
+(defun my-upcase-p(str) (string= str (upcase str)))
 
-(defun downcase-p(str) (string= str (downcase str)))
+(defun my-downcase-p(str) (string= str (downcase str)))
 
 
 (defun my-toggle-case-char ()
@@ -91,8 +91,8 @@
                                         ; (message "input-string: %s" input)
         (while (< i (- end start))
           (let ((current-char (substring input i (+ i 1))))
-                                        ; (message "current-char: %s, is downcase? %s" current-char (downcase-p current-char))
-            (if (downcase-p current-char)
+                                        ; (message "current-char: %s, is downcase? %s" current-char (my-downcase-p current-char))
+            (if (my-downcase-p current-char)
                 (setq return-string
                       (concat return-string (upcase current-char)))
               (setq return-string
@@ -106,7 +106,7 @@
         (goto-char end)
         (setq deactivate-mark nil))
     (let* ((current-char (buffer-substring-no-properties (point) (+ 1 (point))))
-           (upcased (upcase-p current-char))
+           (upcased (my-upcase-p current-char))
            (f (if upcased 'downcase-region 'upcase-region)))
                                         ; (message "input: %s" current-char)
       (funcall f (point) (+ 1 (point)))
@@ -172,6 +172,10 @@
     (insert-char ?+)
     (newline-and-indent)))
 
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'increment-number-at-point #'my-increment-number-at-point "2026-10-27")
+(define-obsolete-function-alias 'un-indent-by-removing-4-spaces #'my-un-indent-by-removing-4-spaces "2026-10-27")
 
 (provide 'my-editing)
 

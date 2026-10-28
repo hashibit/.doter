@@ -199,14 +199,14 @@
   (keymap-set god-local-mode-map "i" #'my-quit-god-mode)
   (keymap-set god-local-mode-map "m" #'my-goto-match-paren)
 
-  (keymap-set god-local-mode-map "`" #'popper-toggle-but-other-window)
-  (keymap-set god-local-mode-map "M-`" #'popper-cycle-but-other-window)
+  (keymap-set god-local-mode-map "`" #'my-popper-toggle-but-other-window)
+  (keymap-set god-local-mode-map "M-`" #'my-popper-cycle-but-other-window)
 
   (keymap-set god-local-mode-map "s" #'my-replace-char)
   (keymap-set god-local-mode-map "x" #'my-delete-char-or-kill-region)
 
-  (keymap-set god-local-mode-map "<f8>" #'highlight-or-dehighlight-line)
-  (keymap-set god-local-mode-map "<f9>" #'remove-all-highlight)
+  (keymap-set god-local-mode-map "<f8>" #'my-highlight-or-dehighlight-line)
+  (keymap-set god-local-mode-map "<f9>" #'my-remove-all-line-highlights)
 
   (keymap-set god-local-mode-map "d d" #'my-kill-whole-line-or-kill-region)
   (keymap-set god-local-mode-map "d j" #'my-kill-whole-line-and-below) ;; TODO point position after kill?
@@ -286,7 +286,7 @@
   (keymap-set god-local-mode-map "SPC h" #'centaur-tabs-backward)
 
   (keymap-set god-local-mode-map "SPC 2" #'treemacs)
-  (keymap-set god-local-mode-map "SPC 3" #'side-ibuffer)
+  (keymap-set god-local-mode-map "SPC 3" #'my-side-ibuffer)
   ;; (keymap-set god-local-mode-map "SPC n" #'my-neotree-toggle)
   ;; (keymap-set god-local-mode-map "SPC N" #'my-neotree-find)
   (keymap-set god-local-mode-map "SPC n" #'treemacs)
@@ -338,7 +338,7 @@
   (keymap-set god-local-mode-map "g G" #'end-of-buffer)
   ;; (keymap-set god-local-mode-map "C-e" #'scroll-up-line)
   ;; (keymap-set god-local-mode-map "C-y" #'scroll-down-line)
-  ;; (keymap-set god-local-mode-map "C-a" #'increment-number-at-point)
+  ;; (keymap-set god-local-mode-map "C-a" #'my-increment-number-at-point)
 
   ;; (keymap-set god-local-mode-map "C-, C-h" #'switch-to-prev-buffer)
   ;; (keymap-set god-local-mode-map "C-, C-l" #'switch-to-next-buffer)
@@ -349,8 +349,8 @@
 
   ;; (keymap-set god-local-mode-map "C-d" #'scroll-up-command)
   ;; (keymap-set god-local-mode-map "C-u" #'scroll-down-command)
-  ;; (keymap-set god-local-mode-map "C-f" #'scroll-full-page-up)
-  ;; (keymap-set god-local-mode-map "C-b" #'scroll-full-page-down)
+  ;; (keymap-set god-local-mode-map "C-f" #'my-scroll-full-page-up)
+  ;; (keymap-set god-local-mode-map "C-b" #'my-scroll-full-page-down)
 
   (keymap-set god-local-mode-map ";" #'scroll-up-command)
   (keymap-set god-local-mode-map "'" #'scroll-down-command)
@@ -379,7 +379,7 @@
 (defun my-flip-buffer-to-window-include-special ()
   "Switch to the previous buffer, special buffers included."
   (interactive)
-  (flip-buffer-to-window t))
+  (my-flip-buffer-to-window t))
 
 (define-minor-mode my-keys-minor-mode
   "A minor mode so that my key settings override annoying major modes."
@@ -405,7 +405,7 @@
   "f" #'avy-goto-word-0
   "M-x" #'my-M-x)
 (define-minor-mode my-special-buffer-keys-minor-mode
-  "A minor mode add some bindings for special-buffers."
+  "A minor mode add some bindings for my-special-buffers."
   :init-value nil
   :lighter " my-special-buffer-keys")
 

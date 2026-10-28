@@ -109,7 +109,7 @@
 (setq smex-save-file (expand-file-name "smex-items.cache" my-local-dir))
 
 ;; compile log with colors
-(add-hook 'compilation-finish-functions #'bury-compile-buffer-if-successful)
+(add-hook 'compilation-finish-functions #'my-bury-compile-buffer-if-successful)
 
 ;;; Terminal-specific Configuration
 (unless (display-graphic-p)
@@ -124,11 +124,11 @@
 ;;; ===================================================================
 
 
-(defvar default-font-family "IBM Plex Mono")
+(defvar my-default-font-family "IBM Plex Mono")
 
 ;; Frame parameters (scroll bars, fringes, maximized) live in early-init.el.
 
-(defun center-frame ()
+(defun my-center-frame ()
   "Center the frame on the screen."
   (interactive)
   ;; 获取显示器的尺寸
@@ -146,7 +146,7 @@
 ;; ;; 在图形界面模式下应用此功能
 ;; (when (display-graphic-p)
 ;;   ;; 在窗口设置完成后调用
-;;   (add-hook 'window-setup-hook 'center-frame t))
+;;   (add-hook 'window-setup-hook 'my-center-frame t))
 
 ;;; UI Mode Configuration
 ;; early-init.el already hides the tool bar (tool-bar-lines 0).
@@ -226,7 +226,7 @@
     (set-window-display-table (selected-window) display-table)))
 
 ;;; Theme Configuration
-(defvar window-divider-color "#06C668")
+(defvar my-window-divider-color "#06C668")
 
 ;; 水平 window 分隔线
 (setopt window-divider-default-places 'bottom-only)
@@ -235,16 +235,16 @@
 ;; 跟 mode-line 一样的颜色
 (window-divider-mode 1)
 
-(defvar use-dark-theme-mode t)
-(defvar darker-window-bg-color (if use-dark-theme-mode "#181818" "#FFFFFF"))
-(defvar darker-window-fg-color (if use-dark-theme-mode "white" "black"))
-(defvar highlight-font-chars-face-fg (if use-dark-theme-mode "green" 'unspecified))
-(defvar highlight-font-chars-face-underline t)
-(defvar whitespace-tab-fg-color "#627D9D")
-(defvar whitespace-trailing-fg-color "#161c23")
-(defvar hl-line-bg-color
+(defvar my-use-dark-theme-mode t)
+(defvar my-darker-window-bg-color (if my-use-dark-theme-mode "#181818" "#FFFFFF"))
+(defvar my-darker-window-fg-color (if my-use-dark-theme-mode "white" "black"))
+(defvar my-highlight-font-chars-face-fg (if my-use-dark-theme-mode "green" 'unspecified))
+(defvar my-highlight-font-chars-face-underline t)
+(defvar my-whitespace-tab-fg-color "#627D9D")
+(defvar my-whitespace-trailing-fg-color "#161c23")
+(defvar my-hl-line-bg-color
   ;; dark: "#1b2129"
-  (if use-dark-theme-mode nil (face-background 'highlight)))
+  (if my-use-dark-theme-mode nil (face-background 'highlight)))
 
 
 
@@ -252,7 +252,7 @@
 (defun my-set-header-line ()
   (interactive)
   (set-face-attribute 'header-line nil
-    :background darker-window-bg-color
+    :background my-darker-window-bg-color
     :box nil
     :overline nil
     :height 10)
@@ -293,8 +293,8 @@
 
 ;;; Custom Faces
 (defface my-highlight-font-chars-face
-  `((t (:foreground ,highlight-font-chars-face-fg
-         :underline (:color ,highlight-font-chars-face-fg :position t)
+  `((t (:foreground ,my-highlight-font-chars-face-fg
+         :underline (:color ,my-highlight-font-chars-face-fg :position t)
          :weight normal)))
   "custom highlight for treemacs current line")
 
@@ -585,7 +585,7 @@
       (when (bound-and-true-p multiple-cursors-mode) (multiple-cursors-mode 0))
       (when (bound-and-true-p iedit-mode) (iedit-done)) ;; exit iedit mode, if needed.
       (ignore-errors (company-cancel))
-      (ignore-errors (remove-all-highlight)))
+      (ignore-errors (my-remove-all-line-highlights)))
     (ignore-errors (flymake-start)) ;; but show errors
     (keyboard-quit)
     (keyboard-quit-context+))) ;; from custom-util-funcs.el
@@ -632,5 +632,8 @@
 
 ;; Faces and Customize-managed variables live in `custom-file'.
 (load custom-file 'noerror 'nomessage)
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'center-frame #'my-center-frame "2026-10-27")
 
 ;;; init.el ends here

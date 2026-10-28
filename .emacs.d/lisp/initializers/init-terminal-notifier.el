@@ -6,33 +6,36 @@
 ;; requires 'sudo port install terminal-notifier'
 ;; stolen from erc-notifier
 ;;
-;; (terminal-notifier-notify "Emacs notification"
+;; (my-terminal-notifier-notify "Emacs notification"
 ;;                           "Something amusing happened")
 
 ;;; Code:
 
-(defvar terminal-notifier-command
+(defvar my-terminal-notifier-command
   (executable-find "terminal-notifier")
   "The path to terminal-notifier.")
 
-(defun terminal-notifier-notify (title message)
-  "Show a message with `terminal-notifier-command`."
+(defun my-terminal-notifier-notify (title message)
+  "Show a message with `my-terminal-notifier-command`."
   (start-process "terminal-notifier"
                  "*terminal-notifier*"
-                 terminal-notifier-command
+                 my-terminal-notifier-command
                  "-title" title
                  "-message" message
                  "-activate" "org.gnu.Emacs"
                  "-sender" "org.gnu.Emacs"))
 
-(defun timed-notification (time msg)
+(defun my-timed-notification (time msg)
   "Show the notification MSG at TIME."
   (interactive
    "sNotification when (e.g: 2 minutes, 60 seconds, 3 days): \nsMessage: ")
   (run-at-time time
                nil
-               (lambda (msg) (terminal-notifier-notify "Emacs" msg))
+               (lambda (msg) (my-terminal-notifier-notify "Emacs" msg))
                msg))
+
+;; Old names, so M-x with the old name still works.
+(define-obsolete-function-alias 'timed-notification #'my-timed-notification "2026-10-27")
 
 (provide 'init-terminal-notifier)
 
