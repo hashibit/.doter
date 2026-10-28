@@ -1,6 +1,11 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-blink-search.el --- Blink-search configuration
 
+;;; Commentary:
+;;
+;;  Not loaded by init.el. Needs blink-search in lisp/blink-search.
+;;
+
 ;;; Code:
 
 (defvar blink-search-history-path)

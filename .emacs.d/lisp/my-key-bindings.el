@@ -101,10 +101,15 @@
   "M-x" #'my-M-x
   "C-M-." #'xref-find-definitions-other-window
   "C-M-h" #'my-toggle-er/mark-defun
-  "C-s h" #'centaur-tabs-backward
-  "C-s l" #'centaur-tabs-forward
-  "C-s n" #'centaur-tabs--create-new-tab
-  "C-s x" #'centaur-tabs--kill-this-buffer-dont-ask
+  ;; Tabs: tab-bar (centaur-tabs is not loaded any more).
+  ;; "C-s h" #'centaur-tabs-backward
+  ;; "C-s l" #'centaur-tabs-forward
+  ;; "C-s n" #'centaur-tabs--create-new-tab
+  ;; "C-s x" #'centaur-tabs--kill-this-buffer-dont-ask
+  "C-s h" #'tab-previous
+  "C-s l" #'tab-next
+  "C-s n" #'tab-bar-new-tab
+  "C-s x" #'kill-current-buffer
 
 
   "s-d" #'my-mc/mark-next-like-this
@@ -435,10 +440,13 @@
 
 
 (unless (display-graphic-p)
-  (with-eval-after-load 'centaur-tabs
-    (keymap-set my-special-buffer-keys-minor-mode-map "C-s h" #'centaur-tabs-backward)
-    (keymap-set my-special-buffer-keys-minor-mode-map "C-s l" #'centaur-tabs-forward)
-    (keymap-set my-special-buffer-keys-minor-mode-map "C-s n" #'centaur-tabs--create-new-tab)))
+  ;; (with-eval-after-load 'centaur-tabs
+  ;;   (keymap-set my-special-buffer-keys-minor-mode-map "C-s h" #'centaur-tabs-backward)
+  ;;   (keymap-set my-special-buffer-keys-minor-mode-map "C-s l" #'centaur-tabs-forward)
+  ;;   (keymap-set my-special-buffer-keys-minor-mode-map "C-s n" #'centaur-tabs--create-new-tab))
+  (keymap-set my-special-buffer-keys-minor-mode-map "C-s h" #'tab-previous)
+  (keymap-set my-special-buffer-keys-minor-mode-map "C-s l" #'tab-next)
+  (keymap-set my-special-buffer-keys-minor-mode-map "C-s n" #'tab-bar-new-tab))
 
 
 (provide 'my-key-bindings)

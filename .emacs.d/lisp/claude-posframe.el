@@ -40,8 +40,8 @@
 (declare-function posframe-poshandler-frame-center "posframe")
 (declare-function posframe-poshandler-frame-top-center "posframe")
 (declare-function posframe-poshandler-frame-bottom-center "posframe")
-(declare-function posframe-poshandler-frame-left-center "posframe")
-(declare-function posframe-poshandler-frame-right-center "posframe")
+(declare-function posframe-poshandler-frame-top-left-corner "posframe")
+(declare-function posframe-poshandler-frame-top-right-corner "posframe")
 (defvar eat-terminal)
 (defvar eat-semi-char-mode-map)
 (declare-function eat-make "eat")
@@ -165,8 +165,9 @@ Falls back to current directory if no project is detected."
     ('center #'posframe-poshandler-frame-center)
     ('top #'posframe-poshandler-frame-top-center)
     ('bottom #'posframe-poshandler-frame-bottom-center)
-    ('left #'posframe-poshandler-frame-left-center)
-    ('right #'posframe-poshandler-frame-right-center)
+    ;; posframe has no left-center / right-center handlers; use the corners.
+    ('left #'posframe-poshandler-frame-top-left-corner)
+    ('right #'posframe-poshandler-frame-top-right-corner)
     (_ #'posframe-poshandler-frame-center)))
 
 (defun claude-posframe--get-project-directory ()

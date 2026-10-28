@@ -208,6 +208,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 
 
+;; Unused: the blink-search package is not installed.
 (defun my-blink-search()
   "Restart the blink-search process and start a search."
   (interactive)

@@ -5,7 +5,7 @@
 
 (require 'avy)
 (setq avy-keys (list ?a ?s ?d ?f ?g ?w ?e ?v ?m ?n ?i ?o ?h ?j ?k ?l ?\;))
-(setq avy-background 't)
+(setq avy-background t)
 (add-to-list 'avy-ignored-modes 'treemacs-mode)
 
 

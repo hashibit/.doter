@@ -95,6 +95,7 @@
 
 
 ;; fix terminal vertical-border char gap
+;; Same function as in init.el; this file is not loaded by init.el.
 (defun my-change-window-divider ()
   (let ((display-table (or buffer-display-table standard-display-table)))
     (set-display-table-slot display-table 5 ?│)

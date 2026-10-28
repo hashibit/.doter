@@ -3,6 +3,9 @@
 
 ;;; Code:
 
+(defvar imenu-list-buffer-name)
+(declare-function imenu-list-quit-window "imenu-list")
+
 (require 'seq)
 (defvar popper-open-popup-alist)
 (defvar ivy-ignore-buffers)
@@ -113,8 +116,11 @@
   "Delete the other windows and close the imenu list."
   (interactive)
   (delete-other-windows)
+  ;; my-imenu-list-check-window-is-open never existed, so this never ran.
   (ignore-errors
-    (when (my-imenu-list-check-window-is-open) (imenu-list-quit-window)))
+    (when (and (bound-and-true-p imenu-list-buffer-name)
+               (get-buffer-window imenu-list-buffer-name t))
+      (imenu-list-quit-window)))
   ;; (ignore-errors
   ;;   (when (eq (treemacs-current-visibility) 'visible) (delete-window (treemacs-get-local-window))))
   (keyboard-quit))
