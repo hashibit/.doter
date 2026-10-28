@@ -140,6 +140,10 @@
         (other-window -1))
       )))
 (defun my-project-switch-to-buffer ()
+  "Switch to a buffer, or open a recent file.
+Show the current project buffers first. When the input matches none of
+them, search the other open buffers, then recently opened files that
+are not open now, then the ignored buffers."
   (interactive)
   (let* ((ignored-p (lambda (name)
                       (seq-some (lambda (pat) (string-match-p pat name))
@@ -153,20 +157,23 @@
                                     (and (not (funcall ignored-p n))
                                          (not (member n project-bufs))))
                                   all-names))
+         ;; recentf-list is newest first. Skip files that a buffer visits.
+         (recent-files (when (bound-and-true-p recentf-list)
+                         (seq-remove (lambda (f) (get-file-buffer f))
+                                     (mapcar #'abbreviate-file-name recentf-list))))
          (ignored-bufs (seq-filter ignored-p all-names)))
     (ivy-read "Buffer: "
               (lambda (input)
                 (if (string-empty-p input)
                     (or project-bufs normal-bufs)
-                  (let ((project-matches (ivy--re-filter input project-bufs)))
-                    (if (or (null project-bufs) project-matches)
-                        project-matches
-                      (let ((normal-matches (ivy--re-filter input normal-bufs)))
-                        (if normal-matches
-                            normal-matches
-                          (ivy--re-filter input ignored-bufs)))))))
+                  ;; Use the first group that has a match.
+                  (seq-some (lambda (group) (ivy--re-filter input group))
+                            (list project-bufs normal-bufs recent-files ignored-bufs))))
               :dynamic-collection t
-              :action #'switch-to-buffer
+              :action (lambda (choice)
+                        (if (get-buffer choice)
+                            (switch-to-buffer choice)
+                          (find-file choice)))
               :caller 'my-project-switch-to-buffer)))
 
 
