@@ -10,7 +10,9 @@
 (declare-function mc/furthest-cursor-before-point "multiple-cursors-core")
 (declare-function mc/furthest-cursor-after-point "multiple-cursors-core")
 (declare-function mc/all-fake-cursors "multiple-cursors-core")
-(eval-when-compile (require 'multiple-cursors-core nil t))
+;; This file loads as source, so eval-when-compile runs at startup and
+;; loads multiple-cursors (about 0.1s). The mc commands load it on first use.
+;; (eval-when-compile (require 'multiple-cursors-core nil t))
 
 (use-package multiple-cursors
   :ensure t

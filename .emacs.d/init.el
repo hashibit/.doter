@@ -149,7 +149,10 @@
 ;;   (add-hook 'window-setup-hook 'center-frame t))
 
 ;;; UI Mode Configuration
-(tool-bar-mode -1)
+;; early-init.el already hides the tool bar (tool-bar-lines 0).
+;; Calling (tool-bar-mode -1) here redraws the frame: about 0.1s.
+;; (tool-bar-mode -1)
+(setq tool-bar-mode nil)
 (menu-bar-mode -1)
 (tab-bar-mode 1)
 

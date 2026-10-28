@@ -51,7 +51,9 @@
   )
 
 ;; 使用 quicklisp 安装的本地 HyperSpec
-(load "~/.quicklisp/clhs-use-local.el" 'noerror)
+;; Load it with slime, not at startup.
+(with-eval-after-load 'slime
+  (load "~/.quicklisp/clhs-use-local.el" 'noerror))
 
 ;; C-c C-d h 打开的本地 HyperSpec 用 eww 显示，其他链接仍走默认浏览器
 (with-eval-after-load 'browse-url
