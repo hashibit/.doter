@@ -29,7 +29,8 @@
   (setcdr lispy-mode-map-c-digits nil)
   (keymap-set lispy-mode-map "M" #'special-lispy-alt-multiline)
   (keymap-set lispy-mode-map "s-m" #'special-lispy-alt-multiline)
-  (keymap-set lispy-mode-map "s-j" #'lispy-down)
+  ;; s-j is taken by the eat popup (bind-key* in my-key-bindings.el).
+  (keymap-set lispy-mode-map "M-s-j" #'lispy-down)
   (keymap-set lispy-mode-map "s-k" #'lispy-up))
 
 

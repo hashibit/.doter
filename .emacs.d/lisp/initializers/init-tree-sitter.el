@@ -1,4 +1,4 @@
-;;; siren-tree-sitter.el --- jimeh's Emacs Siren: tree-sitter
+;;; init-tree-sitter.el --- jimeh's Emacs Siren: tree-sitter
 
 ;;; Commentary:
 
@@ -29,5 +29,5 @@
   :hook
   (tree-sitter-after-on . tree-sitter-hl-mode))
 
-(provide 'siren-tree-sitter)
-;;; siren-tree-sitter.el ends here
+(provide 'init-tree-sitter)
+;;; init-tree-sitter.el ends here

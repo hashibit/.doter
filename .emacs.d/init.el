@@ -355,6 +355,7 @@
 (require 'init-slime)
 (require 'init-eww)
 (require 'my-key-bindings)
+(require 'my-super-keys)
 
 (when (my-system-type-is-gnu)
   (require 'init-wayland))
@@ -367,21 +368,7 @@
 
 
 
-(require 'cnfonts)
-;; 让 cnfonts 在 Emacs 启动时自动生效。
-(cnfonts-mode 1)
-;; 添加两个字号增大缩小的快捷键
-;; (define-key cnfonts-mode-map (kbd "C--") #'cnfonts-decrease-fontsize)
-;; (define-key cnfonts-mode-map (kbd "C-=") #'cnfonts-increase-fontsize)
-(setopt cnfonts-use-system-type t)
-(setopt cnfonts-personal-fontnames '(("IBM Plex Mono") ("IBM Plex Sans SC" "PingFang SC" "等距更纱黑体 SC") ("Symbola") ("Apple Color Emoji")))
-
-;; Emoji 字体调小一点
-(when (member "Apple Color Emoji" (font-family-list))
-  (set-fontset-font "fontset-default"
-    'unicode
-    (font-spec :family "Apple Color Emoji" :size 12)
-    nil 'append))
+(require 'init-cnfonts)
 
 
 
@@ -479,25 +466,7 @@
 
 ;;; Code Intelligence Toggle
 (require 'my-toggle-code-intelligence)
-(add-hook 'isearch-mode-hook #'my-disable-code-intelligence)
-(add-hook 'isearch-mode-end-hook #'my-enable-code-intelligence)
-
-(defun my-change-cursor-type-when-isearch ()
-  (interactive)
-  (if (bound-and-true-p isearch-mode)
-    (progn
-      (setq cursor-type 'bar)
-      (set-cursor-color "yellow"))
-    (progn
-      (setq cursor-type 'box)
-      (set-cursor-color "red"))))
-(add-hook 'isearch-mode-hook #'my-change-cursor-type-when-isearch)
-(add-hook 'isearch-mode-end-hook #'my-change-cursor-type-when-isearch)
-
-;; Safe isearch 全局高亮
-(require 'my-isearch-highlight-all)
-(add-hook 'isearch-update-post-hook #'my-isearch-highlight-all-matches)
-(add-hook 'isearch-mode-end-hook #'my-isearch-cleanup)
+(require 'init-isearch)
 
 ;;; Additional Tools
 ;; (require 'init-tabby)
@@ -533,6 +502,7 @@
 
 ;;; Terminal Emulator
 (require 'init-eat)
+(require 'my-eat-popup)
 (require 'eat-floating)
 (require 'init-eat-claude)
 
@@ -546,54 +516,9 @@
 (require 'init-imenu)
 (require 'init-modeline)
 
-(defun my/web-search ()
-  "在默认浏览器 (Chrome) 中 Google 搜索"
-  (interactive)
-  (let ((query (read-string "Search: ")))
-    (browse-url (concat "https://www.google.com/search?q="
-                  (url-hexify-string query)))))
-(bind-key "C-c w s" #'my/web-search)
+(require 'init-xwidget)
 
-(use-package xwidget
-  :ensure nil
-  ;; xwidget-webkit 会吞掉 ESC 键，改用 my/web-search
-  ;; :bind (("C-c w s" . my/xwidget-webkit-search))
-  :bind (:map xwidget-webkit-mode-map
-          ("r" . xwidget-webkit-reload)
-          ("L" . xwidget-webkit-back)
-          ("H" . xwidget-webkit-forward)
-          ("j" . xwidget-webkit-scroll-up-line)
-          ("k" . xwidget-webkit-scroll-down-line)
-          ("+" . xwidget-webkit-zoom-in)
-          ("-" . xwidget-webkit-zoom-out)
-          ;; 添加复制粘贴绑定
-          ("s-c" . xwidget-webkit-copy-selection-as-kill)
-          ("s-v" . xwidget-webkit-paste)
-          ("s-a" . xwidget-webkit-select-all)          ; Cmd+A 全选
-          ("s-r" . xwidget-webkit-reload)              ; Cmd+R 刷新
-          ("s-l" . xwidget-webkit-current-url)
-          )
-  :config
-  (defun my/xwidget-webkit-search ()
-    "搜索功能"
-    (interactive)
-    (let ((query (read-string "Search: ")))
-      (xwidget-webkit-browse-url (concat "https://www.google.com/search?q="
-                                   (url-hexify-string query))))))
-
-(use-package xwwp
-  :ensure t
-  :bind (("C-c w o" . xwwp))
-  :custom
-  (xwwp-follow-link-completion-system 'ivy)
-  :bind (:map xwidget-webkit-mode-map
-          ("v" . xwwp-follow-link)))
-
-(use-package hl-todo
-  :ensure t
-  :config
-  (global-hl-todo-mode 1)
-  )
+(require 'init-hl-todo)
 
 
 
@@ -605,35 +530,9 @@
 
 
 
-(defun my/indent-bars-enable-maybe ()
-  "Enable indent-bars-mode unless the buffer uses tab indentation."
-  (unless (save-excursion
-            (goto-char (point-min))
-            (re-search-forward "^\t" nil t))
-    (indent-bars-mode 1)))
+(require 'init-indent-bars)
 
-(use-package indent-bars
-  :custom
-  (indent-bars-no-descend-lists t) ; no extra bars in continued func arg lists
-  (indent-bars-treesit-support t)
-  (indent-bars-treesit-ignore-blank-lines-types '("module"))
-  ;; Minimal colorpop:
-  (indent-bars-color '(highlight :face-bg t :blend 0.2))
-  (indent-bars-pattern ".")
-  (indent-bars-width-frac 0.1)
-  (indent-bars-pad-frac 0.1) ; middle of char
-  (indent-bars-zigzag nil)
-  (indent-bars-color-by-depth '(:regexp "outline-\\([0-9]+\\)" :blend 1) ); blend=1: blend with BG only
-  (indent-bars-highlight-current-depth nil) ; pump up the BG blend on current
-  (indent-bars-display-on-blank-lines nil)
-  :hook
-  (prog-mode . my/indent-bars-enable-maybe)
-  (indent-bars-mode . indent-bars-reset))
-
-(use-package systemd
-  :ensure t
-  :defer t
-  )
+(require 'init-systemd)
 
 
 ;; (use-package sis

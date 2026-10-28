@@ -12,7 +12,7 @@
 
 (defun my-qml-mode-setup ()
   "Buffer-local setup for `qml-mode'."
-  (setq js-indent-level 4)
+  (setq-local js-indent-level 4)
   ;; line comment, double forward slash
   (setq-local comment-start "// "
               comment-end "")
