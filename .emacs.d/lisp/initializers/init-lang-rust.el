@@ -21,7 +21,8 @@
 (add-hook 'rust-ts-mode-hook #'my-rust-ts-mode-setup)
 
 (use-package rust-mode
-  :ensure t)
+  :ensure t
+  :defer t)
 
 
 

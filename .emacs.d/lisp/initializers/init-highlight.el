@@ -9,7 +9,8 @@
 ;;; Code:
 
 (use-package highlight
-  :ensure t)
+  :ensure t
+  :defer t)
 
 (provide 'init-highlight)
 

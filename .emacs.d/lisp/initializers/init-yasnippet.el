@@ -14,8 +14,9 @@
     (yas-abort-snippet)))
 
 (use-package yasnippet
+  ;; Load with the first prog-mode buffer, not at startup.
+  :hook (prog-mode . yas-minor-mode)
   :config
-  (add-hook 'prog-mode-hook 'yas-minor-mode)
 
   (add-hook 'yas-before-expand-snippet-hook #'my-disable-eglot-highlight)
   (add-hook 'yas-after-exit-snippet-hook    #'my-enable-eglot-highlight)

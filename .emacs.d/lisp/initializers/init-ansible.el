@@ -9,7 +9,8 @@
 ;;; Code:
 
 (use-package ansible
-  :ensure t)
+  :ensure t
+  :defer t)
 
 (provide 'init-ansible)
 

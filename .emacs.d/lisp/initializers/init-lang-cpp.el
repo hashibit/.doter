@@ -1,8 +1,11 @@
 ;; -*- lexical-binding: t -*-
 ;;; init-lang-cpp.el --- C/C++ language configuration
 
-(require 'clang-format)
-(require 'cff)
+;; Load clang-format and cff on first use, not at startup.
+;; clang-format-buffer and clang-format-region are package autoloads.
+;; (require 'clang-format)
+;; (require 'cff)
+(autoload 'cff-find-other-file "cff" nil t)
 (require 's)
 
 (require 'init-cmake-project)

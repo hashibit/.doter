@@ -512,7 +512,7 @@
 (require 'init-ace-window)
 (require 'init-blamer)
 (require 'init-diminish)
-(require 'init-dashboard)
+;; (require 'init-dashboard)
 ;;; (require 'init-autopep8)
 (require 'init-imenu)
 (require 'init-modeline)
