@@ -10,7 +10,8 @@
 
 (use-package dired+
   :ensure nil
-  :demand t
+  ;; Load with dired, not at startup.
+  :after dired
   :init
   (setq diredp-hide-details-initially-flag nil))
 

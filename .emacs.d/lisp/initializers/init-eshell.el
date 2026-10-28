@@ -1,7 +1,4 @@
 ;;; -*- lexical-binding: t -*-
-(use-package exec-path-from-shell
-  :config (exec-path-from-shell-initialize))
-
 
 ;; eshell with colors
 ;; SEE https://emacs.stackexchange.com/questions/51027/missing-color-support-for-exa-in-eshell

@@ -17,6 +17,9 @@
 
 ;; 完全禁止自动包管理 (package-enable-at-startup is set in early-init.el)
 (setopt package-check-signature nil
+  ;; Read one combined autoload file at startup.
+  ;; package.el refreshes it after each install or delete.
+  package-quickstart t
   ;; 禁止自动安装选中的包
   package-install-upgrade-built-in nil)
 
@@ -43,7 +46,7 @@
 
 ;;; Path Configuration
 ;; PATH and exec-path come from the login shell via exec-path-from-shell
-;; (see init-eshell.el).
+;; (see init-exec-path.el).
 
 (setopt mac-command-modifier 'super)
 
@@ -79,6 +82,7 @@
 ;;; Utility Libraries (no dependencies, loaded first)
 (require 'custom-util-funcs)
 (require 'my-utils)
+(require 'init-exec-path)
 (require 'init-eshell)
 
 ;;; ===================================================================
@@ -453,9 +457,6 @@
 ;;; ===================================================================
 ;;; DEVELOPMENT TOOLS & IDE FEATURES
 ;;; ===================================================================
-
-(semantic-idle-scheduler-mode -1)
-(global-semantic-idle-scheduler-mode -1)
 
 ;;; Code Intelligence and LSP
 (require 'init-eldoc)
