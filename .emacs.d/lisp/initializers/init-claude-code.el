@@ -34,7 +34,7 @@
   (setq claude-code-sandbox-program "claude")
   (setq claude-code-newline-keybinding-style 'newline-on-alt-return)
 
-  (defun my-send-command-with-buffer-or-region-context (cmd &optional arg)
+  (defun my-send-command-with-buffer-or-region-context (cmd &optional _arg)
     "Send CMD to Claude with context:
 - If region is active: include file + selected line range.
 - Otherwise: include the whole file (no line numbers).

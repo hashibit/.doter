@@ -49,7 +49,7 @@
        (member last-repeatable-command my/repeat-commands-to-ignore))
       (setq my/last-repeatable-command last-repeatable-command)))
 
-(add-hook 'pre-command-hook 'my/save-last-repeatable-command)
+(add-hook 'pre-command-hook #'my/save-last-repeatable-command)
 
 (keymap-global-set "<remap> <repeat>" #'my/repeat)
 

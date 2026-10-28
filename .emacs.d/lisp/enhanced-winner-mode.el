@@ -63,7 +63,7 @@
   "增强版的 winner-undo，同时恢复光标和滚动位置。"
   (interactive)
   ;; 在第一次调用时保存当前状态
-  (when (not (eq last-command 'enhanced-winner-undo))
+  (unless (eq last-command 'enhanced-winner-undo)
     (enhanced-winner--save-configuration))
 
   ;; 调用原始的 winner-undo

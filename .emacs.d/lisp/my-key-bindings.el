@@ -27,41 +27,41 @@
 
 
 
-(bind-key (kbd "C-c v") #'rectangle-mark-mode)
+(bind-key "C-c v" #'rectangle-mark-mode)
 (with-eval-after-load 'rect
-  (keymap-set rectangle-mark-mode-map "i" 'string-rectangle))
+  (keymap-set rectangle-mark-mode-map "i" #'string-rectangle))
 
 ;; C-c C-o is preserved by ivy-occur, which is usefull when you want save ivy results to a temp buffer.
 ;; so we change to C-c o
-(bind-key (kbd "C-c o") #'my-occur)
-(bind-key (kbd "C-c /") #'my-rg-at-point)
-(bind-key (kbd "C-c W") #'tab-rename)
+(bind-key "C-c o" #'my-occur)
+(bind-key "C-c /" #'my-rg-at-point)
+(bind-key "C-c W" #'tab-rename)
 
-(bind-key* (kbd "C-'") #'my-toggle-vterm)
+(bind-key* "C-'" #'my-toggle-vterm)
 ;; terminal need this.
-;; (bind-key* (kbd "C-c j") #'my-toggle-vterm)
-;; (bind-key* (kbd "C-`") #'my-toggle-vterm)
+;; (bind-key* "C-c j" #'my-toggle-vterm)
+;; (bind-key* "C-`" #'my-toggle-vterm)
 
-(bind-key (kbd "C-h C-h") #'my-quit-other-window)
-(bind-key (kbd "C-h h")   #'my-quit-other-buffer)
+(bind-key "C-h C-h" #'my-quit-other-window)
+(bind-key "C-h h"   #'my-quit-other-buffer)
 
-(bind-key (kbd "C-h C-w") #'ignore)
-(bind-key (kbd "C-x C-b") #'ibuffer)
-(bind-key (kbd "C-x C-f") #'my-find-files)
-(bind-key (kbd "C-x C-k") #'kill-current-buffer)
-(bind-key (kbd "C-c b") #'switch-to-buffer)
-(bind-key (kbd "C-M-b") #'switch-to-buffer)
+(bind-key "C-h C-w" #'ignore)
+(bind-key "C-x C-b" #'ibuffer)
+(bind-key "C-x C-f" #'my-find-files)
+(bind-key "C-x C-k" #'kill-current-buffer)
+(bind-key "C-c b" #'switch-to-buffer)
+(bind-key "C-M-b" #'switch-to-buffer)
 
-;; (bind-key* (kbd "M-RET") #'my-break-to-multiple-lines)
-(bind-key (kbd "M-m")  #'my-toggle-er/mark-inside-paren)
-(bind-key (kbd "M-M")  #'my-toggle-er/mark-outside-paren)
-(bind-key (kbd "M-o")  #'ace-window)
+;; (bind-key* "M-RET" #'my-break-to-multiple-lines)
+(bind-key "M-m"  #'my-toggle-er/mark-inside-paren)
+(bind-key "M-M"  #'my-toggle-er/mark-outside-paren)
+(bind-key "M-o"  #'ace-window)
 
-(bind-key* (kbd "M-H") #'previous-buffer)
-(bind-key* (kbd "M-L") #'next-buffer)
+(bind-key* "M-H" #'previous-buffer)
+(bind-key* "M-L" #'next-buffer)
 
-(bind-key* (kbd "M-j") #'gcm-scroll-down)
-(bind-key* (kbd "M-k") #'gcm-scroll-up)
+(bind-key* "M-j" #'gcm-scroll-down)
+(bind-key* "M-k" #'gcm-scroll-up)
 
 
 
@@ -72,23 +72,23 @@
     (other-window 1)
     (eat nil t)))
 
-(bind-key* (kbd "C-t") #'eat-floating-toggle)
+(bind-key* "C-t" #'eat-floating-toggle)
 
 
 
-(bind-key (kbd "C-c d") #'emacs-translate-dwim)
+(bind-key "C-c d" #'emacs-translate-dwim)
 
 
 
 ;; jump with C-- C-=, like vscode
 ;; note in terminal emacs, C-/ is translated to C-_, which is undo
 (when (display-graphic-p)
-  (bind-key* (kbd "C--") 'nice-jumper/backward)
-  (bind-key* (kbd "C-_") 'nice-jumper/forward)
+  (bind-key* "C--" #'nice-jumper/backward)
+  (bind-key* "C-_" #'nice-jumper/forward)
   )
 
 
-(bind-key (kbd "C-c \\") 'my-toggle-eldoc-box-help-at-point)
+(bind-key "C-c \\" #'my-toggle-eldoc-box-help-at-point)
 
 
 

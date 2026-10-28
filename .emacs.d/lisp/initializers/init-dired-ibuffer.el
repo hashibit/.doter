@@ -79,7 +79,7 @@
   ;; sort now please!
   (ibuffer-do-sort-by-filename-or-dired))
 
-(add-hook 'ibuffer-mode-hook 'my-ibuffer-hook)
+(add-hook 'ibuffer-mode-hook #'my-ibuffer-hook)
 
 (with-eval-after-load 'dired
   (setq dired-dwim-target t))

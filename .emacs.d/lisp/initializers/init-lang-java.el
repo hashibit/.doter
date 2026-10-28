@@ -348,18 +348,18 @@
 
 (defun my-eglot-java--project-classpath (filename scope)
   "Return the classpath for a given FILENAME and SCOPE."
-  (plist-get (eglot-execute-command (my-eglot-java--server)
-               "java.project.getClasspaths"
-               (vector (eglot-path-to-uri filename)
-                 (json-encode `(( "scope" . ,scope)))))
+  (plist-get (eglot-execute (my-eglot-java--server)
+               (list :command "java.project.getClasspaths"
+                     :arguments (vector (eglot-path-to-uri filename)
+                                  (json-encode `(( "scope" . ,scope))))))
     :classpaths))
 
 (defun my-eglot-java--file--test-p (file-path)
   "Tell if a file locate at FILE-PATH is a test class."
-  (eglot-execute-command
+  (eglot-execute
     (my-eglot-java--server)
-    "java.project.isTestFile"
-    (vector (eglot-path-to-uri file-path ))))
+    (list :command "java.project.isTestFile"
+          :arguments (vector (eglot-path-to-uri file-path)))))
 
 (defun eglot-java-run-test ()
   "Run a test class."

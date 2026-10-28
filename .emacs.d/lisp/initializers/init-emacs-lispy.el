@@ -8,8 +8,8 @@
   (my-enable-symbol-overlay-highlight)
   )
 
-(add-hook 'emacs-lisp-mode-hook 'my-elisp-mode-hook)
-(add-hook 'lisp-mode-hook 'my-elisp-mode-hook)
+(add-hook 'emacs-lisp-mode-hook #'my-elisp-mode-hook)
+(add-hook 'lisp-mode-hook #'my-elisp-mode-hook)
 
 (use-package lispy
   :hook

@@ -3,7 +3,7 @@
 (require 'nice-jumper)
 (global-nice-jumper-mode t)
 ;; (add-hook 'nice-jumper-post-jump-hook 'my-recenter)
-(add-hook 'nice-jumper-post-jump-hook 'xref-pulse-momentarily)
+(add-hook 'nice-jumper-post-jump-hook #'xref-pulse-momentarily)
 
 
 (defvar my/nice-jumper--in-progress nil)

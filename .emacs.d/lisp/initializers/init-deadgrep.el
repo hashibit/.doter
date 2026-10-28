@@ -56,13 +56,13 @@
     ("C-c C-c" . my-deadgrep-edit-exit))
   :hook (deadgrep-edit-mode . my-deadgrep-edit-enter)
   :init
-  (advice-add 'deadgrep-visit-result :after 'xref-pulse-momentarily)
-  (advice-add 'deadgrep-visit-result :after 'my-quit-other-window)
-  (advice-add 'deadgrep-visit-result-other-window :after 'xref-pulse-momentarily)
-  (advice-add 'deadgrep-edit-mode :after 'xref-pulse-momentarily)
+  (advice-add 'deadgrep-visit-result :after #'xref-pulse-momentarily)
+  (advice-add 'deadgrep-visit-result :after #'my-quit-other-window)
+  (advice-add 'deadgrep-visit-result-other-window :after #'xref-pulse-momentarily)
+  (advice-add 'deadgrep-edit-mode :after #'xref-pulse-momentarily)
   (advice-add 'deadgrep--arguments :filter-return #'my-deadgrep--include-args)
   (advice-add 'deadgrep--propagate-change :around #'my-deadgrep--keep-trailing-whitespace)
-  (add-hook 'deadgrep-finished-hook 'my-quit-other-window)
+  (add-hook 'deadgrep-finished-hook #'my-quit-other-window)
   ;; Face configuration moved to custom-set-faces
 )
 

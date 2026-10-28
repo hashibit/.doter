@@ -117,9 +117,9 @@ Only runs clang-format when a .clang-format/_clang-format file dominates
 ;; (add-hook 'c++-mode-hook 'maybe-cmake-project-mode)
 ;; (add-hook 'cmake-mode-hook 'maybe-cmake-project-mode)
 
-(add-hook 'c-ts-mode-hook 'maybe-cmake-project-mode)
-(add-hook 'c++-ts-mode-hook 'maybe-cmake-project-mode)
-(add-hook 'cmake-ts-mode-hook 'maybe-cmake-project-mode)
+(add-hook 'c-ts-mode-hook #'maybe-cmake-project-mode)
+(add-hook 'c++-ts-mode-hook #'maybe-cmake-project-mode)
+(add-hook 'cmake-ts-mode-hook #'maybe-cmake-project-mode)
 
 
 

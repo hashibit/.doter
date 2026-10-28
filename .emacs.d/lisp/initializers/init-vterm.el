@@ -51,7 +51,7 @@
   ;;               nil t)))
 
   (define-prefix-command 'my-vterm-ctrl-s-key)
-  (keymap-set vterm-mode-map "C-s" 'my-vterm-ctrl-s-key)
+  (keymap-set vterm-mode-map "C-s" #'my-vterm-ctrl-s-key)
 
   (keymap-set vterm-copy-mode-map "s-c" #'my-vterm-copy-and-exit)
 

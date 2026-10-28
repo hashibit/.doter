@@ -266,7 +266,7 @@ When switching to an existing buffer, respect its prior god-mode state."
     (setq my-god-mode-is-active-flag t)
     (my-special-buffer-keys-minor-mode 0))))
 
-(add-hook 'find-file-hook 'my-init-god-mode-for-new-buffer)
+(add-hook 'find-file-hook #'my-init-god-mode-for-new-buffer)
 
 (defun my-quit-god-mode ()
   "Quit god mode."
@@ -494,7 +494,7 @@ When switching to an existing buffer, respect its prior god-mode state."
       )
     ))
 
-(add-hook 'god-mode-enabled-hook 'my-god-mode-update-cursor-type)
-(add-hook 'god-mode-disabled-hook 'my-god-mode-update-cursor-type)
+(add-hook 'god-mode-enabled-hook #'my-god-mode-update-cursor-type)
+(add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor-type)
 
 (provide 'init-god)

@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 (require 'lispy)
 (require 'le-lisp)
 

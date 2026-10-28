@@ -25,7 +25,7 @@
     (match-string 0 path)))
 
 (defun jadx-jdt-classpath-to-filename (class-path)
-  "Convert class path like 'com.xme.ai.LLMCaller' to file name 'LLMCaller.java'."
+  "Convert class path like `com.xme.ai.LLMCaller' to file name `LLMCaller.java'."
   (when (string-match "\\([^./]+\\)\\'" class-path)
     (concat (match-string 1 class-path) ".java")))
 

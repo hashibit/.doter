@@ -170,7 +170,7 @@
               (with-current-buffer target-buffer
                 (let ((inhibit-read-only t))
                   (goto-char (point-max))
-                  (delete-region (point-at-bol) (point))  ; Remove "Loading..." line
+                  (delete-region (pos-bol) (point))  ; Remove "Loading..." line
                   (jdtls-insert-large-content java-source target-buffer))))))
         cache-file target-buffer))))
 
@@ -296,7 +296,7 @@
                     (with-current-buffer target-buffer
                       (let ((inhibit-read-only t))
                         (goto-char (point-max))
-                        (delete-region (point-at-bol) (point))  ; Remove "Loading..." line
+                        (delete-region (pos-bol) (point))  ; Remove "Loading..." line
                         (jdtls-insert-large-content java-source target-buffer))))
                   ;; Cleanup temp directory
                   (delete-directory temp-dir t)))
@@ -442,7 +442,7 @@
           (= (buffer-size) 0))
     (jdtls-jadx-decompile-async)))
 
-(add-hook 'find-file-hook 'auto-decompile-jdt-buffer)
+(add-hook 'find-file-hook #'auto-decompile-jdt-buffer)
 
 (provide 'java-decompile)
 ;;; java-decompile.el ends here

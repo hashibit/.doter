@@ -1,4 +1,4 @@
-;;; init-tree-sitter.el --- jimeh's Emacs Siren: tree-sitter
+;;; init-tree-sitter.el --- jimeh's Emacs Siren: tree-sitter  -*- lexical-binding: t -*-
 
 ;;; Commentary:
 

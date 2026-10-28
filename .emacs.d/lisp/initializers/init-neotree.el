@@ -81,7 +81,7 @@
 
 (defun my-add-padding-for-neotree ()
   (set-window-margins (get-buffer-window " *NeoTree*" 'visible) 1))
-(advice-add 'neotree-show :after 'my-add-padding-for-neotree)
+(advice-add 'neotree-show :after #'my-add-padding-for-neotree)
 
 
 (provide 'init-neotree)
