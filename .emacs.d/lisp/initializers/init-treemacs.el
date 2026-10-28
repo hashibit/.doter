@@ -94,6 +94,8 @@
   "Hide treemacs, or show it with only the current buffer's project.
 When the current buffer is not in a project, do the same as `treemacs'."
   (interactive)
+  ;; 下面两个函数没有 autoload，第一次按键时 treemacs 可能还没加载。
+  (require 'treemacs)
   (if (or (eq (treemacs-current-visibility) 'visible)
           (null (treemacs--find-current-user-project)))
       (treemacs)
