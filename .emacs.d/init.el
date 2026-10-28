@@ -64,7 +64,11 @@
   auto-save-list-file-prefix (expand-file-name "auto-save-list/" my-local-dir)
   recentf-save-file (expand-file-name "recentf" my-local-dir)
   create-lockfiles nil
-  inhibit-startup-screen t)
+  inhibit-startup-screen t
+  ;; Plain *scratch*. lisp-interaction-mode would run the elisp hooks at
+  ;; startup: lispy loads all of Org (about 0.9s). M-x lisp-interaction-mode
+  ;; turns it on when needed.
+  initial-major-mode 'fundamental-mode)
 
 ;; Customize writes go here instead of init.el.
 (setopt custom-file (locate-user-emacs-file "custom-settings.el"))
