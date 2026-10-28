@@ -1,7 +1,10 @@
 ;;; -*- lexical-binding: t -*-
 ;;; Emacs Lisp Mode Hook
 (defun my-elisp-mode-hook ()
-  (setq lisp-indent-offset 2)
+  ;; Emacs 32 起此变量是 EditorConfig indent_size 的载体：
+  ;; 非 nil 会完全绕过 common-lisp-indent-function 的对齐逻辑，
+  ;; 强制所有行 = 外层括号列 + offset。所以要注释掉
+  ;;;; (setq lisp-indent-offset 2)
   (my-enable-symbol-overlay-highlight)
   )
 
