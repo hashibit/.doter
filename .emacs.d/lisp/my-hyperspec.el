@@ -13,10 +13,21 @@
 ;;      Anchors of glossary and chapter pages stay as {#name} markers.
 ;;   2. It sends the text to the claude CLI.  The CLI writes a small HTML subset.
 ;;      Dictionary, glossary and chapter pages each have their own prompt.
-;;   3. It checks the HTML and the anchors, adds the Previous, Up and Next links,
-;;      and saves the page.
+;;   3. It checks the HTML and the anchors.  It checks the examples (see below).
+;;      It adds the Previous, Up and Next links, and saves the page.
 ;;   It skips pages that are already in the mirror.
 ;;   `my-hyperspec-rewrite-cancel' stops the batch.
+;;
+;; A wrong example does more harm than no example.  Step 3 checks them:
+;;   - A dictionary page must have the examples of the original page.
+;;   - SBCL runs the examples of a chapter or glossary page.  A form that has a
+;;     result after => must give that result.  Lisp code is in
+;;     my-hyperspec-check.lisp.  SBCL must be installed.
+;;   - A link in the form [label](target) is a fault.
+;;   A page with a fault goes back to the model with the faults in the prompt.
+;;   `my-hyperspec-attempts' sets how many times.  After that, the page is not saved.
+;;   `my-hyperspec-check-all' checks all pages in the mirror.
+;;   `my-hyperspec-rewrite-failed' rewrites the pages that it found faults in.
 ;;
 ;; `my-hyperspec-download' gets the mirror from `my-hyperspec-repo'.
 ;;   Use it instead of `my-hyperspec-rewrite-all' on a new machine.
@@ -72,6 +83,12 @@ Set it with `setopt' or Customize, not with `setq'."
 
 (defcustom my-hyperspec-text-width 80
   "Line width of the text that goes to the claude CLI."
+  :type 'integer)
+
+(defcustom my-hyperspec-attempts 3
+  "Number of times that a page can be rewritten, if its examples are wrong.
+The model gets the faults in the prompt.  After the last try, the page is
+not saved."
   :type 'integer)
 
 (defcustom my-hyperspec-skip-pages '("00_" "01_i")
@@ -198,6 +215,12 @@ Rules for the extra help:
                                "href on a and id on p, h2, h3, li and pre"))
   "System prompt for the rewrite of a chapter or section page.")
 
+(defvar my-hyperspec--feedback (make-hash-table :test #'equal)
+  "Table of page name to the text about the faults in the last version.")
+
+(defvar my-hyperspec--attempts (make-hash-table :test #'equal)
+  "Table of page name to the number of failed rewrites in the current batch.")
+
 (defvar my-hyperspec--queue nil
   "Page names that wait for a rewrite.")
 
@@ -237,11 +260,17 @@ Rules for the extra help:
         (t 'dictionary)))
 
 (defun my-hyperspec--prompt (name)
-  "Return the system prompt for page NAME."
-  (pcase (my-hyperspec--page-kind name)
-    ('glossary my-hyperspec-glossary-prompt)
-    ('chapter my-hyperspec-chapter-prompt)
-    (_ my-hyperspec-prompt)))
+  "Return the system prompt for page NAME.
+If the last version of the page had faults, add them to the prompt."
+  (concat (pcase (my-hyperspec--page-kind name)
+            ('glossary my-hyperspec-glossary-prompt)
+            ('chapter my-hyperspec-chapter-prompt)
+            (_ my-hyperspec-prompt))
+          (when-let* ((faults (gethash name my-hyperspec--feedback)))
+            (concat "\n\nThe last version of this page had faults.  Fix them.  Check every example again.
+A line that starts with \"Example block\" gives the number of the block, the kind of fault, the form, the result that the page shows (expected) and the real result in SBCL (got).
+If you are not sure about a result, remove the example.\n"
+                    faults))))
 
 (defun my-hyperspec--split-url (url)
   "Split URL into (KIND NAME FRAGMENT), or return nil.
@@ -360,6 +389,161 @@ If ANCHORS is non-nil, anchors are written as {#name} markers."
                               (my-hyperspec--prune dom))))
       (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
 
+;;; Check the examples
+
+(defconst my-hyperspec--checker
+  (expand-file-name "my-hyperspec-check.lisp"
+                    (file-name-directory (or load-file-name buffer-file-name)))
+  "Lisp script that runs the examples of a page in SBCL.")
+
+(defconst my-hyperspec--markdown-link-regexp
+  "\\[\\([^]\n]*\\)\\](\\([^) \n]*\\.htm[^) \n]*\\))"
+  "Regexp for a link in the form [label](target.htm).")
+
+(defconst my-hyperspec--result-regexp
+  (concat "\\` \\(?:returns\\|evaluates to\\|yields\\|has the value\\|the result is\\) "
+          "\\(.+?\\)\\(?: \\(?:and\\|because\\|in\\|so\\|which\\)\\_>\\|[.,;]\\(?: \\|\\'\\)\\)")
+  "Regexp for the result that a glossary example gives after its form.")
+
+(define-error 'my-hyperspec-fixable "The page has faults" 'error)
+
+(defun my-hyperspec--pre-text (node)
+  "Return the code in the pre element NODE.  Write each arrow as =>."
+  (let ((text (replace-regexp-in-string my-hyperspec--markdown-link-regexp "\\1"
+                                        (dom-inner-text node))))
+    (setq text (replace-regexp-in-string ";+[ \t]*\\(?:=>\\|→\\|==>\\)" "=>" text))
+    (replace-regexp-in-string "\\(\\`\\|[^[:word:]\"]\\)\\(?:→\\|==>\\)\\([ \t\n]\\)" "\\1=>\\2" text)))
+
+(defun my-hyperspec--section-blocks (dom heading)
+  "Return the code in the pre elements of DOM that follow a heading.
+HEADING is a regexp for the text of the heading.  The section ends at the next
+h2 or h3 heading."
+  (let (in blocks)
+    (named-let walk ((node dom))
+      (when (consp node)
+        (pcase (dom-tag node)
+          ((or 'h2 'h3) (setq in (string-match-p heading (dom-inner-text node))))
+          ('pre (when in (push (my-hyperspec--pre-text node) blocks)))
+          (_ (dolist (child (dom-non-text-children node))
+               (walk child))))))
+    (nreverse blocks)))
+
+(defun my-hyperspec--glossary-blocks (dom)
+  "Return one code block for each example in the glossary page DOM.
+An example is a code form in an i element that has \"Example:\".
+If the text after the form says what it returns, the block has that result
+after =>."
+  (let (blocks)
+    (dolist (node (dom-by-tag dom 'i))
+      (let ((text (dom-inner-text node))
+            (pos 0)
+            lines)
+        (when (string-match-p "Example:" text)
+          (dolist (code (dom-by-tag node 'code))
+            (let ((form (dom-inner-text code)))
+              (when (and (string-match-p "\\`\\(?:(\\|'\\|#'\\)" form)
+                         (string-match (regexp-quote form) text pos))
+                (setq pos (match-end 0))
+                (let ((rest (substring text pos)))
+                  (push (if (string-match my-hyperspec--result-regexp rest)
+                            (concat form " => " (match-string 1 rest))
+                          form)
+                        lines)))))
+          (when lines
+            (push (string-join (nreverse lines) "\n") blocks)))))
+    (nreverse blocks)))
+
+(defun my-hyperspec--sbcl-problems (blocks)
+  "Run the code BLOCKS in SBCL.  Return a list of texts about the wrong examples.
+A form that has a result after => must give that result."
+  (when blocks
+    (unless (executable-find "sbcl")
+      (error "Cannot check the examples: sbcl is not installed"))
+    (let* ((coding-system-for-read 'utf-8)
+           (coding-system-for-write 'utf-8)
+           (file (make-temp-file "hyperspec-check" nil ".txt" (string-join blocks "\f")))
+           (default-directory (file-name-as-directory (make-temp-file "hyperspec-run" t)))
+           problems)
+      (unwind-protect
+          (with-temp-buffer
+            (let ((status (call-process "sbcl" nil t nil "--script" my-hyperspec--checker file)))
+              (unless (eq status 0)
+                (push (format "The check of the examples stopped: %s"
+                              (truncate-string-to-width (string-trim (buffer-string)) 300))
+                      problems))
+              (goto-char (point-min))
+              (while (re-search-forward
+                      "^\\([0-9]+\\) \\(MISMATCH\\|ERROR\\|UNBALANCED\\)\\(?: | \\(.*\\)\\)?$" nil t)
+                (push (format "Example block %s: %s | %s" (match-string 1) (match-string 2)
+                              (or (match-string 3) ""))
+                      problems))))
+        (delete-file file)
+        (delete-directory default-directory t))
+      (nreverse problems))))
+
+(defun my-hyperspec--flat (text)
+  "Return TEXT in a form that makes it easy to compare two examples.
+The result has no white space and no link syntax.  Each arrow is =>."
+  (let ((text (replace-regexp-in-string "[[:space:] ]+" "" text)))
+    (setq text (replace-regexp-in-string "\\[\\([^]]*\\)\\]([^)]*)" "\\1" text))
+    (replace-regexp-in-string ";+=>\\|→\\|==>" "=>" text)))
+
+(defun my-hyperspec--fidelity-problems (dom name)
+  "Return texts about the examples in DOM that are not in the original page NAME.
+The examples of a dictionary page come from the standard.
+They stay as they are."
+  (let ((original (my-hyperspec--flat
+                   (my-hyperspec-html-to-text (my-hyperspec--html-file name)))))
+    (cl-loop for block in (my-hyperspec--section-blocks dom "\\`Examples\\'")
+             unless (string-search (my-hyperspec--flat block) original)
+             collect (format "This example block is not in the original page.  Copy the examples of the page exactly, or leave the section out:\n%s"
+                             (truncate-string-to-width (string-trim block) 300)))))
+
+(defun my-hyperspec--page-problems (html name)
+  "Return a list of texts about the faults in HTML, the mirror page NAME.
+The faults are links in markdown form and wrong examples."
+  (let ((dom (with-temp-buffer
+               (insert html)
+               (libxml-parse-html-region (point-min) (point-max)))))
+    (append
+     (when (string-match-p "<\\(?:[^A-Za-z/!]\\|\\'\\)" html)
+       (list "The page has a < that does not start a tag.  Write < as &lt; in the text and in pre."))
+     (when (string-match-p my-hyperspec--markdown-link-regexp html)
+       (list "The page has a link in the form [label](target).  Write every link as <a href=\"target\">label</a>.  Do this in pre too."))
+     (pcase (my-hyperspec--page-kind name)
+       ('dictionary (my-hyperspec--fidelity-problems dom name))
+       ('chapter (my-hyperspec--sbcl-problems
+                  (my-hyperspec--section-blocks dom "Examples (not in the standard)")))
+       ('glossary (my-hyperspec--sbcl-problems (my-hyperspec--glossary-blocks dom)))))))
+
+;;;###autoload
+(defun my-hyperspec-check-all ()
+  "Check the examples and the links of all pages in the mirror.
+Dictionary pages must have the examples of the original.  Chapter and glossary
+examples must give the results that they show, when SBCL runs them.
+Save the faults for `my-hyperspec-rewrite-failed'.  Show the pages that have
+faults."
+  (interactive)
+  (clrhash my-hyperspec--feedback)
+  (let ((coding-system-for-read 'utf-8)
+        (pages (mapcar #'file-name-sans-extension
+                       (directory-files (expand-file-name "Body/" my-hyperspec-cache-dir)
+                                        nil "\\.htm\\'"))))
+    (dolist (name pages)
+      (when-let* ((problems (my-hyperspec--page-problems
+                             (with-temp-buffer
+                               (insert-file-contents (my-hyperspec--mirror-file name))
+                               (buffer-string))
+                             name)))
+        (puthash name (string-join problems "\n") my-hyperspec--feedback)
+        (message "my-hyperspec: %s has %d faults" name (length problems)))))
+  (with-current-buffer (get-buffer-create "*my-hyperspec-check*")
+    (erase-buffer)
+    (maphash (lambda (name faults) (insert name "\n" faults "\n\n")) my-hyperspec--feedback)
+    (goto-char (point-min))
+    (display-buffer (current-buffer)))
+  (message "my-hyperspec: %d pages have faults" (hash-table-count my-hyperspec--feedback)))
+
 ;;; Rewrite with the claude CLI
 
 (defun my-hyperspec--nav (name)
@@ -414,6 +598,8 @@ Signal an error if the HTML is bad."
       (error "Anchors missing in the output: %s" (string-join (seq-take missing 5) " ")))
     (when-let* ((unknown (my-hyperspec--unknown-tags dom)))
       (error "Unknown tags in the output: %s" (string-join (seq-take unknown 5) " ")))
+    (when-let* ((problems (my-hyperspec--page-problems body name)))
+      (signal 'my-hyperspec-fixable (list (string-join problems "\n"))))
     (let ((nav (or (my-hyperspec--nav name) "")))
       (format "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>%s</title>\n</head>\n<body>\n%s\n<hr>\n%s\n<hr>\n%s\n</body>\n</html>\n"
               (xml-escape-string (string-trim (dom-inner-text h1)))
@@ -423,7 +609,8 @@ Signal an error if the HTML is bad."
   "Save the output of PROCESS as the mirror page NAME.  Then start the next page."
   (setq my-hyperspec--running (assq-delete-all name my-hyperspec--running))
   (let ((output (with-current-buffer (process-buffer process)
-                  (string-trim (buffer-string)))))
+                  (string-trim (buffer-string))))
+        (retry nil))
     (condition-case err
         (progn
           (unless (and (zerop (process-exit-status process)) (not (string-empty-p output)))
@@ -431,10 +618,20 @@ Signal an error if the HTML is bad."
           (let ((file (my-hyperspec--mirror-file name))
                 (coding-system-for-write 'utf-8))
             (make-directory (file-name-directory file) t)
-            (write-region (my-hyperspec--make-page output name (process-get process 'anchors)) nil file nil 'silent)))
-      (error (message "my-hyperspec: rewrite of %s failed: %s" name (error-message-string err)))))
-  (kill-buffer (process-buffer process))
-  (cl-incf my-hyperspec--done)
+            (write-region (my-hyperspec--make-page output name (process-get process 'anchors)) nil file nil 'silent)
+            (remhash name my-hyperspec--feedback)))
+      (my-hyperspec-fixable
+       (let ((tries (puthash name (1+ (gethash name my-hyperspec--attempts 0))
+                             my-hyperspec--attempts)))
+         (puthash name (cadr err) my-hyperspec--feedback)
+         (setq retry (< tries my-hyperspec-attempts))
+         (message "my-hyperspec: %s has faults (try %d of %d)%s:\n%s" name tries my-hyperspec-attempts
+                  (if retry "" ", page not saved") (cadr err))))
+      (error (message "my-hyperspec: rewrite of %s failed: %s" name (error-message-string err))))
+    (kill-buffer (process-buffer process))
+    (if retry
+        (push name my-hyperspec--queue)
+      (cl-incf my-hyperspec--done)))
   (message "my-hyperspec: %d/%d pages rewritten" my-hyperspec--done my-hyperspec--total)
   (my-hyperspec--rewrite-next))
 
@@ -511,6 +708,7 @@ The directory must be new or empty."
   (when my-hyperspec--running
     (user-error "A rewrite batch is already running"))
   (make-directory my-hyperspec-cache-dir t)
+  (clrhash my-hyperspec--attempts)
   (setq my-hyperspec--queue
         (seq-remove (lambda (name) (file-exists-p (my-hyperspec--mirror-file name)))
                     (my-hyperspec--all-pages))
@@ -518,6 +716,18 @@ The directory must be new or empty."
         my-hyperspec--total (length my-hyperspec--queue))
   (message "my-hyperspec: %d pages to rewrite" my-hyperspec--total)
   (my-hyperspec--rewrite-next))
+
+;;;###autoload
+(defun my-hyperspec-rewrite-failed ()
+  "Rewrite the pages that have faults.
+Run `my-hyperspec-check-all' first.  It saves the faults.  The model gets them
+in the prompt.  This also rewrites the pages that are not in the mirror."
+  (interactive)
+  (dolist (name (hash-table-keys my-hyperspec--feedback))
+    (let ((file (my-hyperspec--mirror-file name)))
+      (when (file-exists-p file)
+        (delete-file file))))
+  (my-hyperspec-rewrite-all))
 
 (defun my-hyperspec-rewrite-cancel ()
   "Stop the rewrite batch."
