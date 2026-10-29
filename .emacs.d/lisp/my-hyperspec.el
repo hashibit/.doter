@@ -369,6 +369,20 @@ The links come from the head of the original page."
         (push (format "<a href=\"%s\">%s</a>" target (cdr rel)) links)))
     (and links (format "<p>%s</p>" (string-join (nreverse links) " | ")))))
 
+(defconst my-hyperspec--allowed-tags
+  '(html head body meta title h1 h2 h3 h4 p ul ol li dl dt dd pre code a b i em strong
+         sup sub br hr blockquote table thead tbody tr th td)
+  "Tags that a mirror page may have.
+The first four are the tags that the HTML parser adds around a fragment.")
+
+(defun my-hyperspec--unknown-tags (dom)
+  "Return the tag names in DOM that `my-hyperspec--allowed-tags' does not list.
+A raw < in the text, such as <no values>, or a typo in a tag gives such a tag."
+  (delete-dups
+   (mapcar (lambda (node) (symbol-name (dom-tag node)))
+           (dom-search dom (lambda (node)
+                             (not (memq (dom-tag node) my-hyperspec--allowed-tags)))))))
+
 (defun my-hyperspec--make-page (output name anchors)
   "Check the HTML in OUTPUT.  Return it as a complete page for page NAME.
 ANCHORS are the anchor names of the original page.
@@ -389,8 +403,8 @@ Signal an error if the HTML is bad."
                             (dom-search dom (lambda (node) (equal (dom-attr node 'id) anchor))))
                           anchors)))
       (error "Anchors missing in the output: %s" (string-join (seq-take missing 5) " ")))
-    (when (dom-by-tag dom 'script)
-      (error "Script tag in the output"))
+    (when-let* ((unknown (my-hyperspec--unknown-tags dom)))
+      (error "Unknown tags in the output: %s" (string-join (seq-take unknown 5) " ")))
     (let ((nav (or (my-hyperspec--nav name) "")))
       (format "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>%s</title>\n</head>\n<body>\n%s\n<hr>\n%s\n<hr>\n%s\n</body>\n</html>\n"
               (xml-escape-string (string-trim (dom-inner-text h1)))
