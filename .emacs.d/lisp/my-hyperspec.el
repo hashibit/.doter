@@ -10,8 +10,11 @@
 ;;
 ;; `my-hyperspec-rewrite-all' makes the mirror:
 ;;   1. It renders each page to text, like eww does.  Links stay as [label](target).
+;;      Anchors of glossary and chapter pages stay as {#name} markers.
 ;;   2. It sends the text to the claude CLI.  The CLI writes a small HTML subset.
-;;   3. It checks the HTML, adds the Previous, Up and Next links, and saves the page.
+;;      Dictionary, glossary and chapter pages each have their own prompt.
+;;   3. It checks the HTML and the anchors, adds the Previous, Up and Next links,
+;;      and saves the page.
 ;;   It skips pages that are already in the mirror.
 ;;   `my-hyperspec-rewrite-cancel' stops the batch.
 ;;
@@ -71,8 +74,41 @@ Set it with `setopt' or Customize, not with `setq'."
   "Line width of the text that goes to the claude CLI."
   :type 'integer)
 
+(defcustom my-hyperspec-skip-pages '("00_" "01_i")
+  "Pages that `my-hyperspec-rewrite-all' does not rewrite.
+They are the credits and long lists of names.  eww shows the original page."
+  :type '(repeat string))
+
+(defconst my-hyperspec--link-rules
+  "Rules for the links:
+- The page text has links in the form [label](target).
+- Keep each link that fits your new text.  Write it as <a href=\"target\">label</a>.
+- Do not change a target.  Do not add a link that is not in the page.
+- You may change the label words and move a link to another sentence."
+  "Prompt text about links.  All page kinds use it.")
+
+(defconst my-hyperspec--marker-rules
+  "Rules for the markers:
+- The page text has markers in the form {#name}.  They mark the places that other pages link to.
+- Put id=\"name\" on the element that holds the marker.  Use p, h2, li or pre for this element.
+- Do not write the marker text in the output.  Do not leave out any marker."
+  "Prompt text about markers.  Glossary and chapter pages use it.")
+
+(defun my-hyperspec--format-rules (tags attributes)
+  "Return the prompt text about the output format.
+TAGS lists the allowed tags.  ATTRIBUTES says which attributes are allowed."
+  (format "Rules for the format:
+- Output HTML only.  Do not use markdown.  Do not wrap the output in code fences.
+- Use only these tags: %s.  Use no attribute except %s.
+- Start with one h1 that holds the page title.  Use h2 for the sections.
+- Put every code example, call syntax and grammar in pre.
+- Write < > and & as &lt; &gt; and &amp; in the text and in pre.
+- Output only the page.  Do not add comments about the task."
+          tags attributes))
+
 (defconst my-hyperspec-prompt
-  "You rewrite one page of the Common Lisp HyperSpec for application developers.
+  (concat
+   "You rewrite one page of the Common Lisp HyperSpec for application developers.
 The input is the text of the page.  Write the same page as a practical manual.
 
 Rules for the content:
@@ -81,27 +117,69 @@ Rules for the content:
 - Keep this order: name and kind, call syntax, what it does, arguments, return values, examples, pitfalls, formal grammar, related symbols.
 - Call syntax holds only the short form of the call.  Do not put grammar rules (lines with ::=) in it.
 - Move all grammar rules to an h2 named \"Formal grammar\".  Put it before the h2 for related symbols.
+- Write the Formal grammar section only if the page has grammar rules.  If it has none, leave it out.  Do not write a sentence about missing rules.
+- Put nothing else in the Formal grammar section.  Put a class precedence list in an h2 named \"Class precedence list\".  Put math formulas in an h2 named \"Mathematical definitions\".  Put X3J13 cleanup issues in an h2 named \"Related X3J13 cleanup issues\".  Put these h2 sections before the h2 for related symbols.
 - Keep the grammar rules exactly as written.
-- Start that section with one sentence that says it is reference material that most readers can skip.
+- Start the Formal grammar section with one sentence that says it is reference material that most readers can skip.
+- After that sentence, repeat the forms from the call syntax that use these rules, each in its own pre, with its label such as \"The extended form:\".  Then write the rules in one pre.
 - Keep every code example and its output exactly as written.
 - Keep all facts.  Do not add behavior that the page does not state.
 - Write one clear sentence for each rule about errors and undefined behavior.
 - If a page covers many symbols, give each symbol its own section.
 
-Rules for the links:
-- The page text has links in the form [label](target).
-- Keep each link that fits your new text.  Write it as <a href=\"target\">label</a>.
-- Do not change a target.  Do not add a link that is not in the page.
-- You may change the label words and move a link to another sentence.
+"
+   my-hyperspec--link-rules "\n\n"
+   (my-hyperspec--format-rules "h1, h2, p, ul, li, pre, code, a" "href on a"))
+  "System prompt for the rewrite of a dictionary page.")
 
-Rules for the format:
-- Output HTML only.  Do not use markdown.  Do not wrap the output in code fences.
-- Use only these tags: h1, h2, p, ul, li, pre, code, a.  Use no attribute except href on a.
-- Start with one h1 that holds the page title.  Use h2 for the sections.
-- Put every code example, call syntax and grammar in pre.
-- Write < > and & as &lt; &gt; and &amp; in the text and in pre.
-- Output only the page.  Do not add comments about the task."
-  "System prompt for the rewrite.")
+(defconst my-hyperspec-glossary-prompt
+  (concat
+   "You rewrite one page of the glossary of the Common Lisp HyperSpec for application developers.
+The input is the text of the page.  It is an alphabetical list of terms.
+Each entry has a term, a part of speech such as n. or v., and a definition.
+
+Rules for the content:
+- Keep every entry, in the same order.  Do not merge entries.  Do not drop entries.
+- Keep the term and the part of speech exactly as written.
+- Write each definition in plain and simple English.  Use short sentences.  Use active voice.
+- Keep the meaning exactly.  If a definition is already simple, keep it as it is.
+- Keep labels such as Trad. and keep each See reference.
+- Keep every symbol name exactly as written, with its * and + characters.
+- Keep every example.  Do not add examples.
+
+Rules for the entries:
+- Write each entry as <p id=\"name\"><b>term</b> <i>n.</i> definition</p>.
+- The input marks the start of each entry with a marker.  Use its name as the id.
+
+"
+   my-hyperspec--marker-rules "\n\n"
+   my-hyperspec--link-rules "\n\n"
+   (my-hyperspec--format-rules "h1, h2, p, ul, li, pre, code, a, b, i"
+                               "href on a and id on p, h2, li and pre"))
+  "System prompt for the rewrite of a glossary page.")
+
+(defconst my-hyperspec-chapter-prompt
+  (concat
+   "You rewrite one section of the Common Lisp HyperSpec for application developers.
+The input is the text of a section of the standard.  Write the same section as a practical guide.
+
+Rules for the content:
+- Use plain and simple English.  Use short sentences.  Use active voice.
+- Do not use legal or standards language.  Say what a rule means for a programmer.
+- Keep the section number and the title in the h1.
+- Keep the same order.  Keep a heading for each subsection.
+- Keep all facts, rules, limits and numbers.  Do not add behavior that the page does not state.
+- Keep every code example, figure, table and list of names exactly as written.
+- Keep every symbol name exactly as written, with its * and + characters.
+- Say each rule about errors and undefined behavior in one clear sentence.
+- When the text uses a term of art that a beginner may not know, add a few plain words the first time it appears.  The link stays.
+
+"
+   my-hyperspec--marker-rules "\n\n"
+   my-hyperspec--link-rules "\n\n"
+   (my-hyperspec--format-rules "h1, h2, h3, p, ul, li, pre, code, a, b, i"
+                               "href on a and id on p, h2, h3, li and pre"))
+  "System prompt for the rewrite of a chapter or section page.")
 
 (defvar my-hyperspec--queue nil
   "Page names that wait for a rewrite.")
@@ -128,14 +206,25 @@ Rules for the format:
   "Return the mirror file of page NAME."
   (expand-file-name (concat "Body/" name ".htm") my-hyperspec-cache-dir))
 
-(defun my-hyperspec--dictionary-pages ()
-  "Return the names of all dictionary pages, from Map_Sym.txt."
-  (let (names)
-    (with-temp-buffer
-      (insert-file-contents (expand-file-name "Data/Map_Sym.txt" my-hyperspec-root))
-      (while (re-search-forward "^\\.\\./Body/\\(.+\\)\\.htm$" nil t)
-        (push (match-string 1) names)))
-    (delete-dups (nreverse names))))
+(defun my-hyperspec--all-pages ()
+  "Return the names of all pages to rewrite.  Skip `my-hyperspec-skip-pages'."
+  (seq-remove (lambda (name) (member name my-hyperspec-skip-pages))
+              (mapcar #'file-name-sans-extension
+                      (directory-files (expand-file-name "Body/" my-hyperspec-root)
+                                       nil "\\.htm\\'"))))
+
+(defun my-hyperspec--page-kind (name)
+  "Return the kind of page NAME: `glossary', `chapter' or `dictionary'."
+  (cond ((string-prefix-p "26_glo_" name) 'glossary)
+        ((string-match-p "\\`[0-9][0-9]_" name) 'chapter)
+        (t 'dictionary)))
+
+(defun my-hyperspec--prompt (name)
+  "Return the system prompt for page NAME."
+  (pcase (my-hyperspec--page-kind name)
+    ('glossary my-hyperspec-glossary-prompt)
+    ('chapter my-hyperspec-chapter-prompt)
+    (_ my-hyperspec-prompt)))
 
 (defun my-hyperspec--split-url (url)
   "Split URL into (KIND NAME FRAGMENT), or return nil.
@@ -221,9 +310,27 @@ Only links to HyperSpec body pages have a target."
       (setf (cddr a) (append (list "[") (cddr a) (list (format "](%s)" target))))))
   dom)
 
-(defun my-hyperspec-html-to-text (file)
+(defun my-hyperspec--anchor-names (file)
+  "Return the names of the anchors in HTML FILE."
+  (let ((dom (with-temp-buffer
+               (insert-file-contents file)
+               (libxml-parse-html-region (point-min) (point-max)))))
+    (delete-dups (delq nil (mapcar (lambda (a)
+                                     (and (not (dom-attr a 'href)) (dom-attr a 'name)))
+                                   (dom-by-tag dom 'a))))))
+
+(defun my-hyperspec--mark-anchors (dom)
+  "Write each anchor in DOM as a {#name} marker.  Return DOM."
+  (dolist (a (dom-by-tag dom 'a))
+    (when-let* ((name (dom-attr a 'name))
+                ((not (dom-attr a 'href))))
+      (setf (cddr a) (cons (format "{#%s}" name) (cddr a)))))
+  dom)
+
+(defun my-hyperspec-html-to-text (file &optional anchors)
   "Return the text of HTML FILE, as eww shows it.
-Links to other HyperSpec pages are written as [label](target)."
+Links to other HyperSpec pages are written as [label](target).
+If ANCHORS is non-nil, anchors are written as {#name} markers."
   (let ((dom (with-temp-buffer
                (insert-file-contents file)
                (libxml-parse-html-region (point-min) (point-max))))
@@ -231,7 +338,9 @@ Links to other HyperSpec pages are written as [label](target)."
         (shr-inhibit-images t)
         (shr-width my-hyperspec-text-width))
     (with-temp-buffer
-      (shr-insert-document (my-hyperspec--mark-links (my-hyperspec--prune dom)))
+      (shr-insert-document (my-hyperspec--mark-links
+                            (if anchors (my-hyperspec--mark-anchors (my-hyperspec--prune dom))
+                              (my-hyperspec--prune dom))))
       (string-trim (buffer-substring-no-properties (point-min) (point-max))))))
 
 ;;; Rewrite with the claude CLI
@@ -252,8 +361,10 @@ The links come from the head of the original page."
         (push (format "<a href=\"%s\">%s</a>" target (cdr rel)) links)))
     (and links (format "<p>%s</p>" (string-join (nreverse links) " | ")))))
 
-(defun my-hyperspec--make-page (output name)
+(defun my-hyperspec--make-page (output name anchors)
   "Check the HTML in OUTPUT.  Return it as a complete page for page NAME.
+ANCHORS are the anchor names of the original page.
+Each one needs an id in OUTPUT.
 Signal an error if the HTML is bad."
   (let* ((body (string-trim
                 (replace-regexp-in-string "\\`[ \t\n]*```[a-z]*\n\\|\n```[ \t\n]*\\'" "" output)))
@@ -263,6 +374,13 @@ Signal an error if the HTML is bad."
          (h1 (car (dom-by-tag dom 'h1))))
     (unless h1
       (error "No h1 in the output"))
+    (unless (string-suffix-p ">" body)
+      (error "The output looks cut off"))
+    (when-let* ((missing (seq-remove
+                          (lambda (anchor)
+                            (dom-search dom (lambda (node) (equal (dom-attr node 'id) anchor))))
+                          anchors)))
+      (error "Anchors missing in the output: %s" (string-join (seq-take missing 5) " ")))
     (when (dom-by-tag dom 'script)
       (error "Script tag in the output"))
     (let ((nav (or (my-hyperspec--nav name) "")))
@@ -282,7 +400,7 @@ Signal an error if the HTML is bad."
           (let ((file (my-hyperspec--mirror-file name))
                 (coding-system-for-write 'utf-8))
             (make-directory (file-name-directory file) t)
-            (write-region (my-hyperspec--make-page output name) nil file nil 'silent)))
+            (write-region (my-hyperspec--make-page output name (process-get process 'anchors)) nil file nil 'silent)))
       (error (message "my-hyperspec: rewrite of %s failed: %s" name (error-message-string err)))))
   (kill-buffer (process-buffer process))
   (cl-incf my-hyperspec--done)
@@ -292,6 +410,8 @@ Signal an error if the HTML is bad."
 (defun my-hyperspec--rewrite-start (name)
   "Start the rewrite of page NAME."
   (let* ((default-directory my-hyperspec-cache-dir)
+         (file (my-hyperspec--html-file name))
+         (marked (not (eq (my-hyperspec--page-kind name) 'dictionary)))
          (process (make-process
                    :name (concat "hyperspec-" name)
                    :buffer (generate-new-buffer (format " *hyperspec-%s*" name))
@@ -299,14 +419,16 @@ Signal an error if the HTML is bad."
                                   "--model" my-hyperspec-model
                                   "--tools" ""
                                   "--no-session-persistence"
-                                  "--system-prompt" my-hyperspec-prompt)
+                                  "--system-prompt" (my-hyperspec--prompt name))
                    :coding 'utf-8
                    :connection-type 'pipe
                    :sentinel (lambda (process _event)
                                (unless (process-live-p process)
                                  (my-hyperspec--rewrite-done name process))))))
     (push (cons name process) my-hyperspec--running)
-    (process-send-string process (my-hyperspec-html-to-text (my-hyperspec--html-file name)))
+    (when marked
+      (process-put process 'anchors (my-hyperspec--anchor-names file)))
+    (process-send-string process (my-hyperspec-html-to-text file marked))
     (process-send-eof process)))
 
 (defun my-hyperspec--rewrite-next ()
@@ -353,14 +475,14 @@ The directory must be new or empty."
 
 ;;;###autoload
 (defun my-hyperspec-rewrite-all ()
-  "Rewrite all dictionary pages that are not in the mirror."
+  "Rewrite all pages that are not in the mirror."
   (interactive)
   (when my-hyperspec--running
     (user-error "A rewrite batch is already running"))
   (make-directory my-hyperspec-cache-dir t)
   (setq my-hyperspec--queue
         (seq-remove (lambda (name) (file-exists-p (my-hyperspec--mirror-file name)))
-                    (my-hyperspec--dictionary-pages))
+                    (my-hyperspec--all-pages))
         my-hyperspec--done 0
         my-hyperspec--total (length my-hyperspec--queue))
   (message "my-hyperspec: %d pages to rewrite" my-hyperspec--total)
