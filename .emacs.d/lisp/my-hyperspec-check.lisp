@@ -11,9 +11,11 @@
 ;;   OK         the value is the same as the result on the page.
 ;;   MISMATCH   the value is not the same as the result on the page.
 ;;   ERROR      the form has a result on the page, but it signals an error.
-;;              A form with no result on the page can signal an error.
-;;              Examples of errors use this, so it is not reported.
+;;   UNMARKED   the form signals an error, but the page does not show
+;;              "=> error" after it.  An example of an error must show it.
 ;;   UNCHECKED  the result is words or something that the reader cannot read.
+;;              A word alone, such as STREAM in "stream => position", is not
+;;              checked either.
 ;;   UNBALANCED the block has a form with a missing parenthesis.
 
 (defpackage :my-hyperspec-check (:use :cl))
@@ -101,13 +103,17 @@ Return the form, or :unchecked if the result is words or cannot be read."
         (in (make-string-input-stream text))
         (previous nil)
         (last nil))
+    (flet ((flush ()
+             ;; Report an error of the last form, if no result followed it.
+             (when (and (eq (car last) :err) (not (and (symbolp previous) (caddr last))))
+               (report number :unmarked previous (cadr last)))))
     (loop
       (let ((form (handler-case (read in nil in)
                     (end-of-file ()
                       (return (report number :unbalanced previous)))
                     (error ()
                       (return (report number :unchecked previous))))))
-        (when (eq form in) (return))
+        (when (eq form in) (flush) (return))
         (cond
           ((word-p form "=>")
            (let ((expected (read-expected in)))
@@ -115,14 +121,17 @@ Return the form, or :unchecked if the result is words or cannot be read."
                     (report number :unchecked previous))
                    ((and (eq (car last) :err) (symbolp previous) (caddr last))
                     (report number :unchecked previous))
+                   ((and (eq (car last) :err) (word-p expected "ERROR"))
+                    (report number :ok))
                    ((eq (car last) :err)
                     (report number :error previous (cadr last)))
                    ((same-p (cadr last) expected) (report number :ok))
                    (t (report number :mismatch previous
                               "expected" expected "got" (cadr last))))
              (setf last nil)))
-          (t (setf previous form
-                   last (run form))))))))
+          (t (flush)
+             (setf previous form
+                   last (run form)))))))))
 
 ;; CL-USER in SBCL uses other packages, such as SB-ALIEN.  An example can
 ;; define a function with the name DOUBLE.  Use only COMMON-LISP, as the standard says.

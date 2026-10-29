@@ -21,12 +21,17 @@
 ;; A wrong example does more harm than no example.  Step 3 checks them:
 ;;   - A dictionary page must have the examples of the original page.
 ;;   - SBCL runs the examples of a chapter or glossary page.  A form that has a
-;;     result after => must give that result.  Lisp code is in
-;;     my-hyperspec-check.lisp.  SBCL must be installed.
+;;     result after => must give that result.  A form that signals an error
+;;     must have "=> error" after it.  Lisp code is in my-hyperspec-check.lisp.
+;;     SBCL must be installed.  On macOS, SBCL runs in a sandbox: it can write
+;;     only in a temporary directory, and it cannot use the network.
+;;     Glossary forms that have no stated result are not checked: the glossary
+;;     uses code for data too.
 ;;   - A link in the form [label](target) is a fault.
 ;;   A page with a fault goes back to the model with the faults in the prompt.
 ;;   `my-hyperspec-attempts' sets how many times.  After that, the page is not saved.
 ;;   `my-hyperspec-check-all' checks all pages in the mirror.
+;;   `my-hyperspec-check-page' checks one page, such as the page in eww.
 ;;   `my-hyperspec-rewrite-failed' rewrites the pages that it found faults in.
 ;;
 ;; `my-hyperspec-download' gets the mirror from `my-hyperspec-repo'.
@@ -101,7 +106,8 @@ They are the credits and long lists of names.  eww shows the original page."
 - The page text has links in the form [label](target).
 - Keep each link that fits your new text.  Write it as <a href=\"target\">label</a>.
 - Do not change a target.  Do not add a link that is not in the page.
-- You may change the label words and move a link to another sentence."
+- You may change the label words and move a link to another sentence.
+- Write a link in pre in the same way.  Never write a link in the form [label](target)."
   "Prompt text about links.  All page kinds use it.")
 
 (defconst my-hyperspec--marker-rules
@@ -119,7 +125,7 @@ TAGS lists the allowed tags.  ATTRIBUTES says which attributes are allowed."
 - Use only these tags: %s.  Use no attribute except %s.
 - Start with one h1 that holds the page title.  Use h2 for the sections.
 - Put every code example, call syntax and grammar in pre.
-- Write < > and & as &lt; &gt; and &amp; in the text and in pre.
+- Write < > and & as &lt; &gt; and &amp; in the text, in pre and in the label of a link.  This includes the names < and <=.  A < that is not the start of a tag is a fault.
 - Output only the page.  Do not add comments about the task."
           tags attributes))
 
@@ -139,7 +145,8 @@ Rules for the content:
 - Keep the grammar rules exactly as written.
 - Start the Formal grammar section with one sentence that says it is reference material that most readers can skip.
 - After that sentence, repeat the forms from the call syntax that use these rules, each in its own pre, with its label such as \"The extended form:\".  Then write the rules in one pre.
-- Keep every code example and its output exactly as written.
+- Keep every code example and its output exactly as written.  Copy each example block of the page into its own pre, in the same order.  Do not merge blocks, do not change them and do not add examples.
+- Put the examples of the page in an h2 named \"Examples\".  Put nothing else in it.  If the page has no examples, leave the section out.
 - Keep all facts.  Do not add behavior that the page does not state.
 - Write one clear sentence for each rule about errors and undefined behavior.
 - If a page covers many symbols, give each symbol its own section.
@@ -172,6 +179,9 @@ Rules for the extra help:
 - In the help, write one short sentence that starts with \"In short:\" and says the idea in the simplest words.
 - When a tiny Lisp example makes the idea clear, add one sentence that starts with \"Example:\", with the code in <code>.  Use only well-known standard Lisp behavior.  Make sure the result that you show is correct.
 - If the definition is already clear, add no help.
+- Each form in <code> must run as written in a new SBCL.  Do not use a form that needs a definition that is not in the example.
+- For a generalized boolean, write \"returns true\" or \"returns false\".  Do not write \"returns T\" for a function such as fboundp, member or find.
+- To show a form that signals an error, write \"signals an error\" right after the form.  Any other form must not signal an error.
 
 Rules for the entries:
 - Write each entry as <p id=\"name\"><b>term</b> <i>n.</i> definition <i>(Not in the standard.) In short: ... Example: ...</i></p>.
@@ -203,9 +213,15 @@ Rules for the extra help:
 - After a section or subsection that is hard to understand without examples, add help for the reader.  The help is not in the standard.
 - Put the help in an h2 or h3 named \"Examples (not in the standard)\", one level below the heading of its section.  Put it at the end of that section.
 - Give two to five small examples.  Put each example in its own pre.  Before each pre, write one short sentence that says what the example shows.
-- For a syntax, show sample strings and the parts that each one has.  For a rule, show Lisp code that follows the rule and the result.
-- Use only well-known standard Lisp behavior.  Make sure each result that you show is correct.  Do not show behavior that depends on the implementation.
-- Show only valid examples.  Do not show an example that is wrong or that an implementation may accept.
+- Show Lisp code that follows the rule and the result.  For a syntax, show sample strings that a function such as read-from-string or parse-namestring reads, and the result.
+- Every pre in this section runs as Lisp code.  Write data as quoted data, such as '(a b).  Write notation, such as a lambda list or a type specifier, inside a form that uses it, such as (typep 5 '(integer 0 9)) => true.
+- Use only well-known standard Lisp behavior.  Make sure each result that you show is correct.
+- Each example must run as written in a new SBCL.  Define every function, variable, class and logical host that it uses, before the example uses it.  Make a file before the example opens it.
+- Write a backslash in a Lisp string as two backslashes.  Write the string \"#\\\\Space\" to read the character #\\Space.
+- For a generalized boolean, such as the value of fboundp, member or find, write true or false after =>.  Do not write T or NIL.
+- Do not show a result that depends on the implementation, such as an object printed as #<...>, the host of a logical pathname, or the exact print of a character such as #\\Space.
+- Show a result after => only if you are sure that it is right.  Without a result, the example only shows how to write the call.
+- A form without => must not signal an error.  To show an error, write \"=> error\" after the form, such as (car 5) => error.
 - If the section already has examples, or is a list of names, a table or a figure, add no help.
 
 "
@@ -445,17 +461,29 @@ after =>."
                          (string-match (regexp-quote form) text pos))
                 (setq pos (match-end 0))
                 (let ((rest (substring text pos)))
-                  (push (if (string-match my-hyperspec--result-regexp rest)
-                            (concat form " => " (match-string 1 rest))
-                          form)
+                  (push (cond ((string-match my-hyperspec--result-regexp rest)
+                               (concat form " => " (match-string 1 rest)))
+                              ((string-match-p "\\` \\(?:is an error\\|signals an error\\)" rest)
+                               (concat form " => error"))
+                              (t form))
                         lines)))))
           (when lines
             (push (string-join (nreverse lines) "\n") blocks)))))
     (nreverse blocks)))
 
-(defun my-hyperspec--sbcl-problems (blocks)
+(defun my-hyperspec--sandbox-profile (dir)
+  "Return a macOS sandbox profile.
+A process in the sandbox can write only in DIR and in /tmp.  It cannot use
+the network."
+  (format "(version 1)(allow default)(deny network*)(deny file-write*)(allow file-write* (subpath %S) (subpath \"/private/tmp\") (literal \"/dev/null\"))"
+          (directory-file-name (file-truename dir))))
+
+(defun my-hyperspec--sbcl-problems (blocks &optional allow-unmarked)
   "Run the code BLOCKS in SBCL.  Return a list of texts about the wrong examples.
-A form that has a result after => must give that result."
+A form that has a result after => must give that result.  A form that signals
+an error must have \"=> error\" after it, unless ALLOW-UNMARKED is non-nil.
+On macOS, SBCL runs in a sandbox,
+because the model wrote the code."
   (when blocks
     (unless (executable-find "sbcl")
       (error "Cannot check the examples: sbcl is not installed"))
@@ -466,17 +494,22 @@ A form that has a result after => must give that result."
            problems)
       (unwind-protect
           (with-temp-buffer
-            (let ((status (call-process "sbcl" nil t nil "--script" my-hyperspec--checker file)))
+            (let* ((command (append (when (executable-find "sandbox-exec")
+                                      (list "sandbox-exec" "-p"
+                                            (my-hyperspec--sandbox-profile default-directory)))
+                                    (list "sbcl" "--script" my-hyperspec--checker file)))
+                   (status (apply #'call-process (car command) nil t nil (cdr command))))
               (unless (eq status 0)
                 (push (format "The check of the examples stopped: %s"
                               (truncate-string-to-width (string-trim (buffer-string)) 300))
                       problems))
               (goto-char (point-min))
               (while (re-search-forward
-                      "^\\([0-9]+\\) \\(MISMATCH\\|ERROR\\|UNBALANCED\\)\\(?: | \\(.*\\)\\)?$" nil t)
-                (push (format "Example block %s: %s | %s" (match-string 1) (match-string 2)
-                              (or (match-string 3) ""))
-                      problems))))
+                      "^\\([0-9]+\\) \\(MISMATCH\\|ERROR\\|UNMARKED\\|UNBALANCED\\)\\(?: | \\(.*\\)\\)?$" nil t)
+                (unless (and allow-unmarked (equal (match-string 2) "UNMARKED"))
+                  (push (format "Example block %s: %s | %s" (match-string 1) (match-string 2)
+                                (or (match-string 3) ""))
+                        problems)))))
         (delete-file file)
         (delete-directory default-directory t))
       (nreverse problems))))
@@ -514,7 +547,8 @@ The faults are links in markdown form and wrong examples."
        ('dictionary (my-hyperspec--fidelity-problems dom name))
        ('chapter (my-hyperspec--sbcl-problems
                   (my-hyperspec--section-blocks dom "Examples (not in the standard)")))
-       ('glossary (my-hyperspec--sbcl-problems (my-hyperspec--glossary-blocks dom)))))))
+       ;; Glossary text has data in code, such as (1 2 . 3).  It is not a form.
+       ('glossary (my-hyperspec--sbcl-problems (my-hyperspec--glossary-blocks dom) t))))))
 
 ;;;###autoload
 (defun my-hyperspec-check-all ()
@@ -525,24 +559,52 @@ Save the faults for `my-hyperspec-rewrite-failed'.  Show the pages that have
 faults."
   (interactive)
   (clrhash my-hyperspec--feedback)
-  (let ((coding-system-for-read 'utf-8)
-        (pages (mapcar #'file-name-sans-extension
-                       (directory-files (expand-file-name "Body/" my-hyperspec-cache-dir)
-                                        nil "\\.htm\\'"))))
-    (dolist (name pages)
-      (when-let* ((problems (my-hyperspec--page-problems
-                             (with-temp-buffer
-                               (insert-file-contents (my-hyperspec--mirror-file name))
-                               (buffer-string))
-                             name)))
+  (dolist (name (mapcar #'file-name-sans-extension
+                        (directory-files (expand-file-name "Body/" my-hyperspec-cache-dir)
+                                         nil "\\.htm\\'")))
+    (when-let* ((problems (my-hyperspec--check-mirror-page name)))
+      (message "my-hyperspec: %s has %d faults" name (length problems))))
+  (my-hyperspec--show-faults)
+  (message "my-hyperspec: %d pages have faults" (hash-table-count my-hyperspec--feedback)))
+
+;;;###autoload
+(defun my-hyperspec-check-page (name)
+  "Check the examples and the links of the mirror page NAME.
+In eww, NAME is the page that eww shows.  Save the faults for
+`my-hyperspec-rewrite-failed'."
+  (interactive
+   (list (or (and (derived-mode-p 'eww-mode)
+                  (nth 1 (my-hyperspec--split-url (or (plist-get eww-data :url) ""))))
+             (read-string "Page name, such as f_car_c: "))))
+  (unless (file-exists-p (my-hyperspec--mirror-file name))
+    (user-error "No mirror page for %s" name))
+  (if-let* ((problems (my-hyperspec--check-mirror-page name)))
+      (progn
+        (my-hyperspec--show-faults)
+        (message "my-hyperspec: %s has %d faults" name (length problems)))
+    (message "my-hyperspec: %s has no faults" name)))
+
+(defun my-hyperspec--check-mirror-page (name)
+  "Check the mirror page NAME.  Return the list of faults.
+Save the faults in `my-hyperspec--feedback', or remove the old faults."
+  (let* ((coding-system-for-read 'utf-8)
+         (problems (my-hyperspec--page-problems
+                    (with-temp-buffer
+                      (insert-file-contents (my-hyperspec--mirror-file name))
+                      (buffer-string))
+                    name)))
+    (if problems
         (puthash name (string-join problems "\n") my-hyperspec--feedback)
-        (message "my-hyperspec: %s has %d faults" name (length problems)))))
+      (remhash name my-hyperspec--feedback))
+    problems))
+
+(defun my-hyperspec--show-faults ()
+  "Show the saved faults of all pages in a buffer."
   (with-current-buffer (get-buffer-create "*my-hyperspec-check*")
     (erase-buffer)
     (maphash (lambda (name faults) (insert name "\n" faults "\n\n")) my-hyperspec--feedback)
     (goto-char (point-min))
-    (display-buffer (current-buffer)))
-  (message "my-hyperspec: %d pages have faults" (hash-table-count my-hyperspec--feedback)))
+    (display-buffer (current-buffer))))
 
 ;;; Rewrite with the claude CLI
 
