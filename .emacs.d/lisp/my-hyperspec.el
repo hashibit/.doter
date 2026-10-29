@@ -182,6 +182,15 @@ Rules for the content:
 - Say each rule about errors and undefined behavior in one clear sentence.
 - When the text uses a term of art that a beginner may not know, add a few plain words the first time it appears.  The link stays.
 
+Rules for the extra help:
+- After a section or subsection that is hard to understand without examples, add help for the reader.  The help is not in the standard.
+- Put the help in an h2 or h3 named \"Examples (not in the standard)\", one level below the heading of its section.  Put it at the end of that section.
+- Give two to five small examples.  Put each example in its own pre.  Before each pre, write one short sentence that says what the example shows.
+- For a syntax, show sample strings and the parts that each one has.  For a rule, show Lisp code that follows the rule and the result.
+- Use only well-known standard Lisp behavior.  Make sure each result that you show is correct.  Do not show behavior that depends on the implementation.
+- Show only valid examples.  Do not show an example that is wrong or that an implementation may accept.
+- If the section already has examples, or is a list of names, a table or a figure, add no help.
+
 "
    my-hyperspec--marker-rules "\n\n"
    my-hyperspec--link-rules "\n\n"
