@@ -21,13 +21,11 @@
   ;; Limit line length.
   (setq shr-width 88)
   ;; Indent <blockquote> by 2 columns. `my-eww-indent-sections' uses it.
-  (setq shr-block-indentation-width 2)
-  ;; Make section headings easy to find.
-  (set-face-attribute 'shr-h2 nil :inherit 'font-lock-keyword-face
-                      :underline '(:color "gray30" :style line)))
+  (setq shr-block-indentation-width 2))
 
 (defvar my-hyperspec-cache-dir)
 (defvar my-hyperspec-root)
+(declare-function face-remap-remove-relative "face-remap")
 
 (defun my-eww-indent-pre (node first)
   "Return the pre NODE with its text indented like a blockquote.
@@ -71,6 +69,40 @@ A section ends at the next h2 or at an hr."
       (setcdr (cdr body) (nreverse result))))
   document)
 
+(defvar my-eww-colors t
+  "Non-nil means eww shows the extra colors and highlights.
+These are the h2 heading face, the Lisp colors of the HyperSpec code
+examples and the paren match.  `my-eww-toggle-colors' changes it.")
+
+(defvar-local my-eww--h2-remap nil
+  "Face remap cookie for the h2 heading face in this buffer.")
+
+(defun my-eww--apply-colors ()
+  "Show or hide the h2 face and the paren match in this buffer.
+Follow `my-eww-colors'."
+  (when my-eww--h2-remap
+    (face-remap-remove-relative my-eww--h2-remap)
+    (setq my-eww--h2-remap nil))
+  (when my-eww-colors
+    ;; Make section headings easy to find.
+    (setq my-eww--h2-remap
+          (face-remap-add-relative 'shr-h2 :inherit 'font-lock-keyword-face
+                                   :underline '(:color "gray30" :style line))))
+  ;; `show-paren-predicate' skips special-mode buffers, and eww-mode is one.
+  (show-paren-local-mode (if my-eww-colors 1 -1)))
+
+(defun my-eww-toggle-colors ()
+  "Toggle the extra colors and highlights in all eww buffers."
+  (interactive)
+  (setq my-eww-colors (not my-eww-colors))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (derived-mode-p 'eww-mode)
+        (my-eww--apply-colors)
+        ;; Render again from the saved source.  Do not fetch the page.
+        (eww-reload t))))
+  (message "eww colors %s" (if my-eww-colors "on" "off")))
+
 ;; Do not advise `eww-document-base'.  Native-compiled eww calls it directly.
 (define-advice shr-insert-document (:around (fn document) my-hyperspec)
   "Indent the sections and highlight the code of the local HyperSpec pages."
@@ -80,8 +112,12 @@ A section ends at the next h2 or at an hr."
              (string-prefix-p (concat "file://" (expand-file-name my-hyperspec-cache-dir))
                               url))
         (let ((shr-external-rendering-functions
-               (cons '(pre . my-eww-render-pre) shr-external-rendering-functions)))
-          (funcall fn (my-eww-indent-sections document)))
+               (if my-eww-colors
+                   (cons '(pre . my-eww-render-pre) shr-external-rendering-functions)
+                 shr-external-rendering-functions)))
+          ;; Change a copy.  eww keeps DOCUMENT in `eww-data' and
+          ;; `eww-reload' renders it again.
+          (funcall fn (my-eww-indent-sections (copy-tree document))))
       (funcall fn document))))
 
 (defconst my-eww--loop-keyword-regexp
@@ -196,6 +232,7 @@ The `shr-insert-document' advice adds this function to
 ;; eww buffer 不是 find-file 打开的，find-file-hook 不会触发，这里补上；
 ;; eww-mode 在 my-special-buffer-modes 里，所以会关掉 god mode、开启 special buffer keys
 (add-hook 'eww-mode-hook #'my-init-god-mode-for-new-buffer)
+(add-hook 'eww-mode-hook #'my-eww--apply-colors)
 
 (with-eval-after-load 'eww
   (keymap-set eww-mode-map "H" #'eww-back-url)
