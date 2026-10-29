@@ -141,22 +141,30 @@ Each entry has a term, a part of speech such as n. or v., and a definition.
 Rules for the content:
 - Keep every entry, in the same order.  Do not merge entries.  Do not drop entries.
 - Keep the term and the part of speech exactly as written.
-- Write each definition in plain and simple English.  Use short sentences.  Use active voice.
-- Keep the meaning exactly.  If a definition is already simple, keep it as it is.
-- Keep labels such as Trad. and keep each See reference.
+- Write each definition in plain and simple English.  Use common words.  Use short sentences, one idea in each.  Use active voice.
+- Replace a hard word with a common word only when both words mean exactly the same.  For example, write \"stands for\" for \"denotes\", and \"conversion\" for \"coercion\".
+- Do not replace a technical term with a looser phrase.  Keep terms such as \"conceptual location\", \"establishment\" and \"extent\" as they are.
+- Write \"the consequences are undefined\" as \"the result is undefined: the program may do anything\".
+- Keep the meaning exactly.  Keep every condition and every exception.  Do not add facts to the definition.
+- Keep numbered meanings (1. 2. 3.), quoted examples, labels such as Trad. or ANSI, and each See or See also reference.
 - Keep every symbol name exactly as written, with its * and + characters.
-- Keep every example.  Do not add examples.
+
+Rules for the extra help:
+- After the definition, you may add help for the reader.  The help is not in the standard.
+- Write the help in one <i> element at the end of the entry.  Start it with \"(Not in the standard.)\".
+- In the help, write one short sentence that starts with \"In short:\" and says the idea in the simplest words.
+- When a tiny Lisp example makes the idea clear, add one sentence that starts with \"Example:\", with the code in <code>.  Use only well-known standard Lisp behavior.  Make sure the result that you show is correct.
+- If the definition is already clear, add no help.
 
 Rules for the entries:
-- Write each entry as <p id=\"name\"><b>term</b> <i>n.</i> definition</p>.
+- Write each entry as <p id=\"name\"><b>term</b> <i>n.</i> definition <i>(Not in the standard.) In short: ... Example: ...</i></p>.
 - The input marks the start of each entry with a marker.  Use its name as the id.
 
 "
    my-hyperspec--marker-rules "\n\n"
    my-hyperspec--link-rules "\n\n"
    (my-hyperspec--format-rules "h1, h2, p, ul, li, pre, code, a, b, i"
-                               "href on a and id on p, h2, li and pre"))
-  "System prompt for the rewrite of a glossary page.")
+                               "href on a and id on p, h2, li and pre"))  "System prompt for the rewrite of a glossary page.")
 
 (defconst my-hyperspec-chapter-prompt
   (concat
